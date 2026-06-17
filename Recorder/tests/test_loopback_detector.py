@@ -5,6 +5,7 @@ Kein echter sounddevice-Aufruf in den Tests.
 
 Mock-Dict-Schema entspricht sounddevice.query_devices():
   name: str
+  index: int     ← globaler sounddevice-Geräte-Index (Schlüssel in realen Dicts)
   max_input_channels: int
   max_output_channels: int
   hostapi: int   ← Index in die hostapis-Liste
@@ -12,7 +13,6 @@ Mock-Dict-Schema entspricht sounddevice.query_devices():
 Mock-Dict-Schema für hostapis entspricht sounddevice.query_hostapis():
   name: str
 """
-import pytest
 
 
 # ---------------------------------------------------------------------------
@@ -28,18 +28,20 @@ MMSOUND_HOSTAPI = {"name": "Windows WDM-KS"}
 HOSTAPIS = [WASAPI_HOSTAPI, MMSOUND_HOSTAPI]
 
 
-def _input_device(name: str, hostapi_idx: int = 1) -> dict:
+def _input_device(name: str, hostapi_idx: int = 1, index: int = 0) -> dict:
     return {
         "name": name,
+        "index": index,
         "max_input_channels": 2,
         "max_output_channels": 0,
         "hostapi": hostapi_idx,
     }
 
 
-def _output_device(name: str, hostapi_idx: int = 1) -> dict:
+def _output_device(name: str, hostapi_idx: int = 1, index: int = 0) -> dict:
     return {
         "name": name,
+        "index": index,
         "max_input_channels": 0,
         "max_output_channels": 2,
         "hostapi": hostapi_idx,
@@ -59,7 +61,7 @@ def test_cable_output_erkannt():
     routen = detector.detect_from(inputs, outputs, HOSTAPIS)
     assert len(routen) == 1
     assert routen[0].method == "input_device"
-    assert "cable" in routen[0].name.lower() or "cable" in routen[0].name.lower()
+    assert "cable" in routen[0].name.lower()
 
 
 def test_has_loopback_true_bei_cable():
@@ -208,7 +210,7 @@ def test_best_route_bei_mehreren_inputs():
     routen = detector.detect_from(inputs, [], HOSTAPIS)
     beste = detector.best_route(routen)
     assert beste is not None
-    assert "cable" in beste.name.lower() or beste.score >= max(r.score for r in routen)
+    assert "cable" in beste.name.lower()
 
 
 # ---------------------------------------------------------------------------
@@ -250,3 +252,59 @@ def test_best_route_none_kein_crash(monkeypatch):
     monkeypatch.setattr(detector, "detect", lambda: [])
     result = detector.best_route(None)
     assert result is None
+
+
+# ---------------------------------------------------------------------------
+# device_index — echte sounddevice-Indizes aus dem Dict (nicht enumerate)
+# ---------------------------------------------------------------------------
+
+def test_device_index_input_aus_dict():
+    """device_index einer input_device-Route entspricht dem 'index'-Wert im Dict (nicht enumerate)."""
+    from sources.loopback_detector import LoopbackDetector
+    detector = LoopbackDetector()
+    # Zwei Input-Geräte mit nicht-sequenziellen Indizes (wie in echten sounddevice-Listen)
+    inputs = [
+        _input_device("Stereo Mix (Realtek)", index=3),
+        _input_device("CABLE Output (VB-Audio)", index=5),
+    ]
+    routen = detector.detect_from(inputs, [], HOSTAPIS)
+    assert len(routen) == 2
+    indizes = {r.name: r.device_index for r in routen}
+    assert indizes["Stereo Mix (Realtek)"] == 3, (
+        f"Erwartet index=3, bekommen {indizes['Stereo Mix (Realtek)']}"
+    )
+    assert indizes["CABLE Output (VB-Audio)"] == 5, (
+        f"Erwartet index=5, bekommen {indizes['CABLE Output (VB-Audio)']}"
+    )
+
+
+def test_device_index_output_aus_dict():
+    """device_index einer wasapi_loopback-Route entspricht dem 'index'-Wert im Dict."""
+    from sources.loopback_detector import LoopbackDetector
+    detector = LoopbackDetector()
+    outputs = [
+        _output_device("Lautsprecher (Realtek)", hostapi_idx=WASAPI_HOSTAPI_IDX, index=1),
+        _output_device("Headphones (WASAPI)", hostapi_idx=WASAPI_HOSTAPI_IDX, index=7),
+    ]
+    routen = detector.detect_from([], outputs, HOSTAPIS)
+    assert len(routen) == 2
+    indizes = {r.name: r.device_index for r in routen}
+    assert indizes["Lautsprecher (Realtek)"] == 1
+    assert indizes["Headphones (WASAPI)"] == 7
+
+
+def test_device_index_gemischte_liste():
+    """Gemischte inputs/outputs mit expliziten Indizes — alle Routes haben exakte Dict-Indizes."""
+    from sources.loopback_detector import LoopbackDetector
+    detector = LoopbackDetector()
+    inputs = [
+        _input_device("Stereo Mix (Realtek)", index=3),
+    ]
+    outputs = [
+        _output_device("Lautsprecher", hostapi_idx=WASAPI_HOSTAPI_IDX, index=1),
+    ]
+    routen = detector.detect_from(inputs, outputs, HOSTAPIS)
+    assert len(routen) == 2
+    indizes = {r.method: r.device_index for r in routen}
+    assert indizes["wasapi_loopback"] == 1
+    assert indizes["input_device"] == 3

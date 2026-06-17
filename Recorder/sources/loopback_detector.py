@@ -15,7 +15,7 @@ Score-Tiers (absteigend):
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 # ---------------------------------------------------------------------------
@@ -103,8 +103,15 @@ class LoopbackDetector:
         """Ermittelt Loopback-Routen aus injizierten Gerätedaten.
 
         Jedes Dict entspricht dem sounddevice-Schema:
-            name (str), max_input_channels (int), max_output_channels (int),
+            name (str), index (int, globaler sounddevice-Index),
+            max_input_channels (int), max_output_channels (int),
             hostapi (int, Index in hostapis).
+
+        Der Schlüssel "index" wird direkt übernommen — er entspricht der
+        Position in der vollständigen sd.query_devices()-Liste und ist
+        der richtige Index zum Öffnen eines Geräts. Fehlt "index" in einem
+        Dict (z. B. in Unit-Tests die ihn nicht setzen), wird als Fallback
+        None verwendet; Task 3b muss das dann behandeln.
 
         HostAPI-Dicts: {"name": str}.
 
@@ -114,19 +121,20 @@ class LoopbackDetector:
         routen: list[LoopbackRoute] = []
 
         # --- Weg 1: WASAPI-Loopback (Ausgabegerät + WASAPI-HostAPI) --------
-        for idx, gerät in enumerate(output_devices):
+        for gerät in output_devices:
             api_name = self._hostapi_name(gerät, hostapis)
             if "wasapi" in api_name.lower():
                 routen.append(LoopbackRoute(
                     name=gerät["name"],
                     method="wasapi_loopback",
-                    device_index=idx,
+                    # Echten sounddevice-Index aus dem Dict übernehmen
+                    device_index=gerät.get("index", -1),
                     hostapi=api_name,
                     score=_SCORE_WASAPI,
                 ))
 
         # --- Weg 2: Virtuelles/Monitor-Eingabegerät ------------------------
-        for idx, gerät in enumerate(input_devices):
+        for gerät in input_devices:
             name_lower = gerät["name"].lower()
             api_name = self._hostapi_name(gerät, hostapis)
             score = self._name_score(name_lower)
@@ -134,7 +142,8 @@ class LoopbackDetector:
                 routen.append(LoopbackRoute(
                     name=gerät["name"],
                     method="input_device",
-                    device_index=idx,
+                    # Echten sounddevice-Index aus dem Dict übernehmen
+                    device_index=gerät.get("index", -1),
                     hostapi=api_name,
                     score=score,
                 ))

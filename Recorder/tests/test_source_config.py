@@ -3,8 +3,6 @@
 Headless, kein GUI-Import, kein Hardware-Zugriff.
 """
 import json
-import os
-import pytest
 from pathlib import Path
 
 

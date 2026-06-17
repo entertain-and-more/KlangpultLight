@@ -108,6 +108,12 @@ class AudioEngine:
         # Reale sounddevice-Streams
         self._echte_streams: list = []
 
+        # Board-Audio-Puffer (Task 4a — additiv, kein neuer MixerChannel).
+        # Blöcke werden vom BoardPlayer eingereiht und im MixWorker auf den
+        # fertig gemischten Block summiert (nach mix_with_channels, vor Aufnahme).
+        # Eigene deque — ändert weder _channels noch channel_count().
+        self._board_puffer: deque = deque(maxlen=_PUFFER_MAXLEN)
+
         # Initialer Peak-Eintrag (Nullen der Kanal-Länge) — damit
         # latest_peaks() schon vor start() eine gültige Liste liefert.
         self._peak_deque.append([0.0] * len(channels))
@@ -352,6 +358,14 @@ class AudioEngine:
 
         # Mix berechnen (process() einmalig pro Kanal)
         mix_block, verarbeitete = self._bus.mix_with_channels(blocks)
+
+        # Board-Audio additiv auf den Mix summieren (Task 4a).
+        # _board_puffer wird vom BoardPlayer befüllt; kein eigener MixerChannel.
+        if self._board_puffer:
+            board_block = self._board_puffer.popleft()
+            # Shape-Ausgleich: Board-Block muss zu mix_block passen
+            if board_block.shape == mix_block.shape:
+                mix_block = np.clip(mix_block + board_block, -1.0, 1.0)
 
         # Peak-Update
         peaks = self._bus.peaks()

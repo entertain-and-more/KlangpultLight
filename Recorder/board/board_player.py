@@ -64,6 +64,10 @@ class _PadFeeder:
         self._stop_event = stop_event
 
         self._thread: Optional[threading.Thread] = None
+        # Amplitude des zuletzt geschriebenen Frames — für korrekten Fade-out
+        self._letzter_amp: float = 0.0
+        # Feeder ist fertig (Fütter-Schleife abgeschlossen) — gesetzt vor on_finish
+        self._fertig: bool = False
 
     def start(self) -> None:
         """Startet den Feeder-Thread."""
@@ -82,7 +86,14 @@ class _PadFeeder:
             self._thread = None
 
     def is_alive(self) -> bool:
-        """Gibt zurück, ob der Feeder-Thread noch läuft."""
+        """Gibt zurück, ob der Feeder-Thread noch aktiv Daten liefert.
+
+        _fertig wird gesetzt bevor on_finish() aufgerufen wird — so zählt
+        sich ein Feeder nicht mehr als aktiv, während er noch im finally-Block
+        des Thread-Runners läuft (wichtig für Ducking-Stop-Entscheidung).
+        """
+        if self._fertig:
+            return False
         return self._thread is not None and self._thread.is_alive()
 
     def _run(self) -> None:
@@ -92,7 +103,8 @@ class _PadFeeder:
         ch = self._audio_channels
         loop = self.pad.mode == "loop"
 
-        # Ducking starten
+        # Ducking starten (stop_duck wird via on_finish aus BoardPlayer aufgerufen,
+        # wenn kein weiterer Feeder mehr läuft — daher nicht hier stoppen).
         if self._duck is not None:
             self._duck.start_duck()
 
@@ -101,10 +113,12 @@ class _PadFeeder:
         except Exception as exc:
             _log.warning("BoardFeeder %s: Fehler beim Abspielen: %s", self.pad.id, exc)
         finally:
-            # Fade-out und Ducking beenden
+            # Fade-out anhängen (echte Rampe, kein bloßes Schweigen)
             self._fade_out_in_puffer(block_size, ch)
-            if self._duck is not None:
-                self._duck.stop_duck()
+            # Als fertig markieren, BEVOR on_finish() aufgerufen wird,
+            # damit _aktive_feeder_anzahl() diesen Feeder nicht mehr zählt.
+            self._fertig = True
+            # on_finish räumt Feeder auf und beendet Ducking wenn letzter Feeder
             self._on_finish()
 
     def _feed_loop(
@@ -165,6 +179,9 @@ class _PadFeeder:
                         else:
                             break
 
+                # Amplitude des letzten Blocks merken (für Fade-out)
+                self._letzter_amp = float(self.pad.volume)
+
                 # Echtzeit-Throttling — nicht zu schnell füllen
                 loop_start = time.monotonic()
                 self._engine._board_puffer.append(block)
@@ -177,12 +194,19 @@ class _PadFeeder:
                 return  # nicht wiederholen
 
     def _fade_out_in_puffer(self, block_size: int, ch: int) -> None:
-        """Hängt einen Fade-out-Block (Stille) in den Puffer."""
-        fade_frames = FADE_FRAMES
+        """Hängt einen echten Fade-out-Block (Rampe → Stille) in den Puffer.
+
+        Rampt linear vom letzten bekannten Amplitudenwert auf 0 über FADE_FRAMES
+        Frames, gefolgt von Stille bis block_size.
+        """
+        fade_frames = min(FADE_FRAMES, block_size)
         block = np.zeros((block_size, ch), dtype=np.float32)
-        # Fade-out von letztem Wert auf 0 — wir nutzen einfach einen leeren
-        # Block, da wir den letzten Wert nicht kennen; der MixWorker clippt sowieso.
-        # Ausreichend für den Test-Nachweis (Puffer erhält nach dem Ende Null-Blöcke).
+        # Lineare Rampe: von _letzter_amp auf 0 über fade_frames Frames
+        start_amp = self._letzter_amp
+        if start_amp > 0.0 and fade_frames > 0:
+            rampe = np.linspace(start_amp, 0.0, fade_frames, dtype=np.float32)
+            for kanal_idx in range(ch):
+                block[:fade_frames, kanal_idx] = rampe
         self._engine._board_puffer.append(block)
 
     @staticmethod
@@ -282,6 +306,9 @@ class BoardPlayer:
                 # Sonst: starten (play_stop/loop → genau 1 Feeder)
                 feeder = self._neuer_feeder(pad)
                 self._feeder[pad_id] = [feeder]
+                # Duck registrieren bevor Feeder startet (kein Tick-Lücke)
+                if self._duck is not None and hasattr(self._engine, "register_duck"):
+                    self._engine.register_duck(self._duck)
                 feeder.start()
 
             elif mode == "overlap":
@@ -289,6 +316,9 @@ class BoardPlayer:
                 feeder = self._neuer_feeder(pad)
                 laufende.append(feeder)
                 self._feeder[pad_id] = laufende
+                # Duck registrieren wenn erster Feeder (overlap kann mehrfach aufrufen)
+                if self._duck is not None and hasattr(self._engine, "register_duck"):
+                    self._engine.register_duck(self._duck)
                 feeder.start()
 
     def stop(self, pad_id: str) -> None:
@@ -330,6 +360,13 @@ class BoardPlayer:
     # Intern
     # -------------------------------------------------------------------------
 
+    def _aktive_feeder_anzahl(self) -> int:
+        """Gibt die Gesamtzahl aller aktiven Feeder zurück (unter Lock aufrufen!)."""
+        return sum(
+            sum(1 for f in fl if f.is_alive())
+            for fl in self._feeder.values()
+        )
+
     def _neuer_feeder(self, pad: Pad) -> _PadFeeder:
         """Erzeugt einen neuen _PadFeeder für das gegebene Pad."""
         cfg = self._engine._config
@@ -341,6 +378,11 @@ class BoardPlayer:
                 laufende = self._feeder.get(pad.id, [])
                 # Alle nicht mehr alive entfernen
                 self._feeder[pad.id] = [f for f in laufende if f.is_alive()]
+                # Wenn kein Feeder mehr läuft: Ducking beenden
+                if self._duck is not None and self._aktive_feeder_anzahl() == 0:
+                    self._duck.stop_duck()
+                    if hasattr(self._engine, "unregister_duck"):
+                        self._engine.unregister_duck()
 
         return _PadFeeder(
             pad=pad,

@@ -114,6 +114,12 @@ class AudioEngine:
         # Eigene deque — ändert weder _channels noch channel_count().
         self._board_puffer: deque = deque(maxlen=_PUFFER_MAXLEN)
 
+        # Mic-Ducking (Task 4a) — optionaler DuckController, der im MixWorker
+        # pro Tick getickt wird und Mic-Kanal-Blöcke vor dem Mix abschwächt.
+        # Gesetzt via register_duck(), gelöscht via unregister_duck().
+        self._duck = None
+        self._duck_lock = threading.Lock()
+
         # Initialer Peak-Eintrag (Nullen der Kanal-Länge) — damit
         # latest_peaks() schon vor start() eine gültige Liste liefert.
         self._peak_deque.append([0.0] * len(channels))
@@ -321,6 +327,23 @@ class AudioEngine:
         """
         return self._laeuft
 
+    def register_duck(self, duck) -> None:
+        """Registriert einen DuckController für Mic-Ducking.
+
+        Der MixWorker tickt den Controller jede Block-Periode und skaliert
+        alle Mic-Kanal-Blöcke mit dem aktuellen Gain-Faktor.
+
+        Args:
+            duck: DuckController-Instanz (muss tick(dt) und current_gain_factor() haben).
+        """
+        with self._duck_lock:
+            self._duck = duck
+
+    def unregister_duck(self) -> None:
+        """Entfernt den aktiven DuckController (Mic-Verstärkung kehrt auf 1.0 zurück)."""
+        with self._duck_lock:
+            self._duck = None
+
     # -------------------------------------------------------------------------
     # Zentraler MixWorker (Kern des Task-3c-Fixes)
     # -------------------------------------------------------------------------
@@ -339,6 +362,16 @@ class AudioEngine:
         block_size = self._config.block_size
         ch = self._config.channels
 
+        # Duck-Controller ticken (vor dem Mix, damit Gain-Faktor aktuell ist)
+        dt = block_size / max(1, self._config.samplerate)
+        with self._duck_lock:
+            duck = self._duck
+        if duck is not None:
+            duck.tick(dt)
+            duck_faktor = duck.current_gain_factor()
+        else:
+            duck_faktor = 1.0
+
         # Daten aus Kanalpuffern ziehen
         blocks: dict[str, np.ndarray] = {}
         hat_daten = False
@@ -346,7 +379,11 @@ class AudioEngine:
         for kanal in self._channels:
             puffer = self._kanal_puffer[kanal.source_id]
             if puffer:
-                blocks[kanal.source_id] = puffer.popleft()
+                blk = puffer.popleft()
+                # Mic-Ducking: Bloc per Gain-Faktor skalieren (in-place kopie)
+                if duck_faktor != 1.0:
+                    blk = blk * duck_faktor
+                blocks[kanal.source_id] = blk
                 hat_daten = True
             else:
                 # Zeros für fehlenden Block (Ausrichtung erhalten)

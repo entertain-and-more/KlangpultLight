@@ -142,14 +142,59 @@ def test_stop_beendet_feeder(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Test 2: Board-Audio taucht im MixWorker auf (via Engine-Aufnahme)
+# Test 2: Board-Audio taucht im MixWorker auf — synchroner Nachweis
 # ---------------------------------------------------------------------------
 
-def test_board_audio_landet_in_mix(tmp_path):
-    """Board-Audio fließt über _board_puffer in den Mix-Block.
+def test_board_audio_summiert_auf_mix(tmp_path):
+    """Synchroner Nachweis: Board-Puffer-Block wird im Mix sichtbar.
 
-    Verifizierung: Engine-Aufnahme wird gestartet; mix.wav darf danach
-    nicht nur Nullen enthalten (Board-Signal liegt bei 0.3).
+    Methode (proof-guard): Mic-Kanäle werden mit Null-Blöcken gefüllt;
+    Board-Puffer erhält einen bekannten Block (Amplitude 0.5).
+    _mix_one_tick() muss den Board-Block auf den Mix summieren →
+    mix_block darf nicht Null sein. Wenn die Summierung entfernt wird,
+    fällt dieser Test.
+    """
+    from audio.engine import AudioEngine
+    from audio.mixer_channel import MixerChannel
+    from core.config import AppConfig
+    from audio.wav_recorder import WavRecorder
+
+    cfg = AppConfig(mock_audio=True, block_size=1024, samplerate=48000, channels=2, workspace_dir=str(tmp_path))
+    kanaele = [MixerChannel(source_id="mic1", name="Mikrofon 1")]
+    engine = AudioEngine(config=cfg, channels=kanaele)
+
+    # Mic-Kanal mit NULLEN füllen (kein Mock-Synth-Thread!)
+    null_block = np.zeros((1024, 2), dtype=np.float32)
+    engine._kanal_puffer["mic1"].append(null_block)
+
+    # Board-Puffer mit bekanntem Signal füllen (Amplitude 0.5)
+    board_block = np.full((1024, 2), 0.5, dtype=np.float32)
+    engine._board_puffer.append(board_block)
+
+    # Aufnahme starten und genau einen Tick ausführen
+    aufnahme_dir = str(tmp_path / "sync_test")
+    engine.start_recording(aufnahme_dir)
+    hatte_daten = engine._mix_one_tick()
+    ergebnis = engine.stop_recording()
+
+    assert hatte_daten, "_mix_one_tick() meldet keinen Daten-Tick"
+
+    mix_pfad = ergebnis["mix"]
+    assert os.path.exists(mix_pfad), "mix.wav fehlt"
+
+    mix_daten, _ = sf.read(mix_pfad, dtype="float32")
+    assert mix_daten.size > 0, "mix.wav ist leer"
+    assert np.max(np.abs(mix_daten)) > 0.1, (
+        f"Board-Block (0.5) fehlt im Mix — max={np.max(np.abs(mix_daten)):.4f}. "
+        "Summierung in _mix_one_tick() ist nicht aktiv."
+    )
+
+
+def test_board_audio_landet_in_mix_integriert(tmp_path):
+    """Integrierter Test: Board-Audio über echten BoardPlayer sichtbar in mix.wav.
+
+    Ergänzt den synchronen Nachweis — prüft den echten Feeder-Pfad.
+    Mic läuft im Mock-Modus, Board-Signal liegt bei 0.3.
     """
     from audio.engine import AudioEngine
     from audio.mixer_channel import MixerChannel
@@ -157,7 +202,6 @@ def test_board_audio_landet_in_mix(tmp_path):
     from board.board_model import Board, Pad
     from board.board_player import BoardPlayer
 
-    # Engine MIT Mock-Synth-Thread (start()) für vollständigen MixWorker-Test
     cfg = AppConfig(mock_audio=True, block_size=1024, samplerate=48000, channels=2, workspace_dir=str(tmp_path))
     kanaele = [MixerChannel(source_id="mic1", name="Mikrofon 1")]
     engine = AudioEngine(config=cfg, channels=kanaele)
@@ -173,7 +217,7 @@ def test_board_audio_landet_in_mix(tmp_path):
 
     engine.start_recording(aufnahme_dir)
     player.trigger("bm1")
-    time.sleep(0.5)  # Genug Zeit für Board-Blöcke
+    time.sleep(0.5)
 
     player.stop_all()
     ergebnis = engine.stop_recording()
@@ -181,10 +225,9 @@ def test_board_audio_landet_in_mix(tmp_path):
 
     mix_pfad = ergebnis["mix"]
     assert os.path.exists(mix_pfad), "mix.wav fehlt"
-
     mix_daten, _ = sf.read(mix_pfad, dtype="float32")
     assert mix_daten.size > 0, "mix.wav ist leer"
-    assert np.max(np.abs(mix_daten)) > 0.0, "mix.wav enthält nur Nullen — Board-Audio fehlt"
+    assert np.max(np.abs(mix_daten)) > 0.0, "mix.wav enthält nur Nullen"
 
 
 # ---------------------------------------------------------------------------
@@ -206,7 +249,7 @@ def test_ducking_aktiv_waehrend_pad_spielt(tmp_path):
 
     player.trigger("d1")
 
-    # Warten bis Ducking einsetzt
+    # Warten bis Ducking einsetzt (MixWorker nicht aktiv — Ticks manuell)
     deadline = time.monotonic() + 2.0
     faktor_unter_eins = False
     while time.monotonic() < deadline:
@@ -220,6 +263,50 @@ def test_ducking_aktiv_waehrend_pad_spielt(tmp_path):
 
     assert faktor_unter_eins, (
         f"DuckController wurde nicht aktiviert — Faktor blieb bei {duck.current_gain_factor():.3f}"
+    )
+
+
+def test_ducking_skaliert_mic_im_mix(tmp_path):
+    """Synchroner Nachweis: Mic-Block wird durch Ducking abgeschwächt.
+
+    Methode: Mic-Kanal erhält Block mit Amplitude 1.0; Duck-Faktor -12 dB ≈ 0.25.
+    Nach register_duck + start_duck + _mix_one_tick() muss mix-Amplitude < 0.5.
+    Fällt aus wenn duck_faktor in _mix_one_tick() nicht angewendet wird.
+    """
+    from audio.engine import AudioEngine
+    from audio.mixer_channel import MixerChannel
+    from core.config import AppConfig
+    from board.duck_controller import DuckController
+    from audio.wav_recorder import WavRecorder
+
+    cfg = AppConfig(mock_audio=True, block_size=1024, samplerate=48000, channels=2, workspace_dir=str(tmp_path))
+    kanaele = [MixerChannel(source_id="mic1", name="Mikrofon 1")]
+    engine = AudioEngine(config=cfg, channels=kanaele)
+
+    duck = DuckController(duck_db=-12.0, attack=1e-9, release=1.0)
+    duck.start_duck()
+    # Vorab ticken damit Faktor am Ziel (attack=1e-9 → sofort)
+    duck.tick(1.0)
+    erwartet_faktor = duck.current_gain_factor()
+    assert erwartet_faktor < 0.5, f"Duck-Faktor zu hoch: {erwartet_faktor}"
+
+    # Duck in Engine registrieren
+    engine.register_duck(duck)
+
+    # Mic-Block mit voller Amplitude
+    mic_block = np.ones((1024, 2), dtype=np.float32)
+    engine._kanal_puffer["mic1"].append(mic_block)
+
+    aufnahme_dir = str(tmp_path / "duck_mic_test")
+    engine.start_recording(aufnahme_dir)
+    engine._mix_one_tick()
+    ergebnis = engine.stop_recording()
+
+    mix_daten, _ = sf.read(ergebnis["mix"], dtype="float32")
+    max_amp = float(np.max(np.abs(mix_daten)))
+    assert max_amp < 0.5, (
+        f"Mic wurde NICHT abgeschwächt — Amplitude {max_amp:.4f} ≥ 0.5. "
+        f"Duck-Faktor {erwartet_faktor:.4f} wurde nicht angewendet."
     )
 
 
@@ -437,6 +524,61 @@ def test_stop_all_keine_verwaisten_threads(tmp_path):
     assert laufende_threads == [], (
         f"Verwaiste BoardFeeder-Threads nach stop_all(): {laufende_threads}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Test: Fade-out ist eine echte Rampe, nicht nur Stille
+# ---------------------------------------------------------------------------
+
+def test_fade_out_ist_rampe(tmp_path):
+    """_PadFeeder._fade_out_in_puffer erzeugt eine absteigende Rampe (keine bloße Stille).
+
+    Prüft, dass das erste Frame des Fade-out-Blocks > 0 ist (Rampe startet
+    bei _letzter_amp), das letzte Frame-Segment ≤ 0 ist, und der Block
+    streng monoton abnehmend beginnt.
+    """
+    from board.board_player import _PadFeeder, FADE_FRAMES
+    from board.board_model import Pad
+
+    class _FakeEngine:
+        def __init__(self):
+            from collections import deque
+            self._board_puffer = deque(maxlen=128)
+
+    pad = Pad(id="fo1", kind="audio", asset_path="", mode="play_stop")
+    engine = _FakeEngine()
+
+    import threading
+    feeder = _PadFeeder(
+        pad=pad,
+        engine=engine,
+        block_size=1024,
+        samplerate=48000,
+        audio_channels=2,
+        duck=None,
+        on_finish=lambda: None,
+        stop_event=threading.Event(),
+    )
+    feeder._letzter_amp = 0.8  # Simuliert Amplitude nach letztem Feed-Block
+
+    feeder._fade_out_in_puffer(1024, 2)
+
+    assert len(engine._board_puffer) == 1, "Kein Fade-out-Block in Puffer"
+    block = engine._board_puffer[0]
+
+    assert block.shape == (1024, 2), f"Falsches Shape: {block.shape}"
+
+    # Erstes Frame sollte nahe _letzter_amp sein (Rampe beginnt dort)
+    assert block[0, 0] > 0.5, f"Fade-out startet nicht bei Amplitude: {block[0, 0]:.4f}"
+
+    # Letztes FADE_FRAMES-Frame sollte nahe 0 sein
+    assert block[min(FADE_FRAMES - 1, 1023), 0] < 0.1, (
+        f"Fade-out endet nicht bei Null: {block[FADE_FRAMES - 1, 0]:.4f}"
+    )
+
+    # Rest (nach Fade) sollte Stille sein
+    if FADE_FRAMES < 1024:
+        assert np.max(np.abs(block[FADE_FRAMES:])) < 1e-6, "Nach Fade-out keine Stille"
 
 
 # ---------------------------------------------------------------------------

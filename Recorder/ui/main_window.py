@@ -1,12 +1,17 @@
 """ui.main_window — Hauptfenster des PodcastRecorders (PySide6).
 
-Thread-Modell: Pegel-Updates nur über QTimer (nie direkt aus Audio-Callbacks).
+Thread-Modell:
+  - Pegel-Updates und Video-Vorschau nur über QTimer (nie direkt aus Audio-/Video-Callbacks).
+  - Video-Frames: VideoCaptureLoop schreibt in thread-sicheren Speicher → QTimer liest
+    latest_frame() und aktualisiert das Vorschau-Widget.
 DriftMonitor-Anbindung: QTimer ruft observe() auf, Statusleiste zeigt Warnung.
 """
 import os
 from typing import Optional
 
+import numpy as np
 from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
@@ -21,6 +26,8 @@ from PySide6.QtWidgets import (
     QWidget,
     QLineEdit,
     QFormLayout,
+    QListWidget,
+    QListWidgetItem,
 )
 
 from audio.device_manager import DeviceManager
@@ -32,6 +39,8 @@ from recordings.library import RecordingLibrary
 from recordings.recording_session import RecordingSession
 from ui.level_meter import LevelMeter
 from ui.styles import APP_QSS
+from video.video_manager import VideoManager
+from video.video_source import VideoSourceInfo
 
 
 class MainWindow(QMainWindow):
@@ -69,6 +78,15 @@ class MainWindow(QMainWindow):
         self._drift_warnung = False
         self._drift_monitor.on_warning = self._bei_drift_warnung
 
+        # Video-Manager + verfügbare Quellen
+        self._video_manager = VideoManager()
+        self._video_quellen: list[VideoSourceInfo] = self._video_manager.available_sources()
+        self._gewählte_video_quelle: Optional[VideoSourceInfo] = (
+            self._video_manager.suggest_default_source()
+        )
+        # Vorschau-Capture-Loop (nur für UI-Preview, nicht für Aufnahme)
+        self._vorschau_loop = None  # VideoCaptureLoop-Instanz oder None
+
         self._setup_ui()
         self._setup_timer()
         self._aktualisiere_status()
@@ -90,11 +108,14 @@ class MainWindow(QMainWindow):
         haupt_layout.setContentsMargins(12, 12, 12, 12)
         haupt_layout.setSpacing(12)
 
-        # --- Linkes Panel: Quellen ---
+        # --- Linkes Panel: Audio-Quellen ---
         haupt_layout.addWidget(self._baue_quellen_panel(), stretch=2)
 
         # --- Mittleres Panel: Aufnahme ---
         haupt_layout.addWidget(self._baue_aufnahme_panel(), stretch=3)
+
+        # --- Video-Panel ---
+        haupt_layout.addWidget(self._baue_video_panel(), stretch=3)
 
         # --- Rechtes Panel: Aufnahmeliste ---
         haupt_layout.addWidget(self._baue_aufnahmeliste(), stretch=3)
@@ -180,8 +201,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(pegel_label)
 
         self._pegel_meter: list[LevelMeter] = []
-        # Kanalanzahl aus Engine-Channels ableiten (gleich der channels-Liste der Engine)
-        anzahl_kanäle = max(1, self._config.channels)
+        # Kanalanzahl aus tatsächlichen Engine-Channels ableiten (nicht config.channels!)
+        anzahl_kanäle = max(1, self._engine.channel_count())
         for i in range(anzahl_kanäle):
             zeile = QHBoxLayout()
             lbl = QLabel(f"K{i + 1}")
@@ -194,6 +215,59 @@ class MainWindow(QMainWindow):
 
         layout.addStretch()
         return container
+
+    def _baue_video_panel(self) -> QWidget:
+        """Video-Panel: Quellauswahl + Live-Vorschau (bis zu 4 Quellen als Kacheln)."""
+        box = QGroupBox("Video")
+        layout = QVBoxLayout(box)
+        layout.setSpacing(8)
+
+        # Quell-Liste
+        beschriftung = QLabel("Video-Quellen:")
+        beschriftung.setProperty("role", "überschrift")
+        layout.addWidget(beschriftung)
+
+        self._video_quelle_liste = QListWidget()
+        self._video_quelle_liste.setMaximumHeight(100)
+        for info in self._video_quellen:
+            mock_hint = " (Mock)" if info.is_mock else ""
+            verifiziert = " ✓" if info.verified else ""
+            item = QListWidgetItem(f"{info.name}{mock_hint}{verifiziert}")
+            item.setData(Qt.ItemDataRole.UserRole, info.source_id)
+            self._video_quelle_liste.addItem(item)
+
+        # Default-Auswahl vormarkieren
+        if self._gewählte_video_quelle is not None:
+            for i in range(self._video_quelle_liste.count()):
+                item = self._video_quelle_liste.item(i)
+                if item and item.data(Qt.ItemDataRole.UserRole) == self._gewählte_video_quelle.source_id:
+                    self._video_quelle_liste.setCurrentRow(i)
+                    break
+
+        self._video_quelle_liste.currentItemChanged.connect(self._bei_video_auswahl)
+        layout.addWidget(self._video_quelle_liste)
+
+        # Vorschau-Kacheln (bis zu 4 Quellen — einfaches Kachel-Layout)
+        vorschau_label = QLabel("Vorschau:")
+        vorschau_label.setProperty("role", "überschrift")
+        layout.addWidget(vorschau_label)
+
+        # Kachel-Grid: 2×2 für bis zu 4 Quellen (aktuell: 1 Vorschau-Label für Default)
+        self._vorschau_kacheln: list[QLabel] = []
+        kachel_layout = QHBoxLayout()
+        anzahl_kacheln = min(4, max(1, len(self._video_quellen)))
+        for _ in range(anzahl_kacheln):
+            kachel = QLabel("–")
+            kachel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            kachel.setMinimumSize(120, 90)
+            kachel.setStyleSheet("background: #1a1a1a; color: #555; border: 1px solid #333;")
+            kachel.setScaledContents(False)
+            self._vorschau_kacheln.append(kachel)
+            kachel_layout.addWidget(kachel)
+        layout.addLayout(kachel_layout)
+
+        layout.addStretch()
+        return box
 
     def _baue_aufnahmeliste(self) -> QWidget:
         """Rechtes Panel mit Aufnahme-TreeWidget."""
@@ -221,29 +295,110 @@ class MainWindow(QMainWindow):
         self._timer.start()
 
     def _timer_tick(self) -> None:
-        """QTimer-Callback: pollt Peaks und aktualisiert DriftMonitor."""
+        """QTimer-Callback: pollt Peaks, aktualisiert DriftMonitor und Video-Vorschau."""
         peaks = self._engine.latest_peaks()
         for i, meter in enumerate(self._pegel_meter):
             pegel = peaks[i] if i < len(peaks) else 0.0
             meter.set_level(pegel)
 
-        # DriftMonitor: deque-Länge als Proxy für Queue-Größe
-        queue_len = len(self._engine._peak_deque)
+        # DriftMonitor: öffentliche queue_backlog()-Methode (kein Privatzugriff)
+        queue_len = self._engine.queue_backlog()
         self._drift_monitor.observe(queue_len)
+
+        # Video-Vorschau: letzten Frame aus dem Capture-Loop lesen und anzeigen
+        self._aktualisiere_video_vorschau()
+
+    def _aktualisiere_video_vorschau(self) -> None:
+        """Liest letzten Frame aus dem Vorschau-Loop und zeigt ihn in der ersten Kachel.
+
+        No-op im Offscreen-/Selftest-Modus (Kacheln sind nicht sichtbar).
+        Kein GUI-Aufruf aus dem Capture-Thread — nur aus QTimer im GUI-Thread.
+        """
+        if not self._vorschau_kacheln:
+            return
+
+        if self._vorschau_loop is None:
+            return
+
+        frame = self._vorschau_loop.latest_frame()
+        if frame is None:
+            return
+
+        # BGR → RGB (QImage erwartet RGB)
+        try:
+            frame_rgb = frame[:, :, ::-1].astype(np.uint8)
+            h, w, ch = frame_rgb.shape
+            bytes_per_line = ch * w
+            qimg = QImage(frame_rgb.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
+            pixmap = QPixmap.fromImage(qimg)
+            kachel = self._vorschau_kacheln[0]
+            pixmap = pixmap.scaled(
+                kachel.width(),
+                kachel.height(),
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.FastTransformation,
+            )
+            kachel.setPixmap(pixmap)
+        except Exception:
+            pass  # Vorschau-Fehler darf die App nicht abstürzen lassen
+
+    def _bei_video_auswahl(self, aktuell, _vorher) -> None:
+        """Callback: Video-Quelle wurde in der Liste gewählt."""
+        if aktuell is None:
+            return
+        source_id = aktuell.data(Qt.ItemDataRole.UserRole)
+        # Gewählte Quelle aus der Liste suchen
+        for info in self._video_quellen:
+            if info.source_id == source_id:
+                self._gewählte_video_quelle = info
+                self._starte_vorschau_loop()
+                self._aktualisiere_status()
+                break
+
+    def _starte_vorschau_loop(self) -> None:
+        """Startet (oder neustartet) den Vorschau-Capture-Loop für die gewählte Quelle."""
+        # Alten Loop stoppen
+        if self._vorschau_loop is not None:
+            try:
+                self._vorschau_loop.stop()
+            except Exception:
+                pass
+            self._vorschau_loop = None
+
+        if self._gewählte_video_quelle is None:
+            return
+
+        # Während einer laufenden Aufnahme keine Preview-Quelle öffnen
+        # (echte Kamera kann nicht doppelt geöffnet werden)
+        if self._aufnahme_läuft:
+            return
+
+        try:
+            from video.video_capture_loop import VideoCaptureLoop
+            source = self._video_manager.open_source(self._gewählte_video_quelle)
+            self._vorschau_loop = VideoCaptureLoop(source=source, ziel_fps=25)
+            self._vorschau_loop.start()
+        except Exception:
+            self._vorschau_loop = None
 
     # -------------------------------------------------------------------------
     # Aufnahme-Logik
     # -------------------------------------------------------------------------
 
     def _aufnahme_umschalten(self) -> None:
-        """Startet oder stoppt die Aufnahme."""
-        if self._aufnahme_läuft:
-            self._aufnahme_stoppen()
-        else:
-            self._aufnahme_starten()
+        """Startet oder stoppt die Aufnahme — Doppelklick-Schutz via Button-Disable."""
+        # Während des Umschaltens deaktivieren, um Doppelklick-Probleme zu vermeiden
+        self._btn_aufnahme.setEnabled(False)
+        try:
+            if self._aufnahme_läuft:
+                self._aufnahme_stoppen()
+            else:
+                self._aufnahme_starten()
+        finally:
+            self._btn_aufnahme.setEnabled(True)
 
     def _aufnahme_starten(self) -> None:
-        """Startet eine neue Aufnahme-Session."""
+        """Startet eine neue Aufnahme-Session mit optionalem Video."""
         if self._session is not None:
             return
 
@@ -253,7 +408,24 @@ class MainWindow(QMainWindow):
             engine=self._engine,
             state=self._state,
         )
-        self._session.start(titel)
+
+        # Vorschau-Loop stoppen — echte Kamera kann nicht doppelt geöffnet werden
+        if self._vorschau_loop is not None:
+            try:
+                self._vorschau_loop.stop()
+            except Exception:
+                pass
+            self._vorschau_loop = None
+
+        # Video-Quelle für die Aufnahme öffnen (wenn gewählt)
+        video_source = None
+        if self._gewählte_video_quelle is not None:
+            try:
+                video_source = self._video_manager.open_source(self._gewählte_video_quelle)
+            except Exception:
+                video_source = None
+
+        self._session.start(titel, video_source=video_source)
         self._aufnahme_läuft = True
         self._btn_aufnahme.setText("Aufnahme stoppen")
         self._btn_aufnahme.setProperty("recording", "true")
@@ -262,7 +434,7 @@ class MainWindow(QMainWindow):
         self._aktualisiere_status()
 
     def _aufnahme_stoppen(self) -> None:
-        """Beendet die laufende Aufnahme und aktualisiert die Liste."""
+        """Beendet die laufende Aufnahme, aktualisiert die Liste und startet Preview neu."""
         if self._session is None:
             return
 
@@ -275,6 +447,9 @@ class MainWindow(QMainWindow):
         self._btn_aufnahme.style().polish(self._btn_aufnahme)
         self._aktualisiere_status()
         self._lade_aufnahmeliste()
+
+        # Vorschau-Loop nach der Aufnahme wieder starten
+        self._starte_vorschau_loop()
 
     # -------------------------------------------------------------------------
     # Aufnahmeliste
@@ -320,11 +495,20 @@ class MainWindow(QMainWindow):
         """Aktualisiert die Statuszeile mit aktuellem Systemzustand."""
         teile = []
 
-        # Mock-Hinweis
+        # Mock-Hinweis Audio
         if os.environ.get("PODCAST_RECORDER_MOCK_AUDIO", "").strip() == "1" or self._config.mock_audio:
             teile.append("Mock-Audio aktiv")
 
-        # Anzahl verifizierter Quellen
+        # Mock-Hinweis Video — ehrliche Anzeige gemäß Faktentreue-Regel
+        if os.environ.get("PODCAST_RECORDER_MOCK_VIDEO", "").strip() == "1":
+            teile.append("Mock-Video aktiv")
+        elif self._gewählte_video_quelle is not None:
+            if self._gewählte_video_quelle.is_mock:
+                teile.append("keine Kamera verifiziert — Bildschirm/Mock")
+            else:
+                teile.append(f"Video: {self._gewählte_video_quelle.name}")
+
+        # Anzahl verifizierter Audio-Quellen
         geraete = self._device_manager.list_input_devices(verify=False)
         verifiziert = sum(1 for g in geraete if g.verified)
         teile.append(f"{verifiziert} verifizierte Quelle{'n' if verifiziert != 1 else ''}")
@@ -349,9 +533,25 @@ class MainWindow(QMainWindow):
     # -------------------------------------------------------------------------
 
     def closeEvent(self, event) -> None:  # noqa: N802
-        """Räumt Engine und Timer beim Schließen auf."""
+        """Räumt Engine, Video-Capture-Loops und Timer beim Schließen auf."""
         self._timer.stop()
+
+        # Vorschau-Loop stoppen
+        if self._vorschau_loop is not None:
+            try:
+                self._vorschau_loop.stop()
+            except Exception:
+                pass
+            self._vorschau_loop = None
+
         if self._aufnahme_läuft and self._session is not None:
-            self._session.stop()
-        self._engine.stop()
+            try:
+                self._session.stop()
+            except Exception:
+                pass  # Aufnahme-Stop darf das Schließen nicht blockieren
+
+        # Engine nur stoppen wenn sie läuft (Guard verhindert doppelten Aufruf)
+        if self._engine.is_running():
+            self._engine.stop()
+
         super().closeEvent(event)

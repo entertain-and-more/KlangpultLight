@@ -62,10 +62,12 @@ class AudioEngine:
 
         # Backlog-Zähler: produziert minus konsumiert (für queue_backlog())
         # _produced wird im Mock-Loop bei jedem Block hochgezählt.
-        # _consumed wird in latest_peaks() hochgezählt.
+        # _consumed wird in latest_peaks() gesetzt.
         # queue_backlog() gibt max(0, _produced - _consumed) zurück.
+        # Eigener Lock (nicht _aufnahme_lock — getrenntes Concern).
         self._produced: int = 0
         self._consumed: int = 0
+        self._backlog_lock = threading.Lock()
 
         # Aufnahme-Zustand
         self._recording = False
@@ -222,7 +224,8 @@ class AudioEngine:
         Returns:
             Liste von Peak-Floats, Länge = len(channels).
         """
-        self._consumed = self._produced  # vollständiger Abgleich statt +=1
+        with self._backlog_lock:
+            self._consumed = self._produced  # vollständiger Abgleich statt +=1
         if self._peak_deque:
             return list(self._peak_deque[-1])
         return [0.0] * len(self._channels)
@@ -230,6 +233,7 @@ class AudioEngine:
     def queue_backlog(self) -> int:
         """Gibt den aktuellen Audio-Queue-Rückstau zurück.
 
+        Thread-safe: liest _produced und _consumed unter Lock.
         Misst, wie viele produzierte Blöcke seit dem letzten
         latest_peaks()-Aufruf noch nicht abgeholt wurden.
         Nützlich als Eingabe für den DriftMonitor.
@@ -237,7 +241,28 @@ class AudioEngine:
         Returns:
             Anzahl unabgeholter Blöcke (≥ 0).
         """
-        return max(0, self._produced - self._consumed)
+        with self._backlog_lock:
+            return max(0, self._produced - self._consumed)
+
+    def channel_count(self) -> int:
+        """Gibt die Anzahl der MixerChannels zurück.
+
+        Öffentlicher Accessor — vermeidet privaten _channels-Zugriff aus der GUI.
+
+        Returns:
+            Anzahl der registrierten MixerChannels.
+        """
+        return len(self._channels)
+
+    def is_running(self) -> bool:
+        """Gibt zurück, ob die Engine läuft.
+
+        Öffentlicher Accessor — vermeidet privaten _laeuft-Zugriff.
+
+        Returns:
+            True, wenn start() aufgerufen wurde und stop() noch nicht.
+        """
+        return self._laeuft
 
     # -------------------------------------------------------------------------
     # Interne Hilfsmethoden
@@ -292,7 +317,8 @@ class AudioEngine:
             # Peaks in deque schreiben (thread-safe)
             peaks = self._bus.peaks()
             self._peak_deque.append(peaks)
-            self._produced += 1  # Backlog-Zähler: ein Block produziert
+            with self._backlog_lock:
+                self._produced += 1  # Backlog-Zähler: ein Block produziert
 
             # AppState aktualisieren (falls vorhanden)
             if self._state is not None:

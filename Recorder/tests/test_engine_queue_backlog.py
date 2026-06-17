@@ -37,7 +37,7 @@ def test_queue_backlog_vor_start_ist_null(tmp_path):
 
 
 def test_queue_backlog_steigt_nach_produktion(tmp_path):
-    """Nach start() und kurzem Lauf ist queue_backlog() >= 0 (und mindestens einmal > 0 gewesen)."""
+    """Nach start() und ausreichendem Sleep muss backlog > 0 sein (Frames wurden produziert, noch nicht konsumiert)."""
     from core.config import AppConfig
     from audio.mixer_channel import MixerChannel
     from audio.engine import AudioEngine
@@ -47,12 +47,17 @@ def test_queue_backlog_steigt_nach_produktion(tmp_path):
     engine = AudioEngine(cfg, kanaele)
 
     engine.start()
-    time.sleep(0.05)
+    # Ausreichend warten, damit Mock-Thread Frames produziert hat
+    # (block_size=1024, sr=48000 → ~21 ms/Block; 100 ms ≈ 4+ Blöcke)
+    time.sleep(0.1)
 
-    # Nach Produktion: Backlog ≥ 0, Wert muss int sein
+    # Backlog muss > 0 sein, da latest_peaks() noch nicht aufgerufen wurde
     backlog = engine.queue_backlog()
     assert isinstance(backlog, int)
-    assert backlog >= 0
+    assert backlog > 0, (
+        f"Erwartet backlog > 0 nach 100 ms Produktion, war {backlog}. "
+        "Mock-Thread hat zu langsam produziert oder _produced-Lock-Bug."
+    )
 
     engine.stop()
 

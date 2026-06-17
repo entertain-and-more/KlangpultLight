@@ -8,6 +8,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import tempfile
 from typing import Optional
 
 import numpy as np
@@ -47,6 +48,8 @@ class VideoRecorder:
         self._prozess: Optional[subprocess.Popen] = None
         self._frames_geschrieben: int = 0
         self._out_pfad: Optional[str] = None
+        self._dauer: float = 0.0  # letzte geschlossene Dauer — für idempotentes close()
+        self._stderr_datei: Optional[tempfile.TemporaryFile] = None  # type: ignore[type-arg]
 
     def open(self, out_path: str) -> None:
         """Startet FFmpeg und bereitet die Aufnahme vor.
@@ -73,6 +76,7 @@ class VideoRecorder:
 
         self._out_pfad = out_path
         self._frames_geschrieben = 0
+        self._dauer = 0.0
 
         # FFmpeg-Kommando: rawvideo bgr24 von stdin → H.264 mp4
         cmd = [
@@ -89,14 +93,20 @@ class VideoRecorder:
             out_path,
         ]
 
+        # stderr in Temp-Datei — verhindert Puffer-Deadlock bei langer Aufnahme,
+        # ermöglicht aber Auslesen im Fehlerfall.
+        self._stderr_datei = tempfile.TemporaryFile()
+
         try:
             self._prozess = subprocess.Popen(
                 cmd,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.DEVNULL,       # kein stdout benötigt
-                stderr=subprocess.DEVNULL,       # stderr drainieren verhindert Deadlock
+                stderr=self._stderr_datei,       # Temp-Datei verhindert Deadlock + ermöglicht Auslesen
             )
         except FileNotFoundError as exc:
+            self._stderr_datei.close()
+            self._stderr_datei = None
             raise RuntimeError(
                 f"ffmpeg-Binary '{self._ffmpeg_bin}' konnte nicht gestartet werden: {exc}"
             ) from exc
@@ -127,11 +137,16 @@ class VideoRecorder:
     def close(self) -> float:
         """Schließt stdin und wartet auf FFmpeg.
 
+        Idempotent: zweiter Aufruf gibt die bereits berechnete Dauer zurück.
+
         Returns:
             Aufnahmedauer in Sekunden (aus Framezahl / fps).
+
+        Raises:
+            RuntimeError: Wenn FFmpeg mit Fehler-Exit-Code beendet hat (enthält stderr).
         """
         if self._prozess is None:
-            return 0.0
+            return self._dauer  # idempotent — letzte bekannte Dauer
 
         # stdin schließen — FFmpeg signalisiert: keine weiteren Frames
         if self._prozess.stdin is not None:
@@ -140,12 +155,30 @@ class VideoRecorder:
             except BrokenPipeError:
                 pass  # FFmpeg hat ggf. bereits beendet
 
-        # Auf FFmpeg warten
-        self._prozess.wait()
+        # Auf FFmpeg warten und Exit-Code prüfen
+        returncode = self._prozess.wait()
+        prozess = self._prozess
         self._prozess = None
 
-        dauer = self._frames_geschrieben / self._fps if self._fps > 0 else 0.0
-        return dauer
+        # stderr auslesen für Fehlermeldung
+        stderr_text = ""
+        if self._stderr_datei is not None:
+            try:
+                self._stderr_datei.seek(0)
+                stderr_text = self._stderr_datei.read(4096).decode("utf-8", errors="replace")
+            except Exception:
+                pass
+            self._stderr_datei.close()
+            self._stderr_datei = None
+
+        if returncode != 0:
+            raise RuntimeError(
+                f"FFmpeg beendete sich mit Exit-Code {returncode}. "
+                f"Ausgabe: {stderr_text[-2000:]!r}"
+            )
+
+        self._dauer = self._frames_geschrieben / self._fps if self._fps > 0 else 0.0
+        return self._dauer
 
 
 def mux_audio_video(
@@ -200,14 +233,16 @@ def mux_audio_video(
     ergebnis = subprocess.run(
         cmd,
         stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,   # subprocess.run drainent PIPE automatisch — kein Deadlock
         timeout=60,
     )
 
     if ergebnis.returncode != 0:
+        stderr_text = ergebnis.stderr.decode("utf-8", errors="replace") if ergebnis.stderr else ""
         raise RuntimeError(
             f"ffmpeg Mux fehlgeschlagen (Exit-Code {ergebnis.returncode}). "
-            f"Eingaben: video={video_path}, audio={audio_path}"
+            f"Eingaben: video={video_path}, audio={audio_path}. "
+            f"FFmpeg-Ausgabe: {stderr_text[-2000:]!r}"
         )
 
     return out_path

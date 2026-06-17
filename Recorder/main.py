@@ -100,22 +100,40 @@ def main() -> int:
     return app.exec()
 
 
+def _video_quelle_fuer_selftest():
+    """Gibt eine Video-Quelle für den Selftest zurück (Mock oder None)."""
+    from video.video_manager import VideoManager
+    try:
+        manager = VideoManager()
+        info = manager.suggest_default_source()
+        if info is None:
+            return None
+        return manager.open_source(info)
+    except Exception:
+        return None
+
+
 def _selftest(engine, library, fenster, state) -> int:
     """Führt einen Headless-Selftest durch ohne Event-Loop-Blockade.
 
-    Ablauf:
-      1. Probe-Aufnahme über RecordingSession (start → Pause → stop)
+    Ablauf (M2):
+      1. Audio+Video-Mock-Aufnahme (start → Pause → stop)
       2. Verifizierung: list_recordings() >= 1, duration > 0
-      3. Engine stoppen, Exit-Code 0 bei Erfolg
+      3. Wenn ffmpeg vorhanden: program.mp4 muss existieren und >0 Bytes haben
+      4. Engine stoppen, Exit-Code 0 bei Erfolg
     """
-    from recordings.library import RecordingLibrary
+    import shutil
     from recordings.recording_session import RecordingSession
 
+    ffmpeg_vorhanden = shutil.which("ffmpeg") is not None
+
     try:
+        # Audio+Video-Aufnahme
+        video_source = _video_quelle_fuer_selftest() if ffmpeg_vorhanden else None
         session = RecordingSession(library=library, engine=engine, state=state)
-        session.start("Selftest-Aufnahme")
-        # Warten, damit Mock-Thread Frames produziert (mind. ~150 ms)
-        time.sleep(0.2)
+        session.start("Selftest-Aufnahme", video_source=video_source)
+        # Warten, damit Mock-Thread Frames produziert (mind. ~300 ms für Video-Frames)
+        time.sleep(0.35)
         meta = session.stop()
 
         aufnahmen = library.list_recordings()
@@ -132,8 +150,41 @@ def _selftest(engine, library, fenster, state) -> int:
             engine.stop()
             return 1
 
+        # Video-Prüfung (wenn ffmpeg verfügbar)
+        video_ok = True
+        if ffmpeg_vorhanden and video_source is not None:
+            original = next((b for b in meta.branches if b.is_original), None)
+            program_mp4 = original.video_path if original else ""
+            if not program_mp4:
+                print(
+                    "SELFTEST FEHLER: video_path ist leer — program.mp4 wurde nicht erzeugt.",
+                    file=sys.stderr,
+                )
+                video_ok = False
+            elif not os.path.isfile(program_mp4):
+                print(
+                    f"SELFTEST FEHLER: program.mp4 existiert nicht: {program_mp4}",
+                    file=sys.stderr,
+                )
+                video_ok = False
+            elif os.path.getsize(program_mp4) == 0:
+                print(
+                    f"SELFTEST FEHLER: program.mp4 ist leer: {program_mp4}",
+                    file=sys.stderr,
+                )
+                video_ok = False
+
+        if not video_ok:
+            engine.stop()
+            return 1
+
+        video_info = ""
+        if ffmpeg_vorhanden and video_source is not None:
+            original = next((b for b in meta.branches if b.is_original), None)
+            video_info = f", video={original.video_path if original else '–'}"
+
         print(
-            f"SELFTEST OK: {len(aufnahmen)} Aufnahme(n), duration={meta.duration:.3f}s"
+            f"SELFTEST OK: {len(aufnahmen)} Aufnahme(n), duration={meta.duration:.3f}s{video_info}"
         )
         engine.stop()
         return 0

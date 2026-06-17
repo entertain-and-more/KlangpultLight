@@ -102,3 +102,52 @@ def test_video_recorder_erstellt_verzeichnis(tmp_path):
     recorder.close()
 
     assert os.path.exists(out_pfad), "Datei muss im neu erstellten Verzeichnis liegen"
+
+
+def test_video_recorder_close_idempotent(tmp_path):
+    """close() darf zweimal aufgerufen werden — zweiter Aufruf gibt dieselbe Dauer zurück (M-2)."""
+    if not _ffmpeg_verfuegbar():
+        pytest.skip("ffmpeg nicht im PATH — Test übersprungen")
+
+    from video.video_recorder import VideoRecorder
+
+    width, height, fps = 160, 120, 10
+    out_pfad = str(tmp_path / "idempotent.mp4")
+
+    recorder = VideoRecorder(width=width, height=height, fps=fps)
+    recorder.open(out_pfad)
+
+    for i in range(5):
+        frame = _synthetischen_frame_erzeugen(width, height, i)
+        recorder.write_frame(frame)
+
+    dauer1 = recorder.close()
+    dauer2 = recorder.close()  # zweiter Aufruf — darf nicht abstürzen
+
+    assert dauer1 == dauer2, f"Idempotenz verletzt: close() lieferte {dauer1} vs. {dauer2}"
+    assert dauer1 > 0, "Dauer muss > 0 sein"
+
+
+def test_video_recorder_write_frame_falsche_shape(tmp_path):
+    """write_frame() muss ValueError werfen, wenn die Frame-Shape nicht passt (M-3)."""
+    if not _ffmpeg_verfuegbar():
+        pytest.skip("ffmpeg nicht im PATH — Test übersprungen")
+
+    from video.video_recorder import VideoRecorder
+
+    width, height, fps = 320, 240, 10
+    out_pfad = str(tmp_path / "shape_fehler.mp4")
+
+    recorder = VideoRecorder(width=width, height=height, fps=fps)
+    recorder.open(out_pfad)
+
+    # Falsches Shape — andere Breite
+    falscher_frame = np.zeros((height, width // 2, 3), dtype=np.uint8)
+    with pytest.raises(ValueError, match="Shape"):
+        recorder.write_frame(falscher_frame)
+
+    # Recorder aufräumen (FFmpeg läuft noch)
+    try:
+        recorder.close()
+    except Exception:
+        pass

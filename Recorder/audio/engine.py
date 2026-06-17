@@ -363,7 +363,7 @@ class AudioEngine:
         if self._state is not None:
             self._state.peaks = peaks
 
-        # Aufnahme schreiben (Lock fürclose-Schutz)
+        # Aufnahme schreiben (Lock für close-Schutz)
         if self._recording:
             with self._aufnahme_lock:
                 if self._mix_recorder is not None:

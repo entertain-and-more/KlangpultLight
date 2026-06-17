@@ -2,14 +2,25 @@
 
 Kein GUI-Import. Keine QMutex/PySide6. Nur stdlib + numpy + soundfile.
 
-Thread-Modell:
-- Im Mock-Modus läuft ein Hintergrund-Thread, der synthetisches Audio
-  (Sinus + Rauschen) produziert und durch die Block-Verarbeitungs-Pipeline
-  schickt.
+Thread-Modell (Task 3c — Architektur-Fix):
+- **Pro-Kanal-Eingangspuffer** (`_kanal_puffer`): je ein `collections.deque`
+  (thread-safe, bounded). Stream-Callbacks (real) und der Mock-Synth-Loop
+  schreiben Roh-Blöcke AUSSCHLIESSLICH in den jeweiligen Kanalpuffer.
+  Kein Mixen im Callback.
+- **Zentraler MixWorker-Thread** (`_mix_worker`): läuft von start() bis stop().
+  Zieht je Tick aus ALLEN Kanalpuffern einen Block (fehlt einer, werden Zeros
+  verwendet — Ausrichtung bleibt erhalten), summiert via MasterBus.mix_with_channels
+  und schreibt (wenn Aufnahme aktiv) in mix.wav und die Einzel-Kanal-WAVs.
+  Peak-Updates und _produced-Zähler laufen ebenfalls im MixWorker.
+- Der Mock-Synth-Loop füllt die Kanalpuffer mit synthetischem Audio (Sinus +
+  Rauschen) in Echtzeit-Kadenz.
+- Reale sounddevice-Callbacks schreiben empfangene Frames in die Kanalpuffer
+  (WASAPI-Loopback nur auf Windows-Hardware verifizierbar).
 - Peaks werden in eine collections.deque geschrieben (thread-safe append).
-- latest_peaks() liest die deque aus — für späteres QTimer-Polling aus der GUI.
-- Kein direkter GUI-Aufruf aus dem Audio-Thread.
+  latest_peaks() liest das neueste Element — für späteres QTimer-Polling.
+- Kein direkter GUI-Aufruf aus Audio- oder MixWorker-Thread.
 """
+import logging
 import os
 import threading
 import time
@@ -24,7 +35,10 @@ from audio.mixer_channel import MixerChannel
 from audio.master_bus import MasterBus
 from audio.wav_recorder import WavRecorder
 
+_log = logging.getLogger(__name__)
 
+# Puffer-Tiefe je Kanal (Frames, Ringpuffer — bounded, kein blockierender put)
+_PUFFER_MAXLEN = 128
 # Anzahl Frames pro synthetischem Block im Mock-Modus
 _MOCK_BLOCK_GROESSE = 1024
 # Samplerate des synthetischen Signals (überschrieben durch AppConfig)
@@ -37,6 +51,10 @@ class AudioEngine:
     Im Mock-Modus (PODCAST_RECORDER_MOCK_AUDIO=1 oder config.mock_audio=True)
     läuft ein Hintergrund-Thread, der synthetisches Audio produziert.
     Kein Hardware-Zugriff.
+
+    Öffentliche API (kompatibel zu Task 1a–3b):
+        start / stop / start_recording / stop_recording /
+        latest_peaks / queue_backlog / channel_count / is_running
     """
 
     def __init__(
@@ -57,13 +75,18 @@ class AudioEngine:
         self._state = state
         self._bus = MasterBus(channels)
 
+        # Pro-Kanal-Eingangspuffer (thread-safe deque, bounded)
+        self._kanal_puffer: dict[str, deque] = {
+            kanal.source_id: deque(maxlen=_PUFFER_MAXLEN)
+            for kanal in channels
+        }
+
         # Thread-safe Peak-Deque (maxlen verhindert unbegrenztes Wachstum)
         self._peak_deque: deque[list[float]] = deque(maxlen=10)
 
         # Backlog-Zähler: produziert minus konsumiert (für queue_backlog())
-        # _produced wird im Mock-Loop bei jedem Block hochgezählt.
+        # _produced wird im MixWorker bei jedem Tick hochgezählt.
         # _consumed wird in latest_peaks() gesetzt.
-        # queue_backlog() gibt max(0, _produced - _consumed) zurück.
         # Eigener Lock (nicht _aufnahme_lock — getrenntes Concern).
         self._produced: int = 0
         self._consumed: int = 0
@@ -76,10 +99,14 @@ class AudioEngine:
         self._aufnahme_dir: Optional[str] = None
         self._aufnahme_lock = threading.Lock()
 
-        # Mock-Thread-Steuerung
+        # Thread-Steuerung
+        self._mix_worker_thread: Optional[threading.Thread] = None
         self._mock_thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
         self._laeuft = False
+
+        # Reale sounddevice-Streams
+        self._echte_streams: list = []
 
         # Initialer Peak-Eintrag (Nullen der Kanal-Länge) — damit
         # latest_peaks() schon vor start() eine gültige Liste liefert.
@@ -90,11 +117,19 @@ class AudioEngine:
     # -------------------------------------------------------------------------
 
     def start(self) -> None:
-        """Startet die Audio-Engine (Mock-Thread oder echte Streams)."""
+        """Startet die Audio-Engine (MixWorker + Mock-Thread oder echte Streams)."""
         if self._laeuft:
             return
 
         self._stop_event.clear()
+
+        # MixWorker immer starten (Mock und Real)
+        self._mix_worker_thread = threading.Thread(
+            target=self._mix_worker_loop,
+            name="MixWorker",
+            daemon=True,
+        )
+        self._mix_worker_thread.start()
 
         if self._nutze_mock():
             self._mock_thread = threading.Thread(
@@ -102,18 +137,15 @@ class AudioEngine:
                 name="AudioEngine-Mock",
                 daemon=True,
             )
-            self._laeuft = True
             self._mock_thread.start()
         else:
             # Reale sounddevice-Streams (Task 3b).
-            # Jeder MixerChannel mit device_index != None bekommt einen eigenen InputStream.
-            # System-Kanäle (capture_method="wasapi_loopback") werden im Loopback-Modus
-            # geöffnet: extra_settings=sounddevice.WasapiSettings(loopback=True).
             # ACHTUNG: WASAPI-Loopback ist nur auf Windows-Hardware verifizierbar —
             # im Mock-Pfad (PODCAST_RECORDER_MOCK_AUDIO=1) wird ein synthetischer
             # System-Kanal erzeugt; der reale Pfad hier ist für Produktionsbetrieb.
             self._starte_echte_streams()
-            self._laeuft = True
+
+        self._laeuft = True
 
     def stop(self) -> None:
         """Stoppt die Audio-Engine und beendet laufende Streams/Threads."""
@@ -125,17 +157,25 @@ class AudioEngine:
             self.stop_recording()
 
         self._stop_event.set()
+
+        # Mock-Thread beenden
         if self._mock_thread is not None:
             self._mock_thread.join(timeout=2.0)
             self._mock_thread = None
 
+        # MixWorker beenden (nach Mock-Thread, damit restliche Puffer geleert)
+        if self._mix_worker_thread is not None:
+            self._mix_worker_thread.join(timeout=2.0)
+            self._mix_worker_thread = None
+
         # Reale sounddevice-Streams schließen (wenn vorhanden)
-        for stream in getattr(self, "_echte_streams", []):
+        for stream in self._echte_streams:
             try:
                 stream.stop()
                 stream.close()
-            except Exception:
-                pass
+            except Exception as exc:
+                # Task 3c Minor: Stream-close-Fehler nicht lautlos verschlucken
+                _log.warning("Stream-close-Fehler beim Stoppen der Audio-Engine: %s", exc)
         self._echte_streams = []
 
         self._laeuft = False
@@ -230,16 +270,16 @@ class AudioEngine:
         Thread-safe: liest das letzte Element der deque.
         Liefert immer eine Liste der Länge len(channels), auch ohne start().
 
-        Setzt _consumed = _produced (nicht +=1), weil deque[-1] stets den
-        neuesten Block zurückgibt — alle dazwischenliegenden gelten als konsumiert.
-        Dadurch misst queue_backlog() den Rückstand *seit dem letzten Poll*, nicht
-        einen kumulativen Zähler.
+        Setzt _consumed = _produced (vollständiger Abgleich), weil deque[-1]
+        stets den neuesten Block zurückgibt — alle dazwischenliegenden gelten
+        als konsumiert. Dadurch misst queue_backlog() den Rückstand seit dem
+        letzten Poll, nicht einen kumulativen Zähler.
 
         Returns:
             Liste von Peak-Floats, Länge = len(channels).
         """
         with self._backlog_lock:
-            self._consumed = self._produced  # vollständiger Abgleich statt +=1
+            self._consumed = self._produced
         if self._peak_deque:
             return list(self._peak_deque[-1])
         return [0.0] * len(self._channels)
@@ -248,12 +288,11 @@ class AudioEngine:
         """Gibt den aktuellen Audio-Queue-Rückstau zurück.
 
         Thread-safe: liest _produced und _consumed unter Lock.
-        Misst, wie viele produzierte Blöcke seit dem letzten
-        latest_peaks()-Aufruf noch nicht abgeholt wurden.
-        Nützlich als Eingabe für den DriftMonitor.
+        Misst, wie viele Mix-Ticks seit dem letzten latest_peaks()-Aufruf
+        noch nicht abgeholt wurden. Nützlich als Eingabe für den DriftMonitor.
 
         Returns:
-            Anzahl unabgeholter Blöcke (≥ 0).
+            Anzahl unabgeholter Ticks (≥ 0).
         """
         with self._backlog_lock:
             return max(0, self._produced - self._consumed)
@@ -271,12 +310,93 @@ class AudioEngine:
     def is_running(self) -> bool:
         """Gibt zurück, ob die Engine läuft.
 
-        Öffentlicher Accessor — vermeidet privaten _laeuft-Zugriff.
-
         Returns:
             True, wenn start() aufgerufen wurde und stop() noch nicht.
         """
         return self._laeuft
+
+    # -------------------------------------------------------------------------
+    # Zentraler MixWorker (Kern des Task-3c-Fixes)
+    # -------------------------------------------------------------------------
+
+    def _mix_one_tick(self) -> bool:
+        """Führt einen einzelnen Mix-Tick aus (synchron, testbar).
+
+        Zieht aus JEDEM Kanalpuffer einen Block (fehlt einer, werden Zeros
+        verwendet), ruft MasterBus.mix_with_channels auf und schreibt
+        (wenn Aufnahme aktiv) in mix.wav und Kanal-WAVs.
+
+        Returns:
+            True wenn mindestens ein Kanal Daten hatte (kein reiner Idle-Tick),
+            False wenn alle Puffer leer waren.
+        """
+        block_size = self._config.block_size
+        ch = self._config.channels
+
+        # Daten aus Kanalpuffern ziehen
+        blocks: dict[str, np.ndarray] = {}
+        hat_daten = False
+
+        for kanal in self._channels:
+            puffer = self._kanal_puffer[kanal.source_id]
+            if puffer:
+                blocks[kanal.source_id] = puffer.popleft()
+                hat_daten = True
+            else:
+                # Zeros für fehlenden Block (Ausrichtung erhalten)
+                blocks[kanal.source_id] = np.zeros((block_size, ch), dtype=np.float32)
+
+        if not hat_daten:
+            # Alle Puffer leer → Idle, nichts schreiben
+            return False
+
+        # Mix berechnen (process() einmalig pro Kanal)
+        mix_block, verarbeitete = self._bus.mix_with_channels(blocks)
+
+        # Peak-Update
+        peaks = self._bus.peaks()
+        self._peak_deque.append(peaks)
+        with self._backlog_lock:
+            self._produced += 1
+
+        # AppState aktualisieren
+        if self._state is not None:
+            self._state.peaks = peaks
+
+        # Aufnahme schreiben (Lock fürclose-Schutz)
+        if self._recording:
+            with self._aufnahme_lock:
+                if self._mix_recorder is not None:
+                    self._mix_recorder.write(mix_block)
+                for kanal in self._channels:
+                    rec = self._kanal_recorder.get(kanal.source_id)
+                    if rec is not None:
+                        blk = verarbeitete.get(kanal.source_id)
+                        if blk is not None:
+                            rec.write(blk)
+
+        return True
+
+    def _mix_worker_loop(self) -> None:
+        """Zentraler MixWorker-Thread: drainiert alle Kanalpuffer und mischt.
+
+        Läuft von start() bis stop(). Nur das WAV-Schreiben ist durch
+        self._recording gegattet. Peaks werden immer aktualisiert.
+
+        Polling-Intervall: halbe Block-Kadenz, um Latenzen klein zu halten.
+        """
+        sr = self._config.samplerate
+        block_size = self._config.block_size
+        poll_intervall = (block_size / sr) * 0.5  # halbe Block-Kadenz
+
+        while not self._stop_event.is_set():
+            self._mix_one_tick()
+            time.sleep(poll_intervall)
+
+        # Restliche Blöcke drainieren (sauberes Flush beim Stop)
+        hat_rest = True
+        while hat_rest:
+            hat_rest = self._mix_one_tick()
 
     # -------------------------------------------------------------------------
     # Interne Hilfsmethoden
@@ -296,10 +416,11 @@ class AudioEngine:
         Bei Fehler (ImportError, fehlende WASAPI-Unterstützung) wird der Kanal
         übersprungen und ein Hinweis geloggt.
 
+        Die Callbacks schreiben NUR in _kanal_puffer (kein Mixen im Callback).
         Die Streams werden in self._echte_streams gespeichert und in stop()
         wieder geschlossen.
         """
-        self._echte_streams: list = []
+        self._echte_streams = []
         sr = self._config.samplerate
         ch = self._config.channels
         block_size = self._config.block_size
@@ -351,35 +472,15 @@ class AudioEngine:
     def _stream_callback_factory(self, source_id: str):
         """Erzeugt einen sounddevice-Callback für einen bestimmten Kanal.
 
-        Der Callback schreibt empfangene Frames in die WavRecorder-Instanz
-        des Kanals (wenn Aufnahme aktiv) und aktualisiert Peaks.
-        Kein GUI-Aufruf im Callback — Thread-Sicherheit via deque + Lock.
+        Der Callback schreibt empfangene Frames NUR in den Kanalpuffer —
+        kein Mixen im Callback (Task 3c Fix).
+        Kein GUI-Aufruf im Callback — Thread-Sicherheit via bounded deque.
         """
         def _callback(indata, frames, time_info, status):
             block = indata.copy()
-
-            # Kanal verarbeiten
-            kanal = next((k for k in self._channels if k.source_id == source_id), None)
-            if kanal is None:
-                return
-
-            blocks = {source_id: block}
-            mix_block = self._bus.mix(blocks)
-            peaks = self._bus.peaks()
-            self._peak_deque.append(peaks)
-            with self._backlog_lock:
-                self._produced += 1
-
-            if self._state is not None:
-                self._state.peaks = peaks
-
-            if self._recording:
-                with self._aufnahme_lock:
-                    if self._mix_recorder is not None:
-                        self._mix_recorder.write(mix_block)
-                    rec = self._kanal_recorder.get(source_id)
-                    if rec is not None:
-                        rec.write(block)
+            puffer = self._kanal_puffer.get(source_id)
+            if puffer is not None:
+                puffer.append(block)
 
         return _callback
 
@@ -397,10 +498,10 @@ class AudioEngine:
             return True
 
     def _mock_loop(self) -> None:
-        """Hintergrund-Thread: produziert synthetisches Audio und verarbeitet es.
+        """Mock-Synth-Thread: produziert synthetisches Audio und befüllt Kanalpuffer.
 
-        Erzeugt einen Sinus-Block je Kanal und schickt ihn durch die Pipeline.
-        Schreibt Peaks in die deque (thread-safe append, kein GUI-Aufruf).
+        Erzeugt einen Sinus-Block je Kanal und legt ihn in den jeweiligen
+        Kanalpuffer. Kein Mixen hier — das übernimmt der MixWorker.
         """
         sr = self._config.samplerate
         block_size = self._config.block_size
@@ -423,33 +524,11 @@ class AudioEngine:
             block = np.stack([mono] * ch, axis=1)
             t += block_size
 
-            # Einen Block je Kanal erzeugen und verarbeiten
-            blocks: dict[str, np.ndarray] = {
-                kanal.source_id: block.copy() for kanal in self._channels
-            }
-            mix_block = self._bus.mix(blocks)
+            # Jeden Kanal mit einem Block-Kopie befüllen
+            for kanal in self._channels:
+                self._kanal_puffer[kanal.source_id].append(block.copy())
 
-            # Peaks in deque schreiben (thread-safe)
-            peaks = self._bus.peaks()
-            self._peak_deque.append(peaks)
-            with self._backlog_lock:
-                self._produced += 1  # Backlog-Zähler: ein Block produziert
-
-            # AppState aktualisieren (falls vorhanden)
-            if self._state is not None:
-                self._state.peaks = peaks
-
-            # Aufnahme schreiben (Lock-frei lesbar, da _recording volatile bool)
-            if self._recording:
-                with self._aufnahme_lock:
-                    if self._mix_recorder is not None:
-                        self._mix_recorder.write(mix_block)
-                    for kanal in self._channels:
-                        rec = self._kanal_recorder.get(kanal.source_id)
-                        if rec is not None:
-                            rec.write(blocks[kanal.source_id])
-
-            # Echtzeit-Throttling: Thread schläft, um ca. echte Samplerate zu imitieren
+            # Echtzeit-Throttling
             elapsed = time.monotonic() - start
             schlaf = soll_intervall - elapsed
             if schlaf > 0:

@@ -8,8 +8,11 @@ Video-Integration:
   via mux_audio_video zu program.mp4 zusammengeführt.
   Audio-only-Pfad (video_source=None) bleibt vollständig rückwärtskompatibel.
 """
+import logging
 import os
 from typing import Optional
+
+_log = logging.getLogger(__name__)
 
 from core.app_state import AppState
 from core.event_log import EventLog
@@ -238,6 +241,12 @@ class RecordingSession:
             # damit ffmpeg-Fehler nicht lautlos verloren gehen.
             if self._event_log is not None:
                 self._event_log.log("video_error", fehler=str(exc))
+            else:
+                # Task 3c Minor: Fallback-Logging wenn kein EventLog vorhanden —
+                # Fehler darf niemals still verschluckt werden.
+                _log.warning(
+                    "VideoRecorder.close() Fehler (kein EventLog vorhanden): %s", exc
+                )
         self._video_recorder = None
 
         if not video_pfad or not os.path.exists(video_pfad):

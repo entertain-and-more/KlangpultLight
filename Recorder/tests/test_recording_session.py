@@ -197,3 +197,44 @@ class TestStoppeVideoUndMuxFehlerprotokoll:
         assert "video_error" in typen, (
             f"Erwartetes 'video_error'-Event nicht in events.jsonl. Gefundene Events: {typen}"
         )
+
+    def test_video_close_fehler_ohne_event_log_wird_geloggt(self, tmp_path, caplog):
+        """Task 3c Minor: close()-Fehler ohne EventLog wird via logging.warning geloggt.
+
+        Belegt: der Fehler wird NICHT still verschluckt, auch wenn kein EventLog
+        vorhanden ist. logging.warning() muss mindestens einen Eintrag produzieren,
+        der den Fehlertext enthält.
+        """
+        import logging
+        from unittest.mock import MagicMock
+
+        engine, lib, session = _engine_und_session(tmp_path)
+
+        mock_recorder = MagicMock()
+        mock_recorder.close.side_effect = RuntimeError("no event log test error")
+
+        mock_capture = MagicMock()
+        mock_capture.stop.return_value = None
+
+        # Session starten, dann EventLog manuell auf None setzen
+        meta = session.start("EventLog-Fehler-Test")
+        session._video_recorder = mock_recorder
+        session._video_capture = mock_capture
+        session._video_pfad = str(tmp_path / "fake2.mp4")
+        (tmp_path / "fake2.mp4").write_bytes(b"")
+
+        # EventLog manuell deaktivieren (Fallback-Pfad triggern)
+        session._event_log = None
+
+        with caplog.at_level(logging.WARNING, logger="recordings.recording_session"):
+            session.stop()
+        engine.stop()
+
+        # Warning muss erscheinen
+        assert any(
+            "no event log test error" in rec.message or "kein EventLog" in rec.message
+            for rec in caplog.records
+        ), (
+            f"Kein Warning-Log für close()-Fehler ohne EventLog. "
+            f"Log-Records: {[r.message for r in caplog.records]}"
+        )

@@ -1,0 +1,42 @@
+# Laufzeit / Daten
+workspace/
+*.wav
+*.mp4
+*.mkv
+*.flac
+*.mp3
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# venv liegt NIE in OneDrive — sondern in C:\_Local_DEV\venvs\podcast_packages\
+
+# Secrets
+.env
+*.key
+*.token
+
+# Build
+build/
+dist/
+*.spec.bak
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Node (Planer, später)
+node_modules/
+
+# Interne Steuer-/Planungsdateien
+Plan.txt
+_archive/
+LOCK*.txt

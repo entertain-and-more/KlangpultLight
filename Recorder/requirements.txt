@@ -1,0 +1,19 @@
+# PodcastRecorder — Kern-Abhängigkeiten
+PySide6>=6.6
+sounddevice>=0.4.6
+numpy>=1.26
+soundfile>=0.12
+opencv-python>=4.9
+mss>=9.0
+websockets>=12.0
+jsonschema>=4.21
+
+# Tests
+pytest>=8.0
+
+# --- Optionale Extras (Live-STT) ---------------------------------------------
+# Lokale STT (datenschutzfreundlich, offline). Schwer (CUDA/CTranslate2) — bei
+# Bedarf separat installieren:
+#   pip install faster-whisper
+# Cloud-STT (opt-in mit Key):
+#   pip install openai

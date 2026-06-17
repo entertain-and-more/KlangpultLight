@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Recording",
+  "description": "Metadaten einer Aufnahme. Das Original ist unveränderlich; Bearbeitungen entstehen als Branches.",
+  "type": "object",
+  "required": ["recording_id", "title", "created_at"],
+  "properties": {
+    "recording_id": { "type": "string" },
+    "title": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "duration": { "type": "number", "minimum": 0 },
+    "sources": {
+      "type": "array",
+      "description": "Beim Aufnehmen aktive Quellen (Mic/System/Kamera/Screen).",
+      "items": { "type": "object" }
+    },
+    "branches": {
+      "type": "array",
+      "items": { "$ref": "branch.schema.json" }
+    },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "description": { "type": "string" }
+  }
+}

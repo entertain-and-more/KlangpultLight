@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "podcastpackages-remote-v1",
+  "title": "PodcastPackages Remote Protocol v1",
+  "description": "WebSocket-Protokoll zwischen PodcastRecorder (Desktop) und PodcastPlaner (Web). Erweitert das Studio-Protokoll um transcript_chunk (Live-STT als Motor für Monitor/Teleprompter).",
+  "definitions": {
+    "DesktopToCompanion": {
+      "type": "object",
+      "required": ["type"],
+      "oneOf": [
+        {
+          "properties": {
+            "type": { "const": "state_update" },
+            "channel_peaks": {
+              "type": "array",
+              "items": { "type": "number", "minimum": 0, "maximum": 1 },
+              "description": "Pegel aller Mixer-Kanäle (0.0–1.0)"
+            },
+            "prompter_line": { "type": "integer", "minimum": 0 },
+            "recording": { "type": "boolean" },
+            "active_pad_ids": { "type": "array", "items": { "type": "string" } }
+          },
+          "required": ["type"]
+        },
+        {
+          "properties": {
+            "type": { "const": "transcript_chunk" },
+            "text": { "type": "string", "description": "Erkanntes Live-Textsegment" },
+            "is_final": { "type": "boolean", "description": "true = stabiles Segment, false = vorläufig" },
+            "t_start": { "type": "number", "minimum": 0, "description": "Startzeit relativ zur Aufnahme (s)" },
+            "engine": { "type": "string", "enum": ["local", "cloud"], "description": "Welche STT-Engine das Segment lieferte" }
+          },
+          "required": ["type", "text"]
+        }
+      ]
+    },
+    "CompanionToDesktop": {
+      "type": "object",
+      "required": ["type"],
+      "oneOf": [
+        {
+          "properties": {
+            "type": { "const": "trigger_pad" },
+            "pad_id": { "type": "string" }
+          },
+          "required": ["type", "pad_id"]
+        },
+        {
+          "properties": {
+            "type": { "const": "scroll_teleprompter" },
+            "delta": { "type": "integer", "description": "Scroll-Delta (positiv = runter)" }
+          },
+          "required": ["type", "delta"]
+        },
+        {
+          "properties": {
+            "type": { "const": "toggle_mute" },
+            "channel": { "type": "integer", "minimum": 0 }
+          },
+          "required": ["type", "channel"]
+        },
+        {
+          "properties": {
+            "type": { "const": "insert_chapter_marker" },
+            "label": { "type": "string" }
+          },
+          "required": ["type"]
+        }
+      ]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "desktop_to_companion": { "$ref": "#/definitions/DesktopToCompanion" },
+    "companion_to_desktop": { "$ref": "#/definitions/CompanionToDesktop" }
+  }
+}

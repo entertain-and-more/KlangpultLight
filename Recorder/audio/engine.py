@@ -60,6 +60,13 @@ class AudioEngine:
         # Thread-safe Peak-Deque (maxlen verhindert unbegrenztes Wachstum)
         self._peak_deque: deque[list[float]] = deque(maxlen=10)
 
+        # Backlog-Zähler: produziert minus konsumiert (für queue_backlog())
+        # _produced wird im Mock-Loop bei jedem Block hochgezählt.
+        # _consumed wird in latest_peaks() hochgezählt.
+        # queue_backlog() gibt max(0, _produced - _consumed) zurück.
+        self._produced: int = 0
+        self._consumed: int = 0
+
         # Aufnahme-Zustand
         self._recording = False
         self._mix_recorder: Optional[WavRecorder] = None
@@ -207,12 +214,30 @@ class AudioEngine:
         Thread-safe: liest das letzte Element der deque.
         Liefert immer eine Liste der Länge len(channels), auch ohne start().
 
+        Setzt _consumed = _produced (nicht +=1), weil deque[-1] stets den
+        neuesten Block zurückgibt — alle dazwischenliegenden gelten als konsumiert.
+        Dadurch misst queue_backlog() den Rückstand *seit dem letzten Poll*, nicht
+        einen kumulativen Zähler.
+
         Returns:
             Liste von Peak-Floats, Länge = len(channels).
         """
+        self._consumed = self._produced  # vollständiger Abgleich statt +=1
         if self._peak_deque:
             return list(self._peak_deque[-1])
         return [0.0] * len(self._channels)
+
+    def queue_backlog(self) -> int:
+        """Gibt den aktuellen Audio-Queue-Rückstau zurück.
+
+        Misst, wie viele produzierte Blöcke seit dem letzten
+        latest_peaks()-Aufruf noch nicht abgeholt wurden.
+        Nützlich als Eingabe für den DriftMonitor.
+
+        Returns:
+            Anzahl unabgeholter Blöcke (≥ 0).
+        """
+        return max(0, self._produced - self._consumed)
 
     # -------------------------------------------------------------------------
     # Interne Hilfsmethoden
@@ -267,6 +292,7 @@ class AudioEngine:
             # Peaks in deque schreiben (thread-safe)
             peaks = self._bus.peaks()
             self._peak_deque.append(peaks)
+            self._produced += 1  # Backlog-Zähler: ein Block produziert
 
             # AppState aktualisieren (falls vorhanden)
             if self._state is not None:

@@ -233,8 +233,11 @@ class RecordingSession:
         video_pfad = self._video_pfad or ""
         try:
             self._video_recorder.close()
-        except Exception:
-            pass
+        except Exception as exc:
+            # 2b-Minor: Fehler nicht verschlucken — im EventLog protokollieren,
+            # damit ffmpeg-Fehler nicht lautlos verloren gehen.
+            if self._event_log is not None:
+                self._event_log.log("video_error", fehler=str(exc))
         self._video_recorder = None
 
         if not video_pfad or not os.path.exists(video_pfad):

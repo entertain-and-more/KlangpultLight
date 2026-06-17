@@ -105,9 +105,14 @@ class AudioEngine:
             self._laeuft = True
             self._mock_thread.start()
         else:
-            # Reale sounddevice-Streams — Platzhalter für Task 1b/2.
-            # Hier nur die Markierung setzen; echte Stream-Öffnung folgt
-            # in einem späteren Task.
+            # Reale sounddevice-Streams (Task 3b).
+            # Jeder MixerChannel mit device_index != None bekommt einen eigenen InputStream.
+            # System-Kanäle (capture_method="wasapi_loopback") werden im Loopback-Modus
+            # geöffnet: extra_settings=sounddevice.WasapiSettings(loopback=True).
+            # ACHTUNG: WASAPI-Loopback ist nur auf Windows-Hardware verifizierbar —
+            # im Mock-Pfad (PODCAST_RECORDER_MOCK_AUDIO=1) wird ein synthetischer
+            # System-Kanal erzeugt; der reale Pfad hier ist für Produktionsbetrieb.
+            self._starte_echte_streams()
             self._laeuft = True
 
     def stop(self) -> None:
@@ -123,6 +128,15 @@ class AudioEngine:
         if self._mock_thread is not None:
             self._mock_thread.join(timeout=2.0)
             self._mock_thread = None
+
+        # Reale sounddevice-Streams schließen (wenn vorhanden)
+        for stream in getattr(self, "_echte_streams", []):
+            try:
+                stream.stop()
+                stream.close()
+            except Exception:
+                pass
+        self._echte_streams = []
 
         self._laeuft = False
 
@@ -267,6 +281,107 @@ class AudioEngine:
     # -------------------------------------------------------------------------
     # Interne Hilfsmethoden
     # -------------------------------------------------------------------------
+
+    def _starte_echte_streams(self) -> None:
+        """Öffnet reale sounddevice-InputStreams je Kanal.
+
+        Mic-Kanäle (capture_method != "wasapi_loopback") werden als normales
+        InputStream(device=device_index) geöffnet.
+
+        System-Kanäle (capture_method="wasapi_loopback") werden als Loopback
+        geöffnet: InputStream(device=device_index,
+                              extra_settings=sounddevice.WasapiSettings(loopback=True)).
+
+        WASAPI-Loopback ist Windows-only und nur auf echter Hardware verifizierbar.
+        Bei Fehler (ImportError, fehlende WASAPI-Unterstützung) wird der Kanal
+        übersprungen und ein Hinweis geloggt.
+
+        Die Streams werden in self._echte_streams gespeichert und in stop()
+        wieder geschlossen.
+        """
+        self._echte_streams: list = []
+        sr = self._config.samplerate
+        ch = self._config.channels
+        block_size = self._config.block_size
+
+        try:
+            import sounddevice as sd  # type: ignore[import-untyped]
+        except ImportError:
+            # sounddevice nicht installiert — kein Absturz, stilles Fallback
+            return
+
+        for kanal in self._channels:
+            if kanal.device_index is None:
+                continue  # Kanal ohne zugewiesenes Gerät überspringen
+
+            try:
+                if kanal.capture_method == "wasapi_loopback":
+                    # WASAPI-Loopback: Ausgabegerät im Loopback-Modus öffnen.
+                    # Nur auf Windows mit WASAPI-HostAPI verifizierbar.
+                    try:
+                        extra = sd.WasapiSettings(loopback=True)
+                    except AttributeError:
+                        # Ältere sounddevice-Version ohne WasapiSettings
+                        continue
+                    stream = sd.InputStream(
+                        samplerate=sr,
+                        channels=ch,
+                        dtype="float32",
+                        blocksize=block_size,
+                        device=kanal.device_index,
+                        extra_settings=extra,
+                        callback=self._stream_callback_factory(kanal.source_id),
+                    )
+                else:
+                    # Normales Mic/Line-Input
+                    stream = sd.InputStream(
+                        samplerate=sr,
+                        channels=ch,
+                        dtype="float32",
+                        blocksize=block_size,
+                        device=kanal.device_index,
+                        callback=self._stream_callback_factory(kanal.source_id),
+                    )
+                stream.start()
+                self._echte_streams.append(stream)
+            except Exception:
+                # Gerät nicht öffenbar (unplugged, falsche HostAPI, etc.) — überspringen
+                pass
+
+    def _stream_callback_factory(self, source_id: str):
+        """Erzeugt einen sounddevice-Callback für einen bestimmten Kanal.
+
+        Der Callback schreibt empfangene Frames in die WavRecorder-Instanz
+        des Kanals (wenn Aufnahme aktiv) und aktualisiert Peaks.
+        Kein GUI-Aufruf im Callback — Thread-Sicherheit via deque + Lock.
+        """
+        def _callback(indata, frames, time_info, status):
+            block = indata.copy()
+
+            # Kanal verarbeiten
+            kanal = next((k for k in self._channels if k.source_id == source_id), None)
+            if kanal is None:
+                return
+
+            blocks = {source_id: block}
+            mix_block = self._bus.mix(blocks)
+            peaks = self._bus.peaks()
+            self._peak_deque.append(peaks)
+            with self._backlog_lock:
+                self._produced += 1
+
+            if self._state is not None:
+                self._state.peaks = peaks
+
+            if self._recording:
+                with self._aufnahme_lock:
+                    if self._mix_recorder is not None:
+                        self._mix_recorder.write(mix_block)
+                    rec = self._kanal_recorder.get(source_id)
+                    if rec is not None:
+                        rec.write(block)
+
+        return _callback
 
     def _nutze_mock(self) -> bool:
         """Prüft zur Laufzeit, ob Mock-Audio aktiv sein soll."""

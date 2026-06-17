@@ -2,8 +2,12 @@
 
 Kein GUI-Import. Nur numpy + stdlib.
 """
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Optional
+
 import numpy as np
-from dataclasses import dataclass, field
 
 
 @dataclass
@@ -25,6 +29,11 @@ class MixerChannel:
     """Solo-Flag; Auflösung mehrerer Solo-Kanäle im MasterBus."""
     peak: float = 0.0
     """Zuletzt gemessener Spitzenwert (max abs des Ausgangs)."""
+    device_index: Optional[int] = None
+    """sounddevice-Geräte-Index (None = automatisch / Mock). Abwärtskompatibel."""
+    capture_method: Optional[str] = None
+    """Aufnahmeverfahren: "wasapi_loopback" | "input_device" | None.
+    Relevant für den System-Kanal; Mic-Kanäle lassen dieses Feld leer."""
 
     def process(self, block: np.ndarray) -> np.ndarray:
         """Verarbeitet einen Audio-Block.

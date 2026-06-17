@@ -13,6 +13,7 @@ import numpy as np
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
+    QCheckBox,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -28,6 +29,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QListWidget,
     QListWidgetItem,
+    QScrollArea,
 )
 
 from audio.device_manager import DeviceManager
@@ -37,6 +39,8 @@ from core.app_state import AppState
 from core.config import AppConfig
 from recordings.library import RecordingLibrary
 from recordings.recording_session import RecordingSession
+from sources.source_config import SourcesConfig, save_sources_config
+from sources.loopback_detector import LoopbackRoute, LOOPBACK_HINT
 from ui.level_meter import LevelMeter
 from ui.styles import APP_QSS
 from video.video_manager import VideoManager
@@ -62,6 +66,9 @@ class MainWindow(QMainWindow):
         engine: AudioEngine,
         library: RecordingLibrary,
         state: AppState,
+        sources_config: Optional[SourcesConfig] = None,
+        loopback_route: Optional[LoopbackRoute] = None,
+        sources_config_path: Optional[str] = None,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -70,6 +77,9 @@ class MainWindow(QMainWindow):
         self._engine = engine
         self._library = library
         self._state = state
+        self._sources_config: Optional[SourcesConfig] = sources_config
+        self._loopback_route: Optional[LoopbackRoute] = loopback_route
+        self._sources_config_path: Optional[str] = sources_config_path
         self._session: Optional[RecordingSession] = None
         self._aufnahme_läuft = False
 
@@ -125,48 +135,98 @@ class MainWindow(QMainWindow):
         self.setStatusBar(self._statusleiste)
 
     def _baue_quellen_panel(self) -> QWidget:
-        """Quellen-Panel: zeigt verifizierte Geräte und Default-Belegung."""
+        """Quellen-Panel: Capture-Umschalter je Quelle (SourcesConfig) + LOOPBACK_HINT."""
         box = QGroupBox("Quellen")
-        layout = QVBoxLayout(box)
-        layout.setSpacing(8)
+        outer_layout = QVBoxLayout(box)
+        outer_layout.setSpacing(8)
 
+        if self._sources_config is not None:
+            # --- SourcesConfig-Checkboxen: pro Quelle ein Capture-Umschalter ---
+            capture_label = QLabel("Mitschneiden:")
+            capture_label.setProperty("role", "überschrift")
+            outer_layout.addWidget(capture_label)
+
+            self._capture_checkboxen: dict[str, QCheckBox] = {}
+            belegung = self._device_manager.suggest_default_assignment()
+
+            for eintrag in self._sources_config.enabled_sources():
+                zeile = QHBoxLayout()
+
+                cb = QCheckBox(eintrag.name)
+                cb.setChecked(eintrag.capture)
+
+                # System-Quelle: nur aktivierbar wenn Loopback vorhanden
+                if eintrag.kind == "system":
+                    if self._loopback_route is not None:
+                        methode = self._loopback_route.method
+                        gerät_name = self._loopback_route.name
+                        cb.setToolTip(f"Loopback: {gerät_name} ({methode})")
+                    else:
+                        cb.setEnabled(False)
+                        cb.setChecked(False)
+                        cb.setToolTip("Kein Loopback verfügbar — Checkbox deaktiviert")
+
+                source_id = eintrag.source_id
+                cb.toggled.connect(
+                    lambda checked, sid=source_id: self._capture_umschalten(sid, checked)
+                )
+                self._capture_checkboxen[source_id] = cb
+                zeile.addWidget(cb)
+
+                # Gebundenes Gerät anzeigen
+                if eintrag.kind == "system" and self._loopback_route is not None:
+                    gerät_lbl = QLabel(f"  [{self._loopback_route.name}]")
+                    gerät_lbl.setProperty("role", "sekundär")
+                    zeile.addWidget(gerät_lbl)
+                else:
+                    gerät_info = belegung.get(source_id)
+                    if gerät_info is not None:
+                        gerät_lbl = QLabel(f"  [{gerät_info.name}]")
+                        gerät_lbl.setProperty("role", "sekundär")
+                        zeile.addWidget(gerät_lbl)
+
+                zeile.addStretch()
+                outer_layout.addLayout(zeile)
+
+            # LOOPBACK_HINT — sichtbar wenn kein Loopback vorhanden
+            if self._loopback_route is None:
+                hint_lbl = QLabel(LOOPBACK_HINT)
+                hint_lbl.setWordWrap(True)
+                hint_lbl.setProperty("role", "sekundär")
+                hint_lbl.setObjectName("loopback_hint")
+                outer_layout.addSpacing(4)
+                outer_layout.addWidget(hint_lbl)
+
+            outer_layout.addSpacing(8)
+
+        # --- Verfügbare Hardware-Eingänge (Info, immer sichtbar) ---
         geraete = self._device_manager.list_input_devices(verify=True)
-        belegung = self._device_manager.suggest_default_assignment()
-
-        beschriftung = QLabel("Automatisch belegte Eingänge:")
-        beschriftung.setProperty("role", "überschrift")
-        layout.addWidget(beschriftung)
-
-        form = QFormLayout()
-        form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
-        form.setSpacing(6)
-
-        for rolle, gerät in belegung.items():
-            if gerät is not None:
-                wert = QLabel(gerät.name)
-            else:
-                wert = QLabel("– nicht belegt –")
-                wert.setProperty("role", "sekundär")
-            form.addRow(QLabel(f"{rolle}:"), wert)
-
-        layout.addLayout(form)
-        layout.addSpacing(8)
-
         trenn = QLabel("Verfügbare Eingänge:")
         trenn.setProperty("role", "überschrift")
-        layout.addWidget(trenn)
+        outer_layout.addWidget(trenn)
 
         if geraete:
             for gerät in geraete:
                 mock_hint = " (Mock)" if gerät.is_mock else ""
                 verifiziert = " ✓" if gerät.verified else " ✗"
-                zeile = QLabel(f"{gerät.name}{mock_hint}{verifiziert}")
-                layout.addWidget(zeile)
+                zeile_lbl = QLabel(f"{gerät.name}{mock_hint}{verifiziert}")
+                outer_layout.addWidget(zeile_lbl)
         else:
-            layout.addWidget(QLabel("Keine Geräte gefunden"))
+            outer_layout.addWidget(QLabel("Keine Geräte gefunden"))
 
-        layout.addStretch()
+        outer_layout.addStretch()
         return box
+
+    def _capture_umschalten(self, source_id: str, checked: bool) -> None:
+        """Setzt capture-Flag in SourcesConfig und persistiert wenn Pfad bekannt."""
+        if self._sources_config is None:
+            return
+        self._sources_config.set_capture(source_id, checked)
+        if self._sources_config_path is not None:
+            try:
+                save_sources_config(self._sources_config, self._sources_config_path)
+            except Exception:
+                pass  # Persist-Fehler darf die UI nicht abstürzen lassen
 
     def _baue_aufnahme_panel(self) -> QWidget:
         """Mittelpanel mit Titel-Eingabe, Aufnahme-Button und Pegelmetern."""
@@ -267,6 +327,11 @@ class MainWindow(QMainWindow):
         layout.addLayout(kachel_layout)
 
         layout.addStretch()
+
+        # 2b-Minor: Vorschau-Loop für die Default-Quelle direkt beim Aufbau starten,
+        # nicht erst beim ersten User-Klick. _starte_vorschau_loop() ist idempotent.
+        self._starte_vorschau_loop()
+
         return box
 
     def _baue_aufnahmeliste(self) -> QWidget:
@@ -327,6 +392,9 @@ class MainWindow(QMainWindow):
         # BGR → RGB (QImage erwartet RGB)
         try:
             frame_rgb = frame[:, :, ::-1].astype(np.uint8)
+            # 2b-Minor: C-Contiguität sicherstellen — vermeidet verzerrtes Bild bei
+            # nicht-contiguous Slices (z. B. nach Kanal-Umkehrung oder Resize).
+            frame_rgb = np.ascontiguousarray(frame_rgb)
             h, w, ch = frame_rgb.shape
             bytes_per_line = ch * w
             qimg = QImage(frame_rgb.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)

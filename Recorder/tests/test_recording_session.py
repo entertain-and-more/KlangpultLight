@@ -136,3 +136,64 @@ class TestRecordingSessionStartStop:
         aufnahmen = lib.list_recordings()
         assert len(aufnahmen) == 1
         assert aufnahmen[0].duration > 0
+
+
+class TestStoppeVideoUndMuxFehlerprotokoll:
+    """2b-Minor 1: VideoRecorder.close()-RuntimeError darf nicht verschluckt werden."""
+
+    def test_video_close_fehler_wird_protokolliert(self, tmp_path, monkeypatch):
+        """Wenn VideoRecorder.close() einen RuntimeError wirft, wird dieser im EventLog protokolliert.
+
+        Statt `except Exception: pass` muss der Fehler als 'video_error'-Event im EventLog landen,
+        damit ffmpeg-Fehler nicht lautlos verloren gehen.
+        """
+        import json as _json
+        from unittest.mock import MagicMock, patch
+
+        engine, lib, session = _engine_und_session(tmp_path)
+
+        # Fake-VideoRecorder der bei close() einen RuntimeError wirft
+        mock_recorder = MagicMock()
+        mock_recorder.close.side_effect = RuntimeError("ffmpeg exited with code 1")
+
+        # Fake-VideoCapture der sauber stoppt
+        mock_capture = MagicMock()
+        mock_capture.stop.return_value = None
+
+        # Fake-VideoSource
+        mock_source = MagicMock()
+        mock_source.read_frame.return_value = None
+        mock_source.info.width = 640
+        mock_source.info.height = 480
+
+        # Session starten
+        meta = session.start("Video-Fehler-Test")
+
+        # Intern den Recorder und die Capture-Instanz durch Mocks ersetzen
+        session._video_recorder = mock_recorder
+        session._video_capture = mock_capture
+        session._video_pfad = str(tmp_path / "fake_video.mp4")
+
+        # Eine leere Datei anlegen damit die Existenzprüfung in _stoppe_video_und_mux greift
+        (tmp_path / "fake_video.mp4").write_bytes(b"")
+
+        time.sleep(0.1)
+        meta = session.stop()
+        engine.stop()
+
+        # Das 'video_error'-Event muss in events.jsonl stehen
+        events_pfad = os.path.join(
+            lib.recording_dir(meta.recording_id), "events.jsonl"
+        )
+        assert os.path.isfile(events_pfad), "events.jsonl fehlt"
+
+        typen = []
+        with open(events_pfad, encoding="utf-8") as f:
+            for zeile in f:
+                zeile = zeile.strip()
+                if zeile:
+                    typen.append(_json.loads(zeile)["type"])
+
+        assert "video_error" in typen, (
+            f"Erwartetes 'video_error'-Event nicht in events.jsonl. Gefundene Events: {typen}"
+        )

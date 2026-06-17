@@ -24,28 +24,22 @@ def _setup_sys_path() -> None:
 _setup_sys_path()
 
 
-def _baue_mock_channels():
-    """Baut Mock-MixerChannels für den Fall, dass keine Geräte verfügbar sind."""
-    from audio.mixer_channel import MixerChannel
-    return [
-        MixerChannel(source_id="mic_1", name="Mikrofon 1"),
-        MixerChannel(source_id="mic_2", name="Mikrofon 2"),
-    ]
+def _mock_loopback_route():
+    """Gibt eine synthetische LoopbackRoute für den Mock-Pfad zurück.
 
-
-def _baue_channels_aus_belegung(belegung: dict):
-    """Erzeugt MixerChannels aus der suggest_default_assignment()-Belegung."""
-    from audio.mixer_channel import MixerChannel
-    channels = []
-    rollen = [("mic_1", "Mikrofon 1"), ("mic_2", "Mikrofon 2"), ("system", "System")]
-    for rolle, anzeigename in rollen:
-        gerät = belegung.get(rolle)
-        if gerät is not None:
-            channels.append(MixerChannel(source_id=rolle, name=gerät.name))
-    # Fallback: mindestens ein Kanal
-    if not channels:
-        channels = _baue_mock_channels()
-    return channels
+    Im Mock-Modus (PODCAST_RECORDER_MOCK_AUDIO=1) gibt es keine echte Hardware.
+    Damit der System-Kanal trotzdem im Mock nachweisbar mitläuft, wird eine
+    synthetische Route injiziert — nur wenn Mock aktiv ist.
+    Im Produktionsbetrieb liefert LoopbackDetector.detect() die echte Route.
+    """
+    from sources.loopback_detector import LoopbackRoute
+    return LoopbackRoute(
+        name="Mock-Loopback",
+        method="wasapi_loopback",
+        device_index=0,
+        hostapi="Mock",
+        score=100,
+    )
 
 
 def main() -> int:
@@ -58,17 +52,59 @@ def main() -> int:
     from core.config import AppConfig
     from recordings.library import RecordingLibrary
     from recordings.recording_session import RecordingSession
+    from sources.build_channels import build_channels
+    from sources.loopback_detector import LoopbackDetector
+    from sources.source_config import load_sources_config, save_sources_config
     from ui.main_window import MainWindow
 
     # --- Konfiguration ---
-    config = AppConfig(
-        workspace_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)), "workspace")
+    recorder_root = os.path.dirname(os.path.abspath(__file__))
+    workspace_dir = os.path.join(recorder_root, "workspace")
+    config = AppConfig(workspace_dir=workspace_dir)
+
+    # --- Quellen-Config laden (oder Defaults) ---
+    sources_config_path = os.path.join(workspace_dir, "sources.json")
+    sources_config = load_sources_config(sources_config_path)
+
+    # --- Loopback erkennen ---
+    detector = LoopbackDetector()
+    nutze_mock = (
+        config.mock_audio
+        or os.environ.get("PODCAST_RECORDER_MOCK_AUDIO", "").strip() == "1"
+    )
+    if nutze_mock:
+        # Mock-Pfad: synthetische Route, damit System-Kanal headless testbar ist.
+        # system.capture ist standardmäßig False; wir setzen es im Mock auf True,
+        # damit der Selftest den System-Kanal nachweisen kann.
+        loopback_route = _mock_loopback_route()
+        sources_config.set_capture("system", True)
+    else:
+        # Produktionspfad: echte Hardware-Erkennung
+        routen = detector.detect()
+        loopback_route = detector.best_route(routen)
+
+    # --- Gerätebelegung + Kanäle ---
+    device_manager = DeviceManager()
+    belegung_raw = device_manager.suggest_default_assignment()
+    # device_assignment: source_id → int (nur Einträge mit device_index != None)
+    device_assignment: dict = {}
+    for rolle, gerät in belegung_raw.items():
+        if gerät is not None and hasattr(gerät, "index") and gerät.index is not None:
+            device_assignment[rolle] = gerät.index
+
+    channels = build_channels(
+        sources_config=sources_config,
+        device_assignment=device_assignment,
+        loopback_route=loopback_route,
     )
 
-    # --- Geräte ---
-    device_manager = DeviceManager()
-    belegung = device_manager.suggest_default_assignment()
-    channels = _baue_channels_aus_belegung(belegung)
+    # Fallback: mindestens ein Kanal
+    if not channels:
+        from audio.mixer_channel import MixerChannel
+        channels = [
+            MixerChannel(source_id="mic_1", name="Mikrofon 1"),
+            MixerChannel(source_id="mic_2", name="Mikrofon 2"),
+        ]
 
     # --- Engine + State ---
     state = AppState()
@@ -88,12 +124,15 @@ def main() -> int:
         engine=engine,
         library=library,
         state=state,
+        sources_config=sources_config,
+        loopback_route=loopback_route,
+        sources_config_path=sources_config_path,
     )
 
     # --- Headless-Selftest ---
     selftest = os.environ.get("PODCAST_RECORDER_SELFTEST", "").strip() == "1"
     if selftest:
-        return _selftest(engine, library, fenster, state)
+        return _selftest(engine, library, fenster, state, channels)
 
     # --- Normaler Start ---
     fenster.show()
@@ -113,14 +152,15 @@ def _video_quelle_fuer_selftest():
         return None
 
 
-def _selftest(engine, library, fenster, state) -> int:
+def _selftest(engine, library, fenster, state, channels=None) -> int:
     """Führt einen Headless-Selftest durch ohne Event-Loop-Blockade.
 
-    Ablauf (M2):
+    Ablauf (M3):
       1. Audio+Video-Mock-Aufnahme (start → Pause → stop)
       2. Verifizierung: list_recordings() >= 1, duration > 0
       3. Wenn ffmpeg vorhanden: program.mp4 muss existieren und >0 Bytes haben
-      4. Engine stoppen, Exit-Code 0 bei Erfolg
+      4. Nachweis System-Quelle im Mock: channel 'system' in der Kanalliste
+      5. Engine stoppen, Exit-Code 0 bei Erfolg
     """
     import shutil
     from recordings.recording_session import RecordingSession
@@ -145,6 +185,17 @@ def _selftest(engine, library, fenster, state) -> int:
         if meta.duration <= 0:
             print(
                 f"SELFTEST FEHLER: duration={meta.duration} — keine Frames geschrieben.",
+                file=sys.stderr,
+            )
+            engine.stop()
+            return 1
+
+        # System-Kanal-Nachweis im Mock (M3)
+        channel_ids = [c.source_id for c in (channels or [])]
+        system_im_mock = "system" in channel_ids
+        if not system_im_mock:
+            print(
+                "SELFTEST FEHLER: Kein System-Kanal in der Engine (Mock sollte System-Kanal enthalten).",
                 file=sys.stderr,
             )
             engine.stop()
@@ -183,8 +234,9 @@ def _selftest(engine, library, fenster, state) -> int:
             original = next((b for b in meta.branches if b.is_original), None)
             video_info = f", video={original.video_path if original else '–'}"
 
+        system_info = f", system={'ja' if system_im_mock else 'nein'}"
         print(
-            f"SELFTEST OK: {len(aufnahmen)} Aufnahme(n), duration={meta.duration:.3f}s{video_info}"
+            f"SELFTEST OK: {len(aufnahmen)} Aufnahme(n), duration={meta.duration:.3f}s{video_info}{system_info}"
         )
         engine.stop()
         return 0

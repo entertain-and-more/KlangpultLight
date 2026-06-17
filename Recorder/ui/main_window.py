@@ -4,6 +4,8 @@ Thread-Modell:
   - Pegel-Updates und Video-Vorschau nur über QTimer (nie direkt aus Audio-/Video-Callbacks).
   - Video-Frames: VideoCaptureLoop schreibt in thread-sicheren Speicher → QTimer liest
     latest_frame() und aktualisiert das Vorschau-Widget.
+  - Board-Pad-Highlighting: QTimer pollt BoardPlayer.active_pad_ids() — kein GUI-Aufruf
+    aus Feeder-Threads.
 DriftMonitor-Anbindung: QTimer ruft observe() auf, Statusleiste zeigt Warnung.
 """
 import os
@@ -11,10 +13,11 @@ from typing import Optional
 
 import numpy as np
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QImage, QKeySequence, QPixmap, QShortcut
 from PySide6.QtWidgets import (
     QCheckBox,
     QGroupBox,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QMainWindow,
@@ -69,6 +72,7 @@ class MainWindow(QMainWindow):
         sources_config: Optional[SourcesConfig] = None,
         loopback_route: Optional[LoopbackRoute] = None,
         sources_config_path: Optional[str] = None,
+        board_player=None,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -82,6 +86,13 @@ class MainWindow(QMainWindow):
         self._sources_config_path: Optional[str] = sources_config_path
         self._session: Optional[RecordingSession] = None
         self._aufnahme_läuft = False
+
+        # Board-Player (optional; injiziert von main.py)
+        self._board_player = board_player
+        # pad_id → QPushButton (Board-Kacheln)
+        self._pad_buttons: dict[str, QPushButton] = {}
+        # pad_id → Callable (Hotkey-Funktionen, testbar ohne echte QShortcut-Auslösung)
+        self._pad_shortcuts: dict[str, object] = {}
 
         # DriftMonitor verdrahten
         self._drift_monitor = DriftMonitor(warn_threshold=8)
@@ -123,6 +134,10 @@ class MainWindow(QMainWindow):
 
         # --- Mittleres Panel: Aufnahme ---
         haupt_layout.addWidget(self._baue_aufnahme_panel(), stretch=3)
+
+        # --- Board-Panel (Einspieler) ---
+        self._board_panel = self._baue_board_panel()
+        haupt_layout.addWidget(self._board_panel, stretch=3)
 
         # --- Video-Panel ---
         haupt_layout.addWidget(self._baue_video_panel(), stretch=3)
@@ -334,6 +349,109 @@ class MainWindow(QMainWindow):
 
         return box
 
+    def _baue_board_panel(self) -> QWidget:
+        """Board-Panel: Pad-Kacheln mit Label, Farbe, Klick-Trigger und Hotkeys 1–8.
+
+        Kein Abspiel-Audio direkt hier — ruft nur BoardPlayer.trigger(pad_id) auf.
+        QTimer pollt active_pad_ids() und setzt pad_aktiv-Property für Highlighting.
+        Video/Bild-Pads rufen _on_visual_pad() auf (no-op im offscreen-Modus).
+        """
+        box = QGroupBox("Einspieler")
+        layout = QVBoxLayout(box)
+        layout.setSpacing(8)
+
+        if self._board_player is None:
+            hinweis = QLabel("Kein Board geladen.")
+            hinweis.setProperty("role", "sekundär")
+            layout.addWidget(hinweis)
+            layout.addStretch()
+            return box
+
+        # Board-Objekt vom Player holen
+        board = getattr(self._board_player, "_board", None)
+        pads = board.pads if board is not None else []
+
+        if not pads:
+            hinweis = QLabel("Board enthält keine Pads.")
+            hinweis.setProperty("role", "sekundär")
+            layout.addWidget(hinweis)
+            layout.addStretch()
+            return box
+
+        # Grid-Layout für Pad-Kacheln (bis zu 4 Spalten)
+        grid = QGridLayout()
+        grid.setSpacing(6)
+        spalten = 4
+
+        for idx, pad in enumerate(pads):
+            zeile = idx // spalten
+            spalte = idx % spalten
+
+            btn = QPushButton(pad.label or pad.id)
+            btn.setMinimumSize(80, 56)
+            btn.setMaximumSize(120, 72)
+
+            # Pad-Farbe als Hintergrund (CSS-Farbe aus pad.color)
+            farbe = pad.color or "#444444"
+            btn.setStyleSheet(
+                f"QPushButton {{ background-color: {farbe}; color: #ffffff; "
+                f"border: 2px solid transparent; border-radius: 4px; font-weight: bold; }}"
+                f"QPushButton[pad_aktiv='true'] {{ border: 2px solid #ffffff; }}"
+            )
+            btn.setProperty("pad_aktiv", False)
+
+            pad_id = pad.id
+
+            def _mache_trigger(pid=pad_id, p=pad):
+                def _on_click():
+                    if self._board_player is not None:
+                        self._board_player.trigger(pid)
+                    # Video/Bild-Pads: on_visual_pad aufrufen
+                    if p.kind in ("video", "image"):
+                        self._on_visual_pad(p)
+                return _on_click
+
+            btn.clicked.connect(_mache_trigger())
+            self._pad_buttons[pad_id] = btn
+            grid.addWidget(btn, zeile, spalte)
+
+            # Hotkeys 1–8 für die ersten 8 Pads
+            if idx < 8:
+                taste = str(idx + 1)
+                shortcut = QShortcut(QKeySequence(taste), self)
+                trigger_fn = _mache_trigger()
+                shortcut.activated.connect(trigger_fn)
+                self._pad_shortcuts[pad_id] = trigger_fn
+
+        layout.addLayout(grid)
+        layout.addStretch()
+        return box
+
+    def _on_visual_pad(self, pad) -> None:
+        """Callback für Video/Bild-Pads: zeigt das Asset in der Vorschau-Kachel.
+
+        No-op im offscreen-/Headless-Modus (Kacheln sind nicht sichtbar).
+        Wird aus dem GUI-Thread (Klick-Handler oder QTimer) aufgerufen — thread-safe.
+        """
+        if not self._vorschau_kacheln:
+            return
+        # Nur Bild-Pads: asset_path als Pixmap laden
+        if pad.kind == "image" and pad.asset_path:
+            try:
+                pixmap = QPixmap(pad.asset_path)
+                if not pixmap.isNull():
+                    kachel = self._vorschau_kacheln[0]
+                    pixmap = pixmap.scaled(
+                        kachel.width(),
+                        kachel.height(),
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.FastTransformation,
+                    )
+                    kachel.setPixmap(pixmap)
+            except Exception:
+                pass  # Vorschau-Fehler darf App nicht abstürzen lassen
+        # Video-Pads: no-op (Video läuft über eigene VideoCaptureLoop-Infrastruktur)
+
     def _baue_aufnahmeliste(self) -> QWidget:
         """Rechtes Panel mit Aufnahme-TreeWidget."""
         box = QGroupBox("Aufnahmen")
@@ -360,7 +478,12 @@ class MainWindow(QMainWindow):
         self._timer.start()
 
     def _timer_tick(self) -> None:
-        """QTimer-Callback: pollt Peaks, aktualisiert DriftMonitor und Video-Vorschau."""
+        """QTimer-Callback: pollt Peaks, aktualisiert DriftMonitor und Video-Vorschau.
+
+        Pollt außerdem BoardPlayer.active_pad_ids() und aktualisiert das
+        pad_aktiv-Property der Pad-Buttons für visuelles Feedback.
+        Kein GUI-Aufruf aus Audio-/Feeder-Threads — alles hier im GUI-Thread.
+        """
         peaks = self._engine.latest_peaks()
         for i, meter in enumerate(self._pegel_meter):
             pegel = peaks[i] if i < len(peaks) else 0.0
@@ -370,8 +493,32 @@ class MainWindow(QMainWindow):
         queue_len = self._engine.queue_backlog()
         self._drift_monitor.observe(queue_len)
 
+        # Board-Pad-Highlighting: aktive Pads hervorheben
+        self._aktualisiere_board_highlighting()
+
         # Video-Vorschau: letzten Frame aus dem Capture-Loop lesen und anzeigen
         self._aktualisiere_video_vorschau()
+
+    def _aktualisiere_board_highlighting(self) -> None:
+        """Pollt active_pad_ids() und aktualisiert pad_aktiv-Property der Buttons.
+
+        Nur im GUI-Thread via QTimer aufgerufen — nie aus Feeder-Threads.
+        """
+        if self._board_player is None or not self._pad_buttons:
+            return
+        try:
+            aktive_ids: set = set(self._board_player.active_pad_ids())
+        except Exception:
+            return
+
+        for pad_id, btn in self._pad_buttons.items():
+            ist_aktiv = pad_id in aktive_ids
+            if btn.property("pad_aktiv") != ist_aktiv:
+                btn.setProperty("pad_aktiv", ist_aktiv)
+                # Style neu anwenden damit [pad_aktiv='true']-Selektor greift
+                btn.style().unpolish(btn)
+                btn.style().polish(btn)
+                btn.update()
 
     def _aktualisiere_video_vorschau(self) -> None:
         """Liest letzten Frame aus dem Vorschau-Loop und zeigt ihn in der ersten Kachel.

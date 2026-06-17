@@ -179,12 +179,28 @@ class _PadFeeder:
                         else:
                             break
 
-                # Amplitude des letzten Blocks merken (für Fade-out)
-                self._letzter_amp = float(self.pad.volume)
+                # Amplitude des letzten Blocks merken (für Fade-out).
+                # M-2-Fix: aus der echten Frame-Amplitude ableiten — nicht pauschal
+                # pad.volume. Bei sehr kurzen Assets liegt das Ende noch innerhalb der
+                # Fade-in-Rampe; pad.volume wäre dann ein zu hoher Startwert für
+                # den Fade-out. float-Konversion sichert Serialisierbarkeit.
+                self._letzter_amp = float(np.max(np.abs(block)))
+
+                # I-4-Fix: Overflow-Log wenn _board_puffer voll ist.
+                # deque.append() bei maxlen würfelt links raus — kein Fehler, kein Log
+                # normalerweise. Wir prüfen VOR dem Append, ob noch Platz ist.
+                puffer = self._engine._board_puffer
+                if puffer.maxlen is not None and len(puffer) >= puffer.maxlen:
+                    _log.warning(
+                        "BoardFeeder %s: _board_puffer voll (maxlen=%d) — "
+                        "Block wird verworfen (Overlap-Überlastung?)",
+                        self.pad.id,
+                        puffer.maxlen,
+                    )
 
                 # Echtzeit-Throttling — nicht zu schnell füllen
                 loop_start = time.monotonic()
-                self._engine._board_puffer.append(block)
+                puffer.append(block)
                 elapsed = time.monotonic() - loop_start
                 schlaf = soll_intervall - elapsed
                 if schlaf > 0:

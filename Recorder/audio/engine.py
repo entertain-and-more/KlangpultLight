@@ -124,6 +124,10 @@ class AudioEngine:
         # latest_peaks() schon vor start() eine gültige Liste liefert.
         self._peak_deque.append([0.0] * len(channels))
 
+        # Guard: Shape-Mismatch zwischen Board-Block und Mix-Block nur einmal loggen
+        # (kein Spam pro verworfenen Block).
+        self._board_shape_mismatch_geloggt: bool = False
+
     # -------------------------------------------------------------------------
     # Lifecycle
     # -------------------------------------------------------------------------
@@ -380,7 +384,7 @@ class AudioEngine:
             puffer = self._kanal_puffer[kanal.source_id]
             if puffer:
                 blk = puffer.popleft()
-                # Mic-Ducking: Bloc per Gain-Faktor skalieren (in-place kopie)
+                # Mic-Ducking: Block per Gain-Faktor skalieren (erzeugt neues Array)
                 if duck_faktor != 1.0:
                     blk = blk * duck_faktor
                 blocks[kanal.source_id] = blk
@@ -400,9 +404,19 @@ class AudioEngine:
         # _board_puffer wird vom BoardPlayer befüllt; kein eigener MixerChannel.
         if self._board_puffer:
             board_block = self._board_puffer.popleft()
-            # Shape-Ausgleich: Board-Block muss zu mix_block passen
+            # Shape-Ausgleich: Board-Block muss zu mix_block passen.
+            # Bei Mismatch: einmalig warnen (kein Spam pro verworfenen Block).
             if board_block.shape == mix_block.shape:
                 mix_block = np.clip(mix_block + board_block, -1.0, 1.0)
+            else:
+                if not self._board_shape_mismatch_geloggt:
+                    _log.warning(
+                        "Board-Block shape %s passt nicht zu Mix-Block shape %s — "
+                        "Block verworfen. Weitere Mismatch-Warnungen werden unterdrückt.",
+                        board_block.shape,
+                        mix_block.shape,
+                    )
+                    self._board_shape_mismatch_geloggt = True
 
         # Peak-Update
         peaks = self._bus.peaks()

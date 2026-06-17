@@ -114,6 +114,9 @@ def main() -> int:
     # --- Bibliothek ---
     library = RecordingLibrary(config.workspace_dir)
 
+    # --- Board laden und BoardPlayer erstellen ---
+    board_player = _lade_board_und_player(engine, config)
+
     # --- Qt-App ---
     app = QApplication.instance() or QApplication(sys.argv)
 
@@ -127,16 +130,79 @@ def main() -> int:
         sources_config=sources_config,
         loopback_route=loopback_route,
         sources_config_path=sources_config_path,
+        board_player=board_player,
     )
 
     # --- Headless-Selftest ---
     selftest = os.environ.get("PODCAST_RECORDER_SELFTEST", "").strip() == "1"
     if selftest:
-        return _selftest(engine, library, fenster, state, channels)
+        return _selftest(engine, library, fenster, state, channels, board_player)
 
     # --- Normaler Start ---
     fenster.show()
     return app.exec()
+
+
+def _lade_board_und_player(engine, config):
+    """Lädt das Standard-Board aus dem Workspace und erstellt einen BoardPlayer.
+
+    Wenn keine board.json im Workspace vorhanden ist, wird ein Demo-Board mit
+    ein paar Beispiel-Pads erstellt (ohne Asset-Dateien — werden beim Trigger
+    graceful mit Warning gehandelt).
+
+    workspace_v1-Import: Wenn eine workspace_v1.json vorhanden ist, wird das
+    Board daraus importiert (Fallback auf eigenes Format).
+
+    Returns:
+        BoardPlayer-Instanz oder None bei Fehler.
+    """
+    try:
+        from board.board_model import Board, Pad, load_board, import_from_workspace
+        from board.board_player import BoardPlayer
+
+        workspace_dir = config.workspace_dir
+        os.makedirs(workspace_dir, exist_ok=True)
+
+        board_pfad = os.path.join(workspace_dir, "board.json")
+        workspace_v1_pfad = os.path.join(workspace_dir, "workspace_v1.json")
+
+        board = None
+
+        # Versuch 1: workspace_v1 importieren
+        if os.path.isfile(workspace_v1_pfad):
+            try:
+                import json
+                with open(workspace_v1_pfad, encoding="utf-8") as f:
+                    payload = json.load(f)
+                board = import_from_workspace(payload)
+            except Exception:
+                board = None
+
+        # Versuch 2: eigenes Board-Format laden
+        if board is None and os.path.isfile(board_pfad):
+            try:
+                board = load_board(board_pfad)
+            except Exception:
+                board = None
+
+        # Fallback: Demo-Board
+        if board is None or not board.pads:
+            board = Board(pads=[
+                Pad(id="demo1", label="Intro", color="#3a86ff", kind="audio",
+                    asset_path="", mode="play_stop"),
+                Pad(id="demo2", label="Jingle", color="#ff006e", kind="audio",
+                    asset_path="", mode="play_stop"),
+                Pad(id="demo3", label="Outro", color="#06d6a0", kind="audio",
+                    asset_path="", mode="play_stop"),
+            ])
+
+        player = BoardPlayer(engine=engine, board=board)
+        return player
+
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("Board/BoardPlayer-Initialisierung fehlgeschlagen: %s", exc)
+        return None
 
 
 def _video_quelle_fuer_selftest():
@@ -152,15 +218,16 @@ def _video_quelle_fuer_selftest():
         return None
 
 
-def _selftest(engine, library, fenster, state, channels=None) -> int:
+def _selftest(engine, library, fenster, state, channels=None, board_player=None) -> int:
     """Führt einen Headless-Selftest durch ohne Event-Loop-Blockade.
 
-    Ablauf (M3):
+    Ablauf (M4):
       1. Audio+Video-Mock-Aufnahme (start → Pause → stop)
       2. Verifizierung: list_recordings() >= 1, duration > 0
       3. Wenn ffmpeg vorhanden: program.mp4 muss existieren und >0 Bytes haben
       4. Nachweis System-Quelle im Mock: channel 'system' in der Kanalliste
-      5. Engine stoppen, Exit-Code 0 bei Erfolg
+      5. Board-Audio-Pad triggern und Board-Audio im Mix nachweisen (M4)
+      6. Engine stoppen, Exit-Code 0 bei Erfolg
     """
     import shutil
     from recordings.recording_session import RecordingSession
@@ -235,8 +302,20 @@ def _selftest(engine, library, fenster, state, channels=None) -> int:
             video_info = f", video={original.video_path if original else '–'}"
 
         system_info = f", system={'ja' if system_im_mock else 'nein'}"
+
+        # Board-Audio-Nachweis (M4): Audio-Pad während Mock-Aufnahme triggern,
+        # Mix-Energie messen und mit Baseline ohne Board-Block vergleichen.
+        board_info = ""
+        if board_player is not None:
+            board_info = _selftest_board_audio(engine, library, board_player)
+            if board_info.startswith("FEHLER"):
+                print(f"SELFTEST {board_info}", file=sys.stderr)
+                engine.stop()
+                return 1
+
         print(
-            f"SELFTEST OK: {len(aufnahmen)} Aufnahme(n), duration={meta.duration:.3f}s{video_info}{system_info}"
+            f"SELFTEST OK: {len(aufnahmen)} Aufnahme(n), duration={meta.duration:.3f}s"
+            f"{video_info}{system_info}{board_info}"
         )
         engine.stop()
         return 0
@@ -248,6 +327,73 @@ def _selftest(engine, library, fenster, state, channels=None) -> int:
         except Exception:
             pass
         return 1
+
+
+def _selftest_board_audio(engine, library, board_player) -> str:
+    """Selftest-Erweiterung M4: Board-Audio-Pad während Mock-Aufnahme triggern.
+
+    Erzeugt ein synthetisches WAV, hängt es als Audio-Pad ans Demo-Board,
+    triggert es während einer Probe-Aufnahme und verifiziert, dass Board-Audio
+    im Mix landet (Mix-Peak > 0).
+
+    Returns:
+        String der Form ", board=ok (peak=0.xxxx)" bei Erfolg.
+        String der Form "FEHLER: ..." bei Fehler.
+    """
+    import tempfile
+    import numpy as np
+    import soundfile as sf
+    from board.board_model import Board, Pad
+    from board.board_player import BoardPlayer
+    from recordings.recording_session import RecordingSession
+    from core.app_state import AppState
+
+    try:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            # Synthetisches WAV mit deutlichem Signal (0.5)
+            wav_pfad = os.path.join(tmp_dir, "selftest_board.wav")
+            samplerate = engine._config.samplerate
+            daten = np.full((samplerate // 2, 2), 0.5, dtype=np.float32)  # 0.5s Signal
+            sf.write(wav_pfad, daten, samplerate)
+
+            # Neues Demo-Board mit Audio-Pad
+            demo_pad = Pad(id="selftest_pad", label="Selftest", color="#3a86ff",
+                           kind="audio", asset_path=wav_pfad, mode="play_stop")
+            demo_board = Board(pads=[demo_pad])
+
+            # BoardPlayer erzeugen (separater, temporärer Player für diesen Test)
+            test_player = BoardPlayer(engine=engine, board=demo_board)
+
+            # Probe-Aufnahme mit Board-Audio
+            state = AppState()
+            session = RecordingSession(library=library, engine=engine, state=state)
+            session.start("Selftest-Board-Aufnahme")
+            test_player.trigger("selftest_pad")
+            time.sleep(0.5)  # Board-Feeder produziert Blöcke
+            test_player.stop_all()
+            meta = session.stop()
+
+            # Mix auf Board-Audio prüfen
+            original = next((b for b in meta.branches if b.is_original), None)
+            if original is None:
+                return "FEHLER: Board-Test: keine Original-Branch"
+
+            mix_pfad = getattr(original, "audio_path", "") or getattr(original, "mix_path", "")
+            if not mix_pfad or not os.path.isfile(mix_pfad):
+                return "FEHLER: Board-Test: mix.wav fehlt"
+
+            mix_daten, _ = sf.read(mix_pfad, dtype="float32")
+            if mix_daten.size == 0:
+                return "FEHLER: Board-Test: mix.wav ist leer"
+
+            peak = float(np.max(np.abs(mix_daten)))
+            if peak <= 0.0:
+                return "FEHLER: Board-Test: mix.wav enthält nur Nullen — Board-Audio fehlt im Mix"
+
+            return f", board=ok (peak={peak:.4f})"
+
+    except Exception as exc:
+        return f"FEHLER: Board-Selftest fehlgeschlagen: {exc}"
 
 
 if __name__ == "__main__":

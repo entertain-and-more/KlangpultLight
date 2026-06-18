@@ -210,3 +210,82 @@ def test_on_visual_pad_nachtraeglich_setzen():
 
     player.trigger("v3")
     assert len(aufgerufene_pads) == 1, "Callback nach nachträglicher Zuweisung soll funktionieren"
+
+
+# ---------------------------------------------------------------------------
+# Test: UI-Aktion „Branch anlegen" (M5, offscreen)
+# ---------------------------------------------------------------------------
+
+def _offscreen_verfuegbar() -> bool:
+    import os
+    return os.environ.get("QT_QPA_PLATFORM", "").strip() == "offscreen"
+
+
+def test_ui_branch_anlegen_offscreen(tmp_path, monkeypatch):
+    """MainWindow._branch_anlegen() legt einen Branch an und refresht die Liste.
+
+    Testet den offscreen-tauglichen Logik-Einstiegspunkt (ohne QMenu/Dialog).
+    Wird übersprungen, wenn QT_QPA_PLATFORM=offscreen nicht verfügbar ist.
+    """
+    import sys
+    monkeypatch.setenv("QT_QPA_PLATFORM", "offscreen")
+    if not _offscreen_verfuegbar():
+        pytest.skip("QT_QPA_PLATFORM=offscreen nicht verfügbar")
+
+    from PySide6.QtWidgets import QApplication
+    from PySide6.QtCore import Qt
+    from audio.device_manager import DeviceManager
+    from audio.engine import AudioEngine
+    from audio.mixer_channel import MixerChannel
+    from core.app_state import AppState
+    from core.config import AppConfig
+    from recordings.library import RecordingLibrary
+    from ui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication(sys.argv)
+
+    cfg = AppConfig(mock_audio=True, block_size=1024, samplerate=48000, channels=2,
+                    workspace_dir=str(tmp_path))
+    kanaele = [MixerChannel(source_id="mic1", name="Mikrofon 1")]
+    engine = AudioEngine(config=cfg, channels=kanaele)
+    state = AppState()
+    library = RecordingLibrary(str(tmp_path))
+    device_manager = DeviceManager()
+
+    # Eine Aufnahme anlegen, damit die Liste einen Eintrag hat
+    meta = library.create_recording("UI-Testaufnahme")
+
+    fenster = MainWindow(
+        config=cfg,
+        device_manager=device_manager,
+        engine=engine,
+        library=library,
+        state=state,
+        board_player=None,
+    )
+
+    # Kontextmenü-Policy ist gesetzt
+    assert fenster._aufnahme_tree.contextMenuPolicy() == Qt.ContextMenuPolicy.CustomContextMenu
+
+    # Logik-Einstiegspunkt direkt aufrufen (umgeht QMenu/QInputDialog)
+    fenster._branch_anlegen(meta.recording_id, "UI-Branch")
+
+    # Library hat jetzt Original + neuen Branch
+    aufnahmen = library.list_recordings()
+    reloaded = next(m for m in aufnahmen if m.recording_id == meta.recording_id)
+    branch_namen = {b.name for b in reloaded.branches}
+    assert "UI-Branch" in branch_namen, f"UI-Branch nicht angelegt: {branch_namen}"
+    assert "Original" in branch_namen, "Original muss erhalten bleiben"
+
+    # Tree wurde refresht: Top-Level-Item hat die recording_id, ein Kind heißt „UI-Branch"
+    root = fenster._aufnahme_tree.topLevelItem(0)
+    assert root is not None
+    assert root.data(0, Qt.ItemDataRole.UserRole) == meta.recording_id
+    kind_namen = {root.child(i).text(0) for i in range(root.childCount())}
+    assert any("UI-Branch" in n for n in kind_namen), f"UI-Branch nicht im Tree: {kind_namen}"
+
+    # recording_id-Ermittlung über ein Branch-Kind liefert die Eltern-ID
+    erstes_kind = root.child(0)
+    assert fenster._ermittle_recording_id(erstes_kind) == meta.recording_id
+
+    fenster.close()

@@ -33,6 +33,8 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QScrollArea,
+    QMenu,
+    QInputDialog,
 )
 
 from audio.device_manager import DeviceManager
@@ -463,6 +465,14 @@ class MainWindow(QMainWindow):
         self._aufnahme_tree.setColumnWidth(1, 70)
         self._aufnahme_tree.setAlternatingRowColors(True)
         self._aufnahme_tree.setRootIsDecorated(True)
+
+        # Kontextmenü „Branch anlegen" (M5). Original bleibt unveränderlich —
+        # add_branch fügt nur einen neuen Kind-Eintrag hinzu, kein Schnitt.
+        self._aufnahme_tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self._aufnahme_tree.customContextMenuRequested.connect(
+            self._zeige_aufnahme_kontextmenu
+        )
+
         layout.addWidget(self._aufnahme_tree)
 
         return box
@@ -692,6 +702,59 @@ class MainWindow(QMainWindow):
 
             self._aufnahme_tree.addTopLevelItem(root_item)
             root_item.setExpanded(True)
+
+    def _ermittle_recording_id(self, item) -> Optional[str]:
+        """Ermittelt die recording_id zu einem Tree-Item (auch wenn ein Branch-Kind gewählt ist).
+
+        Branch-Kinder tragen keine recording_id — dann wird das Eltern-Item gelesen.
+        """
+        if item is None:
+            return None
+        rid = item.data(0, Qt.ItemDataRole.UserRole)
+        if rid:
+            return rid
+        eltern = item.parent()
+        if eltern is not None:
+            return eltern.data(0, Qt.ItemDataRole.UserRole)
+        return None
+
+    def _zeige_aufnahme_kontextmenu(self, pos) -> None:
+        """Kontextmenü auf der Aufnahmeliste: „Branch anlegen".
+
+        Nur im GUI-Thread aufgerufen (Signal customContextMenuRequested).
+        """
+        item = self._aufnahme_tree.itemAt(pos)
+        recording_id = self._ermittle_recording_id(item)
+        if not recording_id:
+            return
+
+        menu = QMenu(self._aufnahme_tree)
+        aktion_branch = menu.addAction("Branch anlegen")
+        gewaehlt = menu.exec(self._aufnahme_tree.viewport().mapToGlobal(pos))
+
+        if gewaehlt == aktion_branch:
+            name, ok = QInputDialog.getText(
+                self,
+                "Branch anlegen",
+                "Name des neuen Branches:",
+                text="Neuer Branch",
+            )
+            if ok:
+                final_name = name.strip() or "Neuer Branch"
+                self._branch_anlegen(recording_id, final_name)
+
+    def _branch_anlegen(self, recording_id: str, name: str) -> None:
+        """Legt einen Branch über die Library an und aktualisiert die Liste.
+
+        Original bleibt unveränderlich (library.add_branch fügt nur ein Kind hinzu).
+        Separater, offscreen-testbarer Einstiegspunkt (ohne QMenu/Dialog).
+        """
+        try:
+            self._library.add_branch(recording_id, name)
+        except ValueError:
+            # Aufnahme nicht gefunden — still ignorieren (Liste ggf. veraltet)
+            return
+        self._lade_aufnahmeliste()
 
     @staticmethod
     def _formatiere_dauer(sekunden: float) -> str:

@@ -24,7 +24,6 @@ import asyncio
 import json
 import logging
 import threading
-import time
 from typing import Callable, Optional, Set
 
 _log = logging.getLogger(__name__)
@@ -69,9 +68,10 @@ class RemoteWsServer:
         self._thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
 
-        # Verbundene Clients
+        # Verbundene Clients. Der asyncio.Lock wird erst im Event-Loop-Thread
+        # erzeugt (_run_loop), da er an den dort laufenden Loop gebunden sein muss.
         self._clients: Set = set()
-        self._clients_lock = asyncio.Lock.__class__  # Platzhalter, wird in Loop gesetzt
+        self._clients_lock: Optional[asyncio.Lock] = None
 
         # Tatsächlich gebundener Port (nach start(), für Tests mit port=0)
         self._bound_port: Optional[int] = None
@@ -89,7 +89,7 @@ class RemoteWsServer:
     def start(self, host: str = "127.0.0.1", port: int = 8768) -> None:
         """Startet den WebSocket-Server in einem eigenen Thread.
 
-        Blockiert bis der Server tatsächlich gebunden ist (max. 5 s).
+        Blockiert bis der Server tatsächlich gebunden ist (max. 10 s).
 
         Args:
             host: Bind-Adresse (Standard: 127.0.0.1).

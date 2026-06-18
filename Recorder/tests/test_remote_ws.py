@@ -171,6 +171,7 @@ def test_push_transcript_chunk_gesendet(tmp_path):
     server, port = _starte_server(interval=10.0)
 
     empfangen = []
+    fehler = []
     bereit = threading.Event()
 
     def _client_thread():
@@ -182,7 +183,7 @@ def test_push_transcript_chunk_gesendet(tmp_path):
                 raw = ws.recv(timeout=3.0)
                 empfangen.append(json.loads(raw))
         except Exception as exc:
-            _log.debug("Client-Thread Fehler: %s", exc)
+            fehler.append(exc)
 
     t = threading.Thread(target=_client_thread, daemon=True)
     t.start()

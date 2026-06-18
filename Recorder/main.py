@@ -155,7 +155,9 @@ def main() -> int:
     # --- Headless-Selftest ---
     selftest = os.environ.get("PODCAST_RECORDER_SELFTEST", "").strip() == "1"
     if selftest:
-        ergebnis = _selftest(engine, library, fenster, state, channels, board_player)
+        ergebnis = _selftest(
+            engine, library, fenster, state, channels, board_player, bridge
+        )
         if bridge is not None:
             bridge.stop()
         return ergebnis
@@ -243,16 +245,18 @@ def _video_quelle_fuer_selftest():
         return None
 
 
-def _selftest(engine, library, fenster, state, channels=None, board_player=None) -> int:
+def _selftest(engine, library, fenster, state, channels=None, board_player=None,
+              bridge=None) -> int:
     """Führt einen Headless-Selftest durch ohne Event-Loop-Blockade.
 
-    Ablauf (M4):
+    Ablauf (M4/M5):
       1. Audio+Video-Mock-Aufnahme (start → Pause → stop)
       2. Verifizierung: list_recordings() >= 1, duration > 0
       3. Wenn ffmpeg vorhanden: program.mp4 muss existieren und >0 Bytes haben
       4. Nachweis System-Quelle im Mock: channel 'system' in der Kanalliste
       5. Board-Audio-Pad triggern und Board-Audio im Mix nachweisen (M4)
-      6. Engine stoppen, Exit-Code 0 bei Erfolg
+      6. Bridge hochfahren, GET /api/library liefert >= 1 Aufnahme (M5)
+      7. Engine stoppen, Exit-Code 0 bei Erfolg
     """
     import shutil
     from recordings.recording_session import RecordingSession
@@ -338,9 +342,16 @@ def _selftest(engine, library, fenster, state, channels=None, board_player=None)
                 engine.stop()
                 return 1
 
+        # Bridge-Nachweis (M5): Bibliothek-API hochfahren und per HTTP abfragen.
+        bridge_info = _selftest_bridge_library(library, bridge)
+        if bridge_info.startswith("FEHLER"):
+            print(f"SELFTEST {bridge_info}", file=sys.stderr)
+            engine.stop()
+            return 1
+
         print(
             f"SELFTEST OK: {len(aufnahmen)} Aufnahme(n), duration={meta.duration:.3f}s"
-            f"{video_info}{system_info}{board_info}"
+            f"{video_info}{system_info}{board_info}{bridge_info}"
         )
         engine.stop()
         return 0
@@ -352,6 +363,55 @@ def _selftest(engine, library, fenster, state, channels=None, board_player=None)
         except Exception:
             pass
         return 1
+
+
+def _selftest_bridge_library(library, bridge=None) -> str:
+    """Selftest-Erweiterung M5: Bibliothek-API per HTTP abfragen.
+
+    Fährt die Bridge hoch (falls nicht schon laufend — z. B. weil
+    PODCAST_RECORDER_BRIDGE=0 gesetzt war), ruft in-process
+    GET /api/library auf und prüft, dass mindestens eine Aufnahme
+    im JSON zurückkommt. Stoppt eine selbst gestartete Bridge sauber.
+
+    Returns:
+        ", bridge=ok (N Aufnahmen)" bei Erfolg, "FEHLER: ..." bei Fehler.
+    """
+    import json as _json
+    import urllib.request
+
+    from bridge.bridge_service import BridgeService
+
+    eigene_bridge = None
+    try:
+        aktive_bridge = bridge
+        if aktive_bridge is None or aktive_bridge.api is None:
+            # Bridge war nicht aktiv (z. B. BRIDGE=0) — für den Check selbst starten.
+            # Port 0 = freier Port, vermeidet Kollision mit produktivem 8767.
+            eigene_bridge = BridgeService(library=library, library_port=0, ws_port=0)
+            eigene_bridge.start()
+            aktive_bridge = eigene_bridge
+
+        port = aktive_bridge.api.port if aktive_bridge.api is not None else None
+        if not port:
+            return "FEHLER: Bridge-Test: Library-API-Port nicht verfügbar"
+
+        url = f"http://127.0.0.1:{port}/api/library"
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            if resp.status != 200:
+                return f"FEHLER: Bridge-Test: HTTP {resp.status} von /api/library"
+            daten = _json.loads(resp.read().decode("utf-8"))
+
+        aufnahmen = daten.get("recordings", [])
+        if len(aufnahmen) < 1:
+            return "FEHLER: Bridge-Test: /api/library lieferte keine Aufnahmen"
+
+        return f", bridge=ok ({len(aufnahmen)} Aufnahmen)"
+
+    except Exception as exc:
+        return f"FEHLER: Bridge-Selftest fehlgeschlagen: {exc}"
+    finally:
+        if eigene_bridge is not None:
+            eigene_bridge.stop()
 
 
 def _selftest_board_audio(engine, library, board_player) -> str:

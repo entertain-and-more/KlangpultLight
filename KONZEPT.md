@@ -168,8 +168,8 @@ Transkript-Dokument als Ergebnis erzeugt/exportiert.
 | Studio-Tab / Feature | → PodcastRecorder | → PodcastPlaner | Status-Ziel |
 |---|:--:|:--:|---|
 | Mixer (USB-Mics, Fader/Mute/Solo/Pegel) | ✅ | — | muss erreicht |
-| Voice-FX (Gate/Comp/Limiter/EQ) | ✅ (schlank) | — | soll |
-| Videoquellen (Webcam/Screen/Split) | ✅ | — | muss erreicht |
+| Voice-FX (Gate/Comp/Limiter/EQ) | ❌ | — | bewusst NICHT enthalten (Postproduction/Komplexität vermieden) |
+| Videoquellen (Webcam/Screen/Split) | ✅ | — | erreicht |
 | Soundboards | ✅ (Teil des gem. Boards) | plant Pads | muss |
 | Videoboards/Einspieler | ✅ (Teil des gem. Boards) | plant | muss |
 | Gemeinsames Audio-Videoboard (1 Board, gemischte Pads) | ✅ | plant | muss erreicht |

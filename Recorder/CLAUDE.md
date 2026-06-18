@@ -8,7 +8,10 @@ Audio-Videoboard, Aufnahmen mit Branches). Eigenständig, **kein** geteilter Cod
 FFmpeg-Muster), aber neu und schlanker geschrieben.
 
 **Stack:** Python 3.11+, PySide6 6.x, sounddevice, numpy, soundfile, OpenCV, mss, FFmpeg (subprocess).
-**Modul-Layout:** Python-Package `recorder/` (mit `__init__.py`), Start über `python -m recorder.main`.
+**Modul-Layout (flach, wie das Studio):** App-Root ist `Recorder/`, Entrypoint `Recorder/main.py`,
+Subpakete direkt darunter (`core/`, `audio/`, `video/`, `board/`, `recordings/`, `sources/`,
+`bridge/`, `stt/`, `ui/`, `tests/`). Start aus `Recorder/` heraus mit `python main.py` (KEIN `python -m`,
+da der Ordner großgeschrieben ist). Imports relativ zum `Recorder/`-Root (z. B. `from audio.device_manager import ...`).
 
 ## Hard Rules
 

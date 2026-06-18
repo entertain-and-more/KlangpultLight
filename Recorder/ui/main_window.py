@@ -642,15 +642,21 @@ class MainWindow(QMainWindow):
                 pass
             self._vorschau_loop = None
 
-        # Video-Quelle für die Aufnahme öffnen (wenn gewählt)
-        video_source = None
+        # Video-Quellen für die Aufnahme sammeln und als Liste übergeben.
+        # Aktuell kann in der UI genau eine Quelle gewählt werden;
+        # die Liste ist der Erweiterungspunkt für spätere Mehrfachauswahl.
+        video_quellen: list = []
         if self._gewählte_video_quelle is not None:
             try:
-                video_source = self._video_manager.open_source(self._gewählte_video_quelle)
+                quelle = self._video_manager.open_source(self._gewählte_video_quelle)
+                video_quellen.append(quelle)
             except Exception:
-                video_source = None
+                pass
 
-        self._session.start(titel, video_source=video_source)
+        if video_quellen:
+            self._session.start(titel, video_sources=video_quellen)
+        else:
+            self._session.start(titel)
         self._aufnahme_läuft = True
         self._btn_aufnahme.setText("Aufnahme stoppen")
         self._btn_aufnahme.setProperty("recording", "true")

@@ -87,12 +87,16 @@ class DeviceManager:
 
             verifiziert = False
             if verify:
+                # M-2: Gerät tatsächlich kurz öffnen (nicht nur check_input_settings),
+                # um sicherzustellen, dass es wirklich nutzbar ist.
                 try:
-                    sd.check_input_settings(
+                    with sd.InputStream(
                         device=idx,
                         channels=min(int(info["max_input_channels"]), 2),
                         samplerate=float(info["default_samplerate"]),
-                    )
+                        blocksize=512,
+                    ):
+                        pass  # Öffnen erfolgreich → verified=True
                     verifiziert = True
                 except Exception:
                     verifiziert = False

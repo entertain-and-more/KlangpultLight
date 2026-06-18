@@ -54,22 +54,33 @@ class RecordingSession:
         self._event_log: Optional[EventLog] = None
 
         # Video-Capture (optional)
-        self._video_capture = None    # VideoCaptureLoop-Instanz
+        self._video_capture = None    # VideoCaptureLoop oder MultiSourceCaptureLoop
         self._video_recorder = None   # VideoRecorder-Instanz
         self._video_pfad: Optional[str] = None  # Pfad zur stummen Video-MP4
 
-    def start(self, title: str, video_source=None) -> RecordingMetadata:
+    def start(
+        self,
+        title: str,
+        video_source=None,
+        video_sources: Optional[list] = None,
+    ) -> RecordingMetadata:
         """Startet eine neue Aufnahme.
 
         Legt die Aufnahme in der Library an, startet engine.start_recording()
-        und protokolliert das start-Event. Mit video_source wird zusätzlich
-        ein VideoCaptureLoop + VideoRecorder gestartet.
+        und protokolliert das start-Event.
+
+        Video-Modi:
+          - video_source=<VideoSource>: Einzelquelle (wie bisher, abwärtskompatibel).
+          - video_sources=[src, ...]: Mehrere Quellen (≥2) → MultiSourceCaptureLoop +
+            Compositor → komponiertes program_video.mp4.
+          - video_sources=[src] (1 Element): wie video_source (Single-Source-Pfad).
+          - Beide None: Audio-only.
 
         Args:
             title: Titel der Aufnahme.
-            video_source: Optionale VideoSource-Instanz. Wenn angegeben, wird parallel
-                          zum Audio ein stummes Video in main/program_video.mp4 aufgezeichnet.
-                          Die Quelle darf noch nicht geöffnet sein — start() öffnet sie.
+            video_source: Optionale einzelne VideoSource-Instanz (Einzelquelle).
+            video_sources: Optionale Liste von VideoSource-Instanzen (Multi-Quelle).
+                           Überschreibt video_source wenn gesetzt und nicht leer.
 
         Returns:
             RecordingMetadata der gestarteten Aufnahme.
@@ -99,9 +110,19 @@ class RecordingSession:
         self._engine.start_recording(main_dir)
 
         # Video-Aufnahme starten (optional)
-        if video_source is not None:
+        # video_sources (Liste) hat Vorrang; ≥2 → Multi, 1 → Single-Pfad.
+        quellen_liste: Optional[list] = None
+        if video_sources is not None and len(video_sources) > 0:
+            quellen_liste = list(video_sources)
+        elif video_source is not None:
+            quellen_liste = [video_source]
+
+        if quellen_liste is not None:
             self._video_pfad = os.path.join(main_dir, "program_video.mp4")
-            self._starte_video(video_source, self._video_pfad)
+            if len(quellen_liste) >= 2:
+                self._starte_video_multi(quellen_liste, self._video_pfad)
+            else:
+                self._starte_video(quellen_liste[0], self._video_pfad)
 
         # AppState aktualisieren
         if self._state is not None:
@@ -208,6 +229,43 @@ class RecordingSession:
 
         self._video_capture = VideoCaptureLoop(
             source=video_source,
+            ziel_fps=30,
+            on_frame=_frame_an_recorder,
+        )
+        self._video_capture.start()
+
+    def _starte_video_multi(self, quellen: list, video_pfad: str) -> None:
+        """Startet MultiSourceCaptureLoop + VideoRecorder für mehrere Quellen.
+
+        Zielauflösung = COMPOSITOR_STANDARD_AUFLOESUNG (1280×720).
+        Der Compositor liefert garantiert Frames dieser Größe — VideoRecorder
+        wird direkt damit konfiguriert.
+
+        Args:
+            quellen: Liste von VideoSource-Instanzen (≥2, noch nicht geöffnet).
+            video_pfad: Pfad zur stummen Video-MP4.
+        """
+        import shutil
+        from video.compositor import COMPOSITOR_STANDARD_AUFLOESUNG
+        from video.multi_capture_loop import MultiSourceCaptureLoop
+        from video.video_recorder import VideoRecorder
+
+        W, H = COMPOSITOR_STANDARD_AUFLOESUNG
+        ffmpeg_bin = shutil.which("ffmpeg") or "ffmpeg"
+
+        self._video_recorder = VideoRecorder(width=W, height=H, fps=30, ffmpeg_bin=ffmpeg_bin)
+        self._video_recorder.open(video_pfad)
+
+        def _frame_an_recorder(frame):
+            if self._video_recorder is not None:
+                try:
+                    self._video_recorder.write_frame(frame)
+                except (ValueError, RuntimeError):
+                    pass
+
+        self._video_capture = MultiSourceCaptureLoop(
+            sources=quellen,
+            out_size=(W, H),
             ziel_fps=30,
             on_frame=_frame_an_recorder,
         )

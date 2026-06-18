@@ -332,6 +332,26 @@ def _video_quelle_fuer_selftest():
         return None
 
 
+def _zwei_video_quellen_fuer_selftest():
+    """Gibt 2 MockVideoSource-Instanzen für den Split-Selftest zurück.
+
+    Immer im Mock-Modus (PODCAST_RECORDER_MOCK_VIDEO=1 wird für den Selftest gesetzt).
+    """
+    try:
+        from video.video_source import MockVideoSource, VideoSourceInfo
+        info0 = VideoSourceInfo(
+            source_id="selftest_mock_0", name="Selftest Mock 0", kind="mock",
+            verified=True, is_mock=True, width=1280, height=720,
+        )
+        info1 = VideoSourceInfo(
+            source_id="selftest_mock_1", name="Selftest Mock 1", kind="mock",
+            verified=True, is_mock=True, width=1280, height=720,
+        )
+        return MockVideoSource(info0), MockVideoSource(info1)
+    except Exception:
+        return None, None
+
+
 def _selftest(engine, library, fenster, state, channels=None, board_player=None,
               bridge=None, stt_manager=None) -> int:
     """Führt einen Headless-Selftest durch ohne Event-Loop-Blockade.
@@ -352,12 +372,19 @@ def _selftest(engine, library, fenster, state, channels=None, board_player=None,
     ffmpeg_vorhanden = shutil.which("ffmpeg") is not None
 
     try:
-        # Audio+Video-Aufnahme
-        video_source = _video_quelle_fuer_selftest() if ffmpeg_vorhanden else None
+        # Audio+Video-Aufnahme mit 2 Mock-Video-Quellen (Task 6b: Split-Selftest)
+        video_src_0, video_src_1 = (
+            _zwei_video_quellen_fuer_selftest() if ffmpeg_vorhanden else (None, None)
+        )
+        zwei_quellen = (video_src_0 is not None and video_src_1 is not None)
+
         session = RecordingSession(library=library, engine=engine, state=state)
-        session.start("Selftest-Aufnahme", video_source=video_source)
-        # Warten, damit Mock-Thread Frames produziert (mind. ~300 ms für Video-Frames)
-        time.sleep(0.35)
+        if zwei_quellen:
+            session.start("Selftest-Aufnahme", video_sources=[video_src_0, video_src_1])
+        else:
+            session.start("Selftest-Aufnahme")
+        # Warten, damit Mock-Thread Frames produziert (mind. ~500 ms für Compositor)
+        time.sleep(0.5)
         meta = session.stop()
 
         aufnahmen = library.list_recordings()
@@ -385,9 +412,10 @@ def _selftest(engine, library, fenster, state, channels=None, board_player=None,
             engine.stop()
             return 1
 
-        # Video-Prüfung (wenn ffmpeg verfügbar)
+        # Video-Prüfung (wenn ffmpeg verfügbar und 2 Mock-Quellen genutzt)
         video_ok = True
-        if ffmpeg_vorhanden and video_source is not None:
+        video_info = ""
+        if ffmpeg_vorhanden and zwei_quellen:
             original = next((b for b in meta.branches if b.is_original), None)
             program_mp4 = original.video_path if original else ""
             if not program_mp4:
@@ -408,15 +436,36 @@ def _selftest(engine, library, fenster, state, channels=None, board_player=None,
                     file=sys.stderr,
                 )
                 video_ok = False
+            else:
+                # Auflösung prüfen: muss Compositor-Zielauflösung sein (1280×720)
+                try:
+                    import cv2
+                    from video.compositor import COMPOSITOR_STANDARD_AUFLOESUNG
+                    cap = cv2.VideoCapture(program_mp4)
+                    try:
+                        w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                        h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                    finally:
+                        cap.release()
+                    erwartet_w, erwartet_h = COMPOSITOR_STANDARD_AUFLOESUNG
+                    if w != erwartet_w or h != erwartet_h:
+                        print(
+                            f"SELFTEST FEHLER: program.mp4 Auflösung {w}×{h} "
+                            f"≠ Compositor-Ziel {erwartet_w}×{erwartet_h}",
+                            file=sys.stderr,
+                        )
+                        video_ok = False
+                    else:
+                        video_info = (
+                            f", video={program_mp4} ({w}×{h}, Split-Compositor)"
+                        )
+                except Exception as exc:
+                    # cv2 nicht verfügbar oder anderer Fehler — Auflösungscheck überspringen
+                    video_info = f", video={program_mp4} (Auflösungscheck fehlgeschlagen: {exc})"
 
         if not video_ok:
             engine.stop()
             return 1
-
-        video_info = ""
-        if ffmpeg_vorhanden and video_source is not None:
-            original = next((b for b in meta.branches if b.is_original), None)
-            video_info = f", video={original.video_path if original else '–'}"
 
         system_info = f", system={'ja' if system_im_mock else 'nein'}"
 

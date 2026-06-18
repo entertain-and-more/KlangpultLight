@@ -128,6 +128,15 @@ class AudioEngine:
         # (kein Spam pro verworfenen Block).
         self._board_shape_mismatch_geloggt: bool = False
 
+        # Mix-Audio-Tap (Task 5b) — optionaler Callback, der je fertig gemischtem
+        # Block aufgerufen wird.  Gesetzt via register_audio_sink(), gelöscht via
+        # unregister_audio_sink().  Default None → kein Tap.
+        # Der Callback wird NACH Board-Audio-Summierung aufgerufen (voller Mix).
+        # Aufruf im MixWorker-Thread → Callback MUSS non-blocking sein und
+        # darf NIEMALS die GUI direkt aufrufen.
+        self._mix_sink = None
+        self._mix_sink_lock = threading.Lock()
+
     # -------------------------------------------------------------------------
     # Lifecycle
     # -------------------------------------------------------------------------
@@ -353,6 +362,33 @@ class AudioEngine:
             self._duck = None
 
     # -------------------------------------------------------------------------
+    # Mix-Audio-Tap (Task 5b)
+    # -------------------------------------------------------------------------
+
+    def register_audio_sink(self, callback) -> None:
+        """Registriert einen Mix-Audio-Tap-Callback.
+
+        Der Callback wird einmal pro Mix-Tick mit einer Kopie des vollständig
+        gemischten Blocks (inkl. Board-Audio) aufgerufen.  Signatur::
+
+            callback(mix_block: np.ndarray) -> None
+
+        Der Callback läuft im MixWorker-Thread und MUSS non-blocking sein.
+        Kein GUI-Aufruf im Callback.  Exceptions im Callback werden abgefangen
+        und geloggt — sie dürfen die Aufnahme NIEMALS unterbrechen.
+
+        Args:
+            callback: Aufrufbares Objekt mit Signatur ``callback(np.ndarray)``.
+        """
+        with self._mix_sink_lock:
+            self._mix_sink = callback
+
+    def unregister_audio_sink(self) -> None:
+        """Entfernt den aktiven Mix-Audio-Tap (kein weiterer Callback)."""
+        with self._mix_sink_lock:
+            self._mix_sink = None
+
+    # -------------------------------------------------------------------------
     # Zentraler MixWorker (Kern des Task-3c-Fixes)
     # -------------------------------------------------------------------------
 
@@ -421,6 +457,18 @@ class AudioEngine:
                         mix_block.shape,
                     )
                     self._board_shape_mismatch_geloggt = True
+
+        # Mix-Audio-Tap (Task 5b): vollständig gemischten Block an registrierten
+        # Callback weitergeben (z. B. SttManager.feed).  Eine Kopie übergeben,
+        # damit der Empfänger den Block gefahrlos puffern kann.
+        # Exceptions im Callback abfangen — Aufnahme darf NIE unterbrochen werden.
+        with self._mix_sink_lock:
+            sink = self._mix_sink
+        if sink is not None:
+            try:
+                sink(mix_block.copy())
+            except Exception as _sink_exc:
+                _log.warning("Mix-Audio-Tap Fehler: %s", _sink_exc)
 
         # Peak-Update
         peaks = self._bus.peaks()

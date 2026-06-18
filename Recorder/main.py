@@ -114,6 +114,13 @@ def main() -> int:
     # --- Bibliothek ---
     library = RecordingLibrary(config.workspace_dir)
 
+    # --- STT (Live-Transkription, Task 5b) — optional, env-/config-gesteuert ---
+    # Aktivieren:  PODCAST_RECORDER_STT=1 (oder "cloud" für Cloud-Engine)
+    # Deaktivieren: PODCAST_RECORDER_STT=0 (Standard wenn Libs fehlen)
+    # Der SttManager wird nach dem Bridge-Start aufgesetzt, damit push_transcript_chunk
+    # verfügbar ist. Placeholder, der nach dem Bridge-Block befüllt wird.
+    _stt_manager = None  # wird weiter unten gesetzt
+
     # --- Board laden und BoardPlayer erstellen ---
     board_player = _lade_board_und_player(engine, config)
 
@@ -152,12 +159,27 @@ def main() -> int:
         )
         bridge.start()
 
+    # --- STT-Manager aufsetzen (nach Bridge-Start, vor Selftest) ---
+    stt_env = os.environ.get("PODCAST_RECORDER_STT", "").strip()
+    stt_prefer = "cloud" if stt_env == "cloud" else "local"
+    stt_aktiv = stt_env not in ("0", "")
+
+    if stt_aktiv:
+        _stt_manager = _setup_stt(
+            engine=engine,
+            bridge=bridge,
+            prefer=stt_prefer,
+        )
+
     # --- Headless-Selftest ---
     selftest = os.environ.get("PODCAST_RECORDER_SELFTEST", "").strip() == "1"
     if selftest:
         ergebnis = _selftest(
-            engine, library, fenster, state, channels, board_player, bridge
+            engine, library, fenster, state, channels, board_player, bridge,
+            stt_manager=_stt_manager,
         )
+        if _stt_manager is not None:
+            _stt_manager.stop()
         if bridge is not None:
             bridge.stop()
         return ergebnis
@@ -165,6 +187,8 @@ def main() -> int:
     # --- Normaler Start ---
     fenster.show()
     exit_code = app.exec()
+    if _stt_manager is not None:
+        _stt_manager.stop()
     if bridge is not None:
         bridge.stop()
     return exit_code
@@ -232,6 +256,69 @@ def _lade_board_und_player(engine, config):
         return None
 
 
+def _setup_stt(engine, bridge, prefer: str = "local"):
+    """Richtet den SttManager ein und hängt ihn in den Mix-Audio-Tap.
+
+    Wählt die Engine nach Präferenz und verfügbaren Adaptern:
+    - prefer='cloud': Cloud wenn API-Key + openai vorhanden, sonst lokal
+    - prefer='local' (Standard): lokal wenn faster-whisper vorhanden, sonst deaktiviert
+
+    Args:
+        engine: AudioEngine-Instanz (muss register_audio_sink() haben).
+        bridge: BridgeService-Instanz oder None.
+        prefer: 'cloud' oder 'local'.
+
+    Returns:
+        Gestarteter SttManager oder None wenn keine Engine verfügbar ist.
+    """
+    import logging
+
+    from stt.local_engine import LocalWhisperEngine
+    from stt.cloud_engine import CloudSttEngine
+    from stt.stt_manager import SttManager, select_engine
+    from stt.transcript_models import TranscriptChunk
+
+    _log_stt = logging.getLogger(__name__)
+
+    local = LocalWhisperEngine()
+    cloud = CloudSttEngine()
+
+    gewählte_engine = select_engine(prefer=prefer, local=local, cloud=cloud)
+
+    if not gewählte_engine.available():
+        _log_stt.info(
+            "STT: Keine Engine verfügbar — Live-Transkription deaktiviert. "
+            "Installiere 'faster-whisper' (lokal) oder setze OPENAI_API_KEY (Cloud)."
+        )
+        return None
+
+    # on_chunk-Adapter: TranscriptChunk → bridge.push_transcript_chunk
+    def on_chunk(chunk: TranscriptChunk) -> None:
+        if bridge is not None and bridge.ws is not None:
+            try:
+                bridge.ws.push_transcript_chunk(
+                    text=chunk.text,
+                    is_final=chunk.is_final,
+                    t_start=chunk.t_start,
+                    engine=chunk.engine,
+                )
+            except Exception as exc:
+                _log_stt.warning("STT on_chunk Bridge-Fehler: %s", exc)
+
+    stt_manager = SttManager(
+        engine=gewählte_engine,
+        on_chunk=on_chunk,
+        samplerate=engine._config.samplerate,
+    )
+    stt_manager.start()
+
+    # Mix-Audio-Tap registrieren
+    engine.register_audio_sink(stt_manager.feed)
+
+    _log_stt.info("STT gestartet (Engine: %s).", gewählte_engine.name)
+    return stt_manager
+
+
 def _video_quelle_fuer_selftest():
     """Gibt eine Video-Quelle für den Selftest zurück (Mock oder None)."""
     from video.video_manager import VideoManager
@@ -246,17 +333,18 @@ def _video_quelle_fuer_selftest():
 
 
 def _selftest(engine, library, fenster, state, channels=None, board_player=None,
-              bridge=None) -> int:
+              bridge=None, stt_manager=None) -> int:
     """Führt einen Headless-Selftest durch ohne Event-Loop-Blockade.
 
-    Ablauf (M4/M5):
+    Ablauf (M4/M5/M5b):
       1. Audio+Video-Mock-Aufnahme (start → Pause → stop)
       2. Verifizierung: list_recordings() >= 1, duration > 0
       3. Wenn ffmpeg vorhanden: program.mp4 muss existieren und >0 Bytes haben
       4. Nachweis System-Quelle im Mock: channel 'system' in der Kanalliste
       5. Board-Audio-Pad triggern und Board-Audio im Mix nachweisen (M4)
       6. Bridge hochfahren, GET /api/library liefert >= 1 Aufnahme (M5)
-      7. Engine stoppen, Exit-Code 0 bei Erfolg
+      7. STT Mock-Chunk über on_chunk/Bridge nachweisen (M5b)
+      8. Engine stoppen, Exit-Code 0 bei Erfolg
     """
     import shutil
     from recordings.recording_session import RecordingSession
@@ -349,9 +437,16 @@ def _selftest(engine, library, fenster, state, channels=None, board_player=None,
             engine.stop()
             return 1
 
+        # STT-Nachweis (M5b): MockSttEngine + SttManager + on_chunk → mind. 1 Chunk.
+        stt_info = _selftest_stt(engine, bridge, stt_manager)
+        if stt_info.startswith("FEHLER"):
+            print(f"SELFTEST {stt_info}", file=sys.stderr)
+            engine.stop()
+            return 1
+
         print(
             f"SELFTEST OK: {len(aufnahmen)} Aufnahme(n), duration={meta.duration:.3f}s"
-            f"{video_info}{system_info}{board_info}{bridge_info}"
+            f"{video_info}{system_info}{board_info}{bridge_info}{stt_info}"
         )
         engine.stop()
         return 0
@@ -479,6 +574,62 @@ def _selftest_board_audio(engine, library, board_player) -> str:
 
     except Exception as exc:
         return f"FEHLER: Board-Selftest fehlgeschlagen: {exc}"
+
+
+def _selftest_stt(engine, bridge, laufender_stt_manager=None) -> str:
+    """Selftest-Erweiterung M5b: STT Mock-Chunk über on_chunk/Bridge nachweisen.
+
+    Erzeugt einen MockSttEngine + SttManager mit kurzem Fenster, registriert
+    ihn am Mix-Audio-Tap der Engine und wartet, bis mind. ein Chunk über
+    den on_chunk-Callback ankommt.  Testet unabhängig davon, ob der echte
+    SttManager läuft (Isolation durch separaten temporären Manager).
+
+    Returns:
+        ", stt=ok (N Chunks)" bei Erfolg, "FEHLER: ..." bei Fehler.
+    """
+    import threading
+
+    from stt.mock_engine import MockSttEngine
+    from stt.stt_manager import SttManager
+    from stt.transcript_models import TranscriptChunk
+
+    empfangene: list[TranscriptChunk] = []
+    chunk_event = threading.Event()
+
+    def on_chunk(chunk: TranscriptChunk) -> None:
+        empfangene.append(chunk)
+        chunk_event.set()
+
+    # Kurzes Fenster damit Mock-Audio reicht (0.05 s = 2400 Samples bei 48 kHz)
+    samplerate = engine._config.samplerate
+    window_seconds = 0.05
+
+    test_manager = SttManager(
+        engine=MockSttEngine(),
+        on_chunk=on_chunk,
+        samplerate=samplerate,
+        window_seconds=window_seconds,
+    )
+    test_manager.start()
+
+    # Mix-Audio-Tap temporär registrieren
+    engine.register_audio_sink(test_manager.feed)
+
+    try:
+        # Warten, bis mindestens ein Chunk über on_chunk ankommt (max. 5 s).
+        # Der Mock-Synth-Loop der AudioEngine produziert im Hintergrund Audio;
+        # nach window_seconds sollte ein Fenster ausgelöst sein.
+        ankam = chunk_event.wait(timeout=5.0)
+    finally:
+        # Tap wieder freigeben (kein Einfluss auf den echten STT-Manager)
+        engine.unregister_audio_sink()
+        test_manager.stop()
+
+    if not ankam:
+        return "FEHLER: STT-Test: Kein Mock-Chunk innerhalb von 5 Sekunden empfangen"
+
+    n = len(empfangene)
+    return f", stt=ok ({n} Chunk{'s' if n != 1 else ''})"
 
 
 if __name__ == "__main__":

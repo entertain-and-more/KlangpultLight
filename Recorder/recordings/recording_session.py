@@ -262,7 +262,16 @@ class RecordingSession:
                 audio_path=mix_pfad,
                 out_path=program_mp4,
             )
-        except Exception:
+        except Exception as mux_exc:
+            # M-3: Mux-Fehler dürfen NICHT lautlos verschwinden (Task 6a).
+            # Als Event protokollieren UND via logging ausgeben.
+            fehler_msg = str(mux_exc)
+            if self._event_log is not None:
+                self._event_log.log("video_error", fehler=fehler_msg, phase="mux")
+            _log.warning(
+                "FFmpeg-Mux fehlgeschlagen — program.mp4 wurde nicht erstellt: %s",
+                fehler_msg,
+            )
             return ""
 
         self._video_pfad = None

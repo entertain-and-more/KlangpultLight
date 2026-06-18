@@ -112,7 +112,18 @@ class AudioEngine:
         # Blöcke werden vom BoardPlayer eingereiht und im MixWorker auf den
         # fertig gemischten Block summiert (nach mix_with_channels, vor Aufnahme).
         # Eigene deque — ändert weder _channels noch channel_count().
+        # Rückwärtskompatibel: Tests die direkt auf _board_puffer schreiben, nutzen
+        # diesen Puffer. Er wird im MixWorker wie ein weiterer Feeder-Puffer behandelt.
         self._board_puffer: deque = deque(maxlen=_PUFFER_MAXLEN)
+
+        # Pro-Feeder-Puffer (Task 6a — additives Board-Mischen).
+        # Jeder _PadFeeder registriert beim Start seinen eigenen Puffer und
+        # schreibt ausschließlich dorthin. Im MixWorker werden alle Feeder-Puffer
+        # und _board_puffer gemeinsam summiert → gleichzeitige Pads werden additiv
+        # gemischt, nicht zeitlich verschachtelt.
+        # Schlüssel: eindeutige Feeder-ID (z. B. id(feeder) als int).
+        self._board_feeders: dict[int, deque] = {}
+        self._board_feeders_lock = threading.Lock()
 
         # Mic-Ducking (Task 4a) — optionaler DuckController, der im MixWorker
         # pro Tick getickt wird und Mic-Kanal-Blöcke vor dem Mix abschwächt.
@@ -181,8 +192,13 @@ class AudioEngine:
         if not self._laeuft:
             return
 
-        # Laufende Aufnahme abschließen, wenn aktiv
-        if self._recording:
+        # Laufende Aufnahme abschließen, wenn aktiv.
+        # _recording konsistent unter Lock lesen, danach lock-frei stop_recording() aufrufen
+        # (stop_recording() nimmt _aufnahme_lock intern — kein Deadlock, da wir hier
+        # schon freigegeben haben).
+        with self._aufnahme_lock:
+            laeuft_aufnahme = self._recording
+        if laeuft_aufnahme:
             self.stop_recording()
 
         self._stop_event.set()
@@ -389,6 +405,42 @@ class AudioEngine:
             self._mix_sink = None
 
     # -------------------------------------------------------------------------
+    # Pro-Feeder-Board-API (Task 6a — additives Board-Mischen)
+    # -------------------------------------------------------------------------
+
+    def register_board_feeder(self, feeder_id: int) -> deque:
+        """Registriert einen neuen Board-Feeder-Puffer und gibt ihn zurück.
+
+        Jeder _PadFeeder ruft dies beim Start auf und schreibt alle Board-Blöcke
+        ausschließlich in seinen eigenen Puffer. Der MixWorker summiert alle
+        registrierten Feeder-Puffer (plus _board_puffer) additiv.
+
+        Feeder-ID muss pro Instanz eindeutig sein — nicht pro Pad (Overlap-Mode
+        erzeugt mehrere Feeder für denselben Pad).
+
+        Args:
+            feeder_id: Eindeutige Integer-ID des Feeders (z. B. id(feeder_objekt)).
+
+        Returns:
+            Gebundene deque (maxlen=_PUFFER_MAXLEN), in die der Feeder schreibt.
+        """
+        puffer: deque = deque(maxlen=_PUFFER_MAXLEN)
+        with self._board_feeders_lock:
+            self._board_feeders[feeder_id] = puffer
+        return puffer
+
+    def unregister_board_feeder(self, feeder_id: int) -> None:
+        """Entfernt den Feeder-Puffer des beendeten Feeders.
+
+        Idempotent — doppelter Aufruf wirft keinen Fehler.
+
+        Args:
+            feeder_id: Dieselbe ID, die bei register_board_feeder() übergeben wurde.
+        """
+        with self._board_feeders_lock:
+            self._board_feeders.pop(feeder_id, None)
+
+    # -------------------------------------------------------------------------
     # Zentraler MixWorker (Kern des Task-3c-Fixes)
     # -------------------------------------------------------------------------
 
@@ -440,14 +492,24 @@ class AudioEngine:
         # Mix berechnen (process() einmalig pro Kanal)
         mix_block, verarbeitete = self._bus.mix_with_channels(blocks)
 
-        # Board-Audio additiv auf den Mix summieren (Task 4a).
-        # _board_puffer wird vom BoardPlayer befüllt; kein eigener MixerChannel.
+        # Board-Audio additiv summieren (Task 6a — Pro-Feeder-Puffer + Legacy-Puffer).
+        # Alle registrierten Feeder-Puffer + _board_puffer (Rückwärtskompatibilität)
+        # werden je Tick addiert. Gleichzeitige Pads summierten so wirklich additiv.
+        # Snapshot der Feeder-Puffer unter Lock erstellen (verhindert dict-Mutation
+        # durch register/unregister während der Iteration im MixWorker-Thread).
+        with self._board_feeders_lock:
+            feeder_puffer_liste = list(self._board_feeders.values())
+
+        # Alle Board-Quellen sammeln: Legacy-Puffer + pro Feeder-Puffer
+        board_summe = np.zeros_like(mix_block, dtype=np.float32)
+        hat_board = False
+
+        # Legacy-Puffer (_board_puffer) — für Tests die direkt einschreiben
         if self._board_puffer:
             board_block = self._board_puffer.popleft()
-            # Shape-Ausgleich: Board-Block muss zu mix_block passen.
-            # Bei Mismatch: einmalig warnen (kein Spam pro verworfenen Block).
             if board_block.shape == mix_block.shape:
-                mix_block = np.clip(mix_block + board_block, -1.0, 1.0)
+                board_summe += board_block
+                hat_board = True
             else:
                 if not self._board_shape_mismatch_geloggt:
                     _log.warning(
@@ -457,6 +519,26 @@ class AudioEngine:
                         mix_block.shape,
                     )
                     self._board_shape_mismatch_geloggt = True
+
+        # Pro-Feeder-Puffer (Zeros wenn Feeder gerade keine Daten hat)
+        for fpuffer in feeder_puffer_liste:
+            if fpuffer:
+                board_block = fpuffer.popleft()
+                if board_block.shape == mix_block.shape:
+                    board_summe += board_block
+                    hat_board = True
+                else:
+                    if not self._board_shape_mismatch_geloggt:
+                        _log.warning(
+                            "Board-Feeder-Block shape %s passt nicht zu Mix-Block shape %s — "
+                            "Block verworfen. Weitere Mismatch-Warnungen werden unterdrückt.",
+                            board_block.shape,
+                            mix_block.shape,
+                        )
+                        self._board_shape_mismatch_geloggt = True
+
+        if hat_board:
+            mix_block = np.clip(mix_block + board_summe, -1.0, 1.0)
 
         # Mix-Audio-Tap (Task 5b): vollständig gemischten Block an registrierten
         # Callback weitergeben (z. B. SttManager.feed).  Eine Kopie übergeben,
@@ -480,9 +562,11 @@ class AudioEngine:
         if self._state is not None:
             self._state.peaks = peaks
 
-        # Aufnahme schreiben (Lock für close-Schutz)
-        if self._recording:
-            with self._aufnahme_lock:
+        # Aufnahme schreiben (Lock für close-Schutz).
+        # _recording wird konsistent unter _aufnahme_lock geprüft und geschrieben,
+        # damit kein lock-freier Lesezugriff auf eine veränderliche Variable (M-5).
+        with self._aufnahme_lock:
+            if self._recording:
                 if self._mix_recorder is not None:
                     self._mix_recorder.write(mix_block)
                 for kanal in self._channels:

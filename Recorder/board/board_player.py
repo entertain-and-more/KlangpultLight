@@ -37,10 +37,15 @@ class _PadFeeder:
     """Interner Feeder-Thread für einen einzelnen Audio-Pad.
 
     Liest das WAV-Asset blockweise, wendet Fade-in/out + volume an
-    und schreibt Blöcke in engine._board_puffer.
+    und schreibt Blöcke in seinen eigenen pro-Feeder-Puffer (Task 6a).
+
+    Durch den pro-Feeder-Puffer können mehrere gleichzeitig spielende Pads
+    (z. B. im Overlap-Mode oder Jingle über Musikbett) additiv summiert werden
+    statt zeitlich verschachtelt — der MixWorker zieht je Tick aus ALLEN
+    registrierten Feeder-Puffern und summiert.
 
     Der Feeder kennt weder MixerChannels noch WavRecorder — er
-    kommuniziert ausschließlich über die thread-safe deque.
+    kommuniziert ausschließlich über seine thread-safe deque.
     """
 
     def __init__(
@@ -69,8 +74,26 @@ class _PadFeeder:
         # Feeder ist fertig (Fütter-Schleife abgeschlossen) — gesetzt vor on_finish
         self._fertig: bool = False
 
+        # Pro-Feeder-Puffer (Task 6a): wird beim Start via register_board_feeder()
+        # bei der Engine registriert. Eindeutige ID = id(self) — verhindert Kollision
+        # auch wenn mehrere Feeder für denselben Pad laufen (Overlap-Mode).
+        self._feeder_id: int = id(self)
+        self._puffer = None  # wird in start() gesetzt
+
     def start(self) -> None:
-        """Startet den Feeder-Thread."""
+        """Startet den Feeder-Thread und registriert den pro-Feeder-Puffer.
+
+        Falls die Engine die neue API (register_board_feeder) unterstützt,
+        wird ein eigener Puffer registriert. Andernfalls Fallback auf den
+        Legacy-_board_puffer (Rückwärtskompatibilität mit alten Engine-Stubs
+        in Tests).
+        """
+        if hasattr(self._engine, "register_board_feeder"):
+            self._puffer = self._engine.register_board_feeder(self._feeder_id)
+        else:
+            # Legacy-Fallback für Stub-Engines in Tests
+            self._puffer = self._engine._board_puffer
+
         self._thread = threading.Thread(
             target=self._run,
             name=f"BoardFeeder-{self.pad.id}",
@@ -115,6 +138,10 @@ class _PadFeeder:
         finally:
             # Fade-out anhängen (echte Rampe, kein bloßes Schweigen)
             self._fade_out_in_puffer(block_size, ch)
+            # Pro-Feeder-Puffer bei der Engine abmelden (Task 6a).
+            # Idempotent — unregister_board_feeder() ist robust gegen doppelten Aufruf.
+            if hasattr(self._engine, "unregister_board_feeder"):
+                self._engine.unregister_board_feeder(self._feeder_id)
             # Als fertig markieren, BEVOR on_finish() aufgerufen wird,
             # damit _aktive_feeder_anzahl() diesen Feeder nicht mehr zählt.
             self._fertig = True
@@ -186,13 +213,15 @@ class _PadFeeder:
                 # den Fade-out. float-Konversion sichert Serialisierbarkeit.
                 self._letzter_amp = float(np.max(np.abs(block)))
 
-                # I-4-Fix: Overflow-Log wenn _board_puffer voll ist.
+                # I-4-Fix: Overflow-Log wenn Feeder-Puffer voll ist.
                 # deque.append() bei maxlen würfelt links raus — kein Fehler, kein Log
                 # normalerweise. Wir prüfen VOR dem Append, ob noch Platz ist.
-                puffer = self._engine._board_puffer
+                # _puffer ist der pro-Feeder-Puffer (Task 6a); Fallback auf _board_puffer
+                # für Stub-Engines (Legacy-Tests).
+                puffer = self._puffer if self._puffer is not None else self._engine._board_puffer
                 if puffer.maxlen is not None and len(puffer) >= puffer.maxlen:
                     _log.warning(
-                        "BoardFeeder %s: _board_puffer voll (maxlen=%d) — "
+                        "BoardFeeder %s: Feeder-Puffer voll (maxlen=%d) — "
                         "Block wird verworfen (Overlap-Überlastung?)",
                         self.pad.id,
                         puffer.maxlen,
@@ -210,10 +239,11 @@ class _PadFeeder:
                 return  # nicht wiederholen
 
     def _fade_out_in_puffer(self, block_size: int, ch: int) -> None:
-        """Hängt einen echten Fade-out-Block (Rampe → Stille) in den Puffer.
+        """Hängt einen echten Fade-out-Block (Rampe → Stille) in den Feeder-Puffer.
 
         Rampt linear vom letzten bekannten Amplitudenwert auf 0 über FADE_FRAMES
         Frames, gefolgt von Stille bis block_size.
+        Schreibt in den pro-Feeder-Puffer (Task 6a) oder Fallback auf _board_puffer.
         """
         fade_frames = min(FADE_FRAMES, block_size)
         block = np.zeros((block_size, ch), dtype=np.float32)
@@ -223,7 +253,8 @@ class _PadFeeder:
             rampe = np.linspace(start_amp, 0.0, fade_frames, dtype=np.float32)
             for kanal_idx in range(ch):
                 block[:fade_frames, kanal_idx] = rampe
-        self._engine._board_puffer.append(block)
+        puffer = self._puffer if self._puffer is not None else self._engine._board_puffer
+        puffer.append(block)
 
     @staticmethod
     def _passe_kanaele_an(daten: np.ndarray, ziel_kanaele: int) -> np.ndarray:

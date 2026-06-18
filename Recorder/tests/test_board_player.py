@@ -69,11 +69,20 @@ def _engine_und_board(tmp_path, pad_liste):
 
 
 def _warte_auf_puffer(engine, timeout: float = 2.0) -> bool:
-    """Wartet bis _board_puffer mindestens einen Block enthält."""
+    """Wartet bis ein Board-Puffer mindestens einen Block enthält.
+
+    Task 6a: Feeder schreiben jetzt in pro-Feeder-Puffer (engine._board_feeders),
+    nicht mehr ausschließlich in _board_puffer. Die Hilfsfunktion prüft beide
+    Quellen, damit bestehende Tests ohne weitere Änderungen grün bleiben.
+    """
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if len(engine._board_puffer) > 0:
             return True
+        # Pro-Feeder-Puffer prüfen (Task 6a)
+        if hasattr(engine, "_board_feeders"):
+            if any(len(p) > 0 for p in engine._board_feeders.values()):
+                return True
         time.sleep(0.01)
     return False
 
@@ -83,7 +92,10 @@ def _warte_auf_puffer(engine, timeout: float = 2.0) -> bool:
 # ---------------------------------------------------------------------------
 
 def test_audio_pad_füllt_board_puffer(tmp_path):
-    """Audio-Pad trigger → _board_puffer der Engine erhält mindestens einen Block."""
+    """Audio-Pad trigger → Board-Puffer der Engine erhält mindestens einen Block.
+
+    Task 6a: Feeder schreiben in eigene pro-Feeder-Puffer (engine._board_feeders).
+    """
     from board.board_model import Pad
     from board.board_player import BoardPlayer
 
@@ -98,7 +110,7 @@ def test_audio_pad_füllt_board_puffer(tmp_path):
     hat_daten = _warte_auf_puffer(engine, timeout=2.0)
     player.stop_all()
 
-    assert hat_daten, "_board_puffer blieb leer — Board-Audio wurde nicht eingereiht"
+    assert hat_daten, "Board-Puffer blieb leer — Board-Audio wurde nicht eingereiht"
 
 
 def test_active_pad_ids_korrekt(tmp_path):

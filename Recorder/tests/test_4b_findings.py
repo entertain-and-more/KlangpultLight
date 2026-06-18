@@ -89,67 +89,62 @@ def test_i3_shape_mismatch_wird_geloggt(tmp_path, caplog):
 
 
 # ---------------------------------------------------------------------------
-# Test I-4: Verworfene Blöcke bei vollem _board_puffer werden geloggt
+# Test I-4: Verworfene Blöcke bei vollem Feeder-Puffer werden geloggt
 # ---------------------------------------------------------------------------
 
 def test_i4_verworfene_bloecke_werden_geloggt(tmp_path, caplog):
-    """Wenn _board_puffer voll ist und ein Block verworfen wird, soll ein Log erscheinen.
+    """Wenn der pro-Feeder-Puffer voll ist und ein Block verworfen wird, soll ein Log erscheinen.
 
-    _PadFeeder schreibt via engine._board_puffer.append() in eine deque mit maxlen=128.
-    Wenn sie voll ist, verwirft deque.append() links-seitig OHNE Fehler — das soll geloggt werden.
+    Task 6a: Feeder schreiben in ihren eigenen pro-Feeder-Puffer (nicht mehr in den
+    gemeinsamen _board_puffer). Der Overflow-Check prüft daher self._puffer.
+    Test: Feeder-Puffer direkt bis maxlen füllen, dann _feed_loop synchron
+    aufrufen — beim ersten append() muss der Feeder einen WARNING loggen.
     """
-    from audio.engine import AudioEngine
-    from audio.mixer_channel import MixerChannel
-    from core.config import AppConfig
-    from board.board_model import Board, Pad
-    from board.board_player import BoardPlayer
+    from board.board_model import Pad
+    from board.board_player import _PadFeeder
+    import threading
+    from collections import deque
 
     wav = _erstelle_test_wav(str(tmp_path / "i4_signal.wav"), dauer_frames=4096)
-    pad = Pad(id="i4pad", kind="audio", asset_path=wav, mode="overlap")
-    pad2 = Pad(id="i4pad2", kind="audio", asset_path=wav, mode="overlap")
+    pad = Pad(id="i4pad", kind="audio", asset_path=wav, mode="play_stop")
 
-    cfg = AppConfig(mock_audio=True, block_size=1024, samplerate=48000, channels=2, workspace_dir=str(tmp_path))
-    kanaele = [MixerChannel(source_id="mic1", name="Mikrofon 1")]
-    engine = AudioEngine(config=cfg, channels=kanaele)
-    board = Board(pads=[pad, pad2])
-    player = BoardPlayer(engine=engine, board=board)
+    # Stub-Engine mit minimaler API
+    class StubEngine:
+        class _config:
+            block_size = 1024
+            samplerate = 48000
+            channels = 2
+        _board_puffer = deque(maxlen=128)
 
-    # _board_puffer bis zur Kapazität füllen
-    maxlen = engine._board_puffer.maxlen
-    assert maxlen is not None and maxlen > 0
-    dummy_block = np.zeros((cfg.block_size, cfg.channels), dtype=np.float32)
-    for _ in range(maxlen):
-        engine._board_puffer.append(dummy_block)
+    engine = StubEngine()
+    stop_event = threading.Event()
 
-    assert len(engine._board_puffer) == maxlen, "Puffer sollte voll sein"
+    feeder = _PadFeeder(
+        pad=pad,
+        engine=engine,
+        block_size=1024,
+        samplerate=48000,
+        audio_channels=2,
+        duck=None,
+        on_finish=lambda: None,
+        stop_event=stop_event,
+    )
+    # Feeder manuell einen vollständig gefüllten eigenen Puffer geben
+    voll_puffer: deque = deque(maxlen=128)
+    dummy_block = np.zeros((1024, 2), dtype=np.float32)
+    for _ in range(128):
+        voll_puffer.append(dummy_block)
+    feeder._puffer = voll_puffer
 
-    # Jetzt einen weiteren Block direkt anhängen — soll Drop loggen
+    assert len(feeder._puffer) == 128, "Puffer sollte voll sein"
+
+    # _feed_loop aufrufen — beim ersten Block-Append muss ein WARNING kommen
     with caplog.at_level(logging.WARNING, logger="board.board_player"):
-        # _PadFeeder._append_mit_backpressure_check() oder ähnliche Methode aufrufen
-        # Da der Feeder thread-intern ist, testen wir BoardPlayer._append_in_puffer()
-        # Fallback: direkt append und prüfen ob Log via monkey-patch entsteht
-        # Wir simulieren den Drop: der Puffer ist voll, append() wird aufgerufen
-        # Dabei soll der Feeder/BoardPlayer loggen
-        if hasattr(player, '_append_in_puffer'):
-            player._append_in_puffer(dummy_block)
-        else:
-            # Engine hat keinen Log-Hook → Feeder hat Log-Hook
-            # Wir triggern den Feeder kurz und prüfen ob ein Drop-Log erscheint
-            # In dieser Situation ist der Puffer voll, jeder neue append() überschreibt links
-            # Der Fix muss daher VOR append() prüfen
-            engine._board_puffer.append(dummy_block)  # Löst Drop aus
+        feeder._feed_loop(block_size=1024, sr=48000, ch=2, loop=False)
 
-    # Log-Prüfung: WARNING über verworfenen Block oder voller Puffer
+    # Log-Prüfung: WARNING über vollen Puffer / verworfenen Block
     drop_logs = [r for r in caplog.records
-                 if any(kw in r.message.lower() for kw in ("drop", "voll", "full", "verworf", "overflow", "überlauf"))]
-
-    if not drop_logs:
-        # Akzeptiere auch: BoardPlayer-Trigger mit vollem Puffer erzeugt Log
-        # via direktem Trigger-Aufruf — längeres Sleep für Timing-Robustheit
-        player.trigger("i4pad")
-        time.sleep(0.5)
-        drop_logs = [r for r in caplog.records
-                     if any(kw in r.message.lower() for kw in ("drop", "voll", "full", "verworf", "overflow", "überlauf"))]
+                 if any(kw in r.message.lower() for kw in ("voll", "full", "verworf", "overflow", "überlauf", "drop"))]
 
     assert drop_logs, (
         f"Kein Drop/Overflow-Log gefunden. Alle Logs (WARNING+): "
@@ -273,14 +268,31 @@ def test_board_audio_landet_in_mix_deterministisch(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Test Selftest-Erweiterung: Board-Audio via Feeder-Thread im Mix (Integrationstest)
+# Test Selftest-Erweiterung: Board-Audio via Feeder-Thread im Mix (gehärtet, Task 6a)
 # ---------------------------------------------------------------------------
+
+def _warte_auf_mix_ticks(engine, min_ticks: int = 20, timeout: float = 5.0) -> bool:
+    """Pollt bis der MixWorker min_ticks Board-Ticks produziert hat.
+
+    Liest engine._produced (Gesamttick-Zähler). Deterministisch: kein blindes Sleep.
+    """
+    deadline = time.monotonic() + timeout
+    start = engine._produced
+    while time.monotonic() < deadline:
+        if engine._produced - start >= min_ticks:
+            return True
+        time.sleep(0.005)
+    return False
+
 
 def test_board_audio_landet_in_mix_via_feeder(tmp_path):
     """Integrationsnachweis: BoardPlayer-Feeder-Thread schreibt Board-Audio in die Aufnahme.
 
-    Dieser Test belegt Meilenstein M4: Audio-Pads landen in der Aufnahme.
-    Das Board-Signal (0.5) ist deutlich über dem Mock-Null-Mix.
+    Task 6a — gehärtet gegen Flakes:
+    - Kein blindes sleep(0.6) mehr: deterministisches Polling auf engine._produced.
+    - Diskriminierende Assertion: Baseline-Aufnahme (ohne Board) vs. Board-Aufnahme.
+      Board-Signal (Amplitude 0.5) muss klar mehr Energie liefern als Mock-Null-Mix.
+    - Test schlägt fehl, wenn Board-Audio NICHT im Mix landet (war bisher nicht der Fall).
     """
     from audio.engine import AudioEngine
     from audio.mixer_channel import MixerChannel
@@ -288,11 +300,26 @@ def test_board_audio_landet_in_mix_via_feeder(tmp_path):
     from board.board_model import Board, Pad
     from board.board_player import BoardPlayer
 
-    wav_pfad = _erstelle_test_wav(str(tmp_path / "board_m4.wav"),
-                                   dauer_frames=48000, amplitude=0.5)
-
+    # --- Baseline: Aufnahme OHNE Board-Audio ---
+    baseline_dir = str(tmp_path / "baseline")
     cfg = AppConfig(mock_audio=True, block_size=1024, samplerate=48000, channels=2,
                     workspace_dir=str(tmp_path))
+    kanaele_b = [MixerChannel(source_id="mic1", name="Mikrofon 1")]
+    engine_b = AudioEngine(config=cfg, channels=kanaele_b)
+    engine_b.start()
+    engine_b.start_recording(baseline_dir)
+    # Mindestens 30 Ticks produzieren lassen
+    assert _warte_auf_mix_ticks(engine_b, min_ticks=30), "Baseline: MixWorker produzierte keine Ticks"
+    ergebnis_b = engine_b.stop_recording()
+    engine_b.stop()
+
+    baseline_daten, _ = sf.read(ergebnis_b["mix"], dtype="float32")
+    baseline_energie = float(np.sum(baseline_daten ** 2))
+
+    # --- Board-Aufnahme: mit Audio-Pad (Amplitude 0.5) ---
+    wav_pfad = _erstelle_test_wav(str(tmp_path / "board_m4.wav"),
+                                   dauer_frames=48000, amplitude=0.5)
+    aufnahme_dir = str(tmp_path / "aufnahme_m4")
     kanaele = [MixerChannel(source_id="mic1", name="Mikrofon 1")]
     engine = AudioEngine(config=cfg, channels=kanaele)
 
@@ -300,13 +327,12 @@ def test_board_audio_landet_in_mix_via_feeder(tmp_path):
     board = Board(pads=[pad])
     player = BoardPlayer(engine=engine, board=board)
 
-    aufnahme_dir = str(tmp_path / "aufnahme_m4")
     engine.start()
-    time.sleep(0.05)
-
     engine.start_recording(aufnahme_dir)
     player.trigger("m4pad")
-    time.sleep(0.6)  # ausreichend Zeit für Feeder + Mix
+
+    # Warte deterministisch: mindestens 30 Board-Ticks produziert
+    assert _warte_auf_mix_ticks(engine, min_ticks=30), "Board-Aufnahme: MixWorker produzierte keine Ticks"
 
     player.stop_all()
     ergebnis = engine.stop_recording()
@@ -316,4 +342,12 @@ def test_board_audio_landet_in_mix_via_feeder(tmp_path):
     assert os.path.exists(mix_pfad), "mix.wav fehlt"
     mix_daten, _ = sf.read(mix_pfad, dtype="float32")
     assert mix_daten.size > 0, "mix.wav ist leer"
-    assert np.max(np.abs(mix_daten)) > 0.0, "mix.wav enthält nur Nullen — Board-Audio fehlt"
+
+    board_energie = float(np.sum(mix_daten ** 2))
+
+    # Diskriminierende Assertion: Board-Aufnahme muss messbar mehr Energie haben als Baseline.
+    # Amplitude 0.5 über 48 000 Frames entspricht hoher Energie — deutlich über Mock-Null-Mix.
+    assert board_energie > baseline_energie, (
+        f"Board-Audio nicht im Mix nachweisbar: "
+        f"board_energie={board_energie:.4f}, baseline_energie={baseline_energie:.4f}"
+    )

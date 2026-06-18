@@ -137,6 +137,10 @@ class AudioEngine:
         if self._laeuft:
             return
 
+        # Board-Shape-Mismatch-Guard bei Neustart zurücksetzen, damit nach einem
+        # Board-/Kanal-Reload der erste Mismatch wieder geloggt wird.
+        self._board_shape_mismatch_geloggt = False
+
         self._stop_event.clear()
 
         # MixWorker immer starten (Mock und Real)

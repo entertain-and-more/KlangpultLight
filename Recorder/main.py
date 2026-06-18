@@ -133,14 +133,39 @@ def main() -> int:
         board_player=board_player,
     )
 
+    # --- on_visual_pad verdrahten (4b-Fix) ---
+    # BoardPlayer wurde ohne on_visual_pad-Callback erstellt (in _lade_board_und_player).
+    # Nach MainWindow-Konstruktion wird der Callback hier gesetzt — genau eine
+    # Callback-Kette, kein Doppelpfad.
+    if board_player is not None and hasattr(fenster, "_on_visual_pad"):
+        board_player._on_visual_pad = fenster._on_visual_pad
+
+    # --- BridgeService optional starten ---
+    from bridge.bridge_service import BridgeService
+    bridge: BridgeService | None = None
+    if BridgeService.soll_starten():
+        bridge = BridgeService(
+            library=library,
+            engine=engine,
+            state=state,
+            board_player=board_player,
+        )
+        bridge.start()
+
     # --- Headless-Selftest ---
     selftest = os.environ.get("PODCAST_RECORDER_SELFTEST", "").strip() == "1"
     if selftest:
-        return _selftest(engine, library, fenster, state, channels, board_player)
+        ergebnis = _selftest(engine, library, fenster, state, channels, board_player)
+        if bridge is not None:
+            bridge.stop()
+        return ergebnis
 
     # --- Normaler Start ---
     fenster.show()
-    return app.exec()
+    exit_code = app.exec()
+    if bridge is not None:
+        bridge.stop()
+    return exit_code
 
 
 def _lade_board_und_player(engine, config):

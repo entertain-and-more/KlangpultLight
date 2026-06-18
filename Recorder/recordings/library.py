@@ -131,6 +131,43 @@ class RecordingLibrary:
         )
         return aufnahmen
 
+    def add_branch(self, recording_id: str, name: str) -> Branch:
+        """Legt einen neuen Branch unter einer bestehenden Aufnahme an.
+
+        Das Original (is_original=True) bleibt unverändert. Dieser Branch
+        ist nur ein Verwaltungseintrag — kein Schnitt, kein EDL.
+
+        Args:
+            recording_id: ID der übergeordneten Aufnahme.
+            name:         Anzeigename des neuen Branches.
+
+        Returns:
+            Neu angelegter Branch.
+
+        Raises:
+            ValueError: Wenn die Aufnahme nicht gefunden wird.
+        """
+        aufnahmen = self.list_recordings()
+        meta = next((m for m in aufnahmen if m.recording_id == recording_id), None)
+        if meta is None:
+            raise ValueError(f"Aufnahme '{recording_id}' nicht gefunden.")
+
+        jetzt = datetime.now(tz=timezone.utc)
+        kurz_id = uuid.uuid4().hex[:8]
+        neuer_branch = Branch(
+            branch_id=f"branch_{kurz_id}",
+            recording_id=recording_id,
+            name=name,
+            created_at=jetzt.isoformat(),
+            audio_path="",
+            video_path="",
+            duration=0.0,
+            is_original=False,
+        )
+        meta.branches.append(neuer_branch)
+        self.update_metadata(meta)
+        return neuer_branch
+
     def update_metadata(self, meta: RecordingMetadata) -> None:
         """Schreibt die Metadaten einer Aufnahme neu.
 

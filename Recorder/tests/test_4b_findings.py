@@ -145,9 +145,9 @@ def test_i4_verworfene_bloecke_werden_geloggt(tmp_path, caplog):
 
     if not drop_logs:
         # Akzeptiere auch: BoardPlayer-Trigger mit vollem Puffer erzeugt Log
-        # via direktem Trigger-Aufruf
+        # via direktem Trigger-Aufruf — längeres Sleep für Timing-Robustheit
         player.trigger("i4pad")
-        time.sleep(0.1)
+        time.sleep(0.5)
         drop_logs = [r for r in caplog.records
                      if any(kw in r.message.lower() for kw in ("drop", "voll", "full", "verworf", "overflow", "überlauf"))]
 

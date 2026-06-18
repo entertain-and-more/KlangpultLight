@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "remote_protocol_v1",
+  "description": "WebSocket-Protokoll zwischen PodcastRecorder (Desktop) und Companion (Mobilgerät/Web-Planer). Alle Nachrichten sind JSON-Objekte mit einem 'type'-Feld.",
+  "version": "1.0.0",
+  "messages": {
+    "desktop_to_companion": {
+      "state_update": {
+        "description": "Periodischer Zustandsupdate vom Desktop an den Companion (20–30/s).",
+        "fields": {
+          "type": {"const": "state_update"},
+          "channel_peaks": {"type": "array", "items": {"type": "number"}, "description": "Peak-Pegel je Mischer-Kanal (0.0–1.0)."},
+          "recording": {"type": "boolean", "description": "Ob gerade eine Aufnahme läuft."},
+          "active_pad_ids": {"type": "array", "items": {"type": "string"}, "description": "IDs der aktiven Board-Pads."},
+          "prompter_line": {"type": "integer", "description": "Aktuelle Zeile im Teleprompter (0-basiert)."}
+        },
+        "required": ["type", "channel_peaks", "recording", "active_pad_ids", "prompter_line"]
+      },
+      "transcript_chunk": {
+        "description": "Transkriptfragment vom STT-Modul (Task 5b).",
+        "fields": {
+          "type": {"const": "transcript_chunk"},
+          "text": {"type": "string", "description": "Transkribierter Text."},
+          "is_final": {"type": "boolean", "description": "True = endgültiges Ergebnis, False = Zwischenergebnis."},
+          "t_start": {"type": "number", "description": "Startzeit in Sekunden (relativ zur Aufnahme)."},
+          "engine": {"type": "string", "description": "Name der STT-Engine (z. B. 'whisper', 'vosk')."}
+        },
+        "required": ["type", "text", "is_final", "t_start", "engine"]
+      }
+    },
+    "companion_to_desktop": {
+      "trigger_pad": {
+        "description": "Companion fordert Trigger eines Board-Pads an.",
+        "fields": {
+          "type": {"const": "trigger_pad"},
+          "pad_id": {"type": "string", "description": "ID des zu triggernden Pads."}
+        },
+        "required": ["type", "pad_id"]
+      },
+      "toggle_mute": {
+        "description": "Companion schaltet den Mute-Status eines Kanals um.",
+        "fields": {
+          "type": {"const": "toggle_mute"},
+          "source_id": {"type": "string", "description": "ID des Mischer-Kanals (z. B. 'mic_1')."}
+        },
+        "required": ["type", "source_id"]
+      },
+      "insert_chapter_marker": {
+        "description": "Companion setzt einen Kapitelmarker in der aktuellen Aufnahme.",
+        "fields": {
+          "type": {"const": "insert_chapter_marker"},
+          "label": {"type": "string", "description": "Optionaler Markertext."}
+        },
+        "required": ["type"]
+      },
+      "scroll_teleprompter": {
+        "description": "Companion steuert den Teleprompter-Scroll.",
+        "fields": {
+          "type": {"const": "scroll_teleprompter"},
+          "delta": {"type": "integer", "description": "Scroll-Delta in Zeilen (positiv = vorwärts)."}
+        },
+        "required": ["type", "delta"]
+      }
+    }
+  },
+  "transport": {
+    "protocol": "WebSocket",
+    "encoding": "UTF-8 JSON",
+    "port_default": 8768,
+    "host_default": "127.0.0.1",
+    "notes": "Verbindung ist lokal (Loopback). Kein TLS erforderlich für lokale Nutzung."
+  }
+}

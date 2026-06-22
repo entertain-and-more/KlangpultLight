@@ -243,3 +243,51 @@ def test_kein_orphan_thread_nach_stop(tmp_path):
     assert "LibraryApiServer" not in threads_nach_stop, (
         "LibraryApiServer-Thread läuft noch nach stop() — Orphan-Thread!"
     )
+
+
+# ---------------------------------------------------------------------------
+# Test: /api/library/<id>/audio  (P2 Browser-Player)
+# ---------------------------------------------------------------------------
+
+def test_audio_endpoint_streamt_datei(tmp_path):
+    """GET /api/library/<id>/audio liefert die mix.wav mit Content-Type audio/wav."""
+    import os
+    import urllib.error  # noqa: F401
+    from bridge.library_api import LibraryApiServer
+    library, meta = _erstelle_mock_library(tmp_path)
+    main_dir = os.path.join(library.recording_dir(meta.recording_id), "main")
+    os.makedirs(main_dir, exist_ok=True)
+    inhalt = b"RIFF\x00\x00\x00\x00WAVEfake-audio-bytes"
+    with open(os.path.join(main_dir, "mix.wav"), "wb") as f:
+        f.write(inhalt)
+
+    server = LibraryApiServer(library=library)
+    server.start(host="127.0.0.1", port=0)
+    port = server.port
+    try:
+        url = f"http://127.0.0.1:{port}/api/library/{meta.recording_id}/audio"
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            assert resp.status == 200
+            assert resp.headers.get("Content-Type") == "audio/wav"
+            body = resp.read()
+        assert body == inhalt
+    finally:
+        server.stop()
+
+
+def test_audio_endpoint_unbekannt_404(tmp_path):
+    import urllib.error
+    from bridge.library_api import LibraryApiServer
+    library, _ = _erstelle_mock_library(tmp_path)
+    server = LibraryApiServer(library=library)
+    server.start(host="127.0.0.1", port=0)
+    port = server.port
+    try:
+        url = f"http://127.0.0.1:{port}/api/library/gibtsnicht/audio"
+        try:
+            urllib.request.urlopen(url, timeout=5)
+            assert False, "404 erwartet"
+        except urllib.error.HTTPError as e:
+            assert e.code == 404
+    finally:
+        server.stop()

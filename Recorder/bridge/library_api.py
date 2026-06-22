@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import re
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
@@ -18,6 +20,9 @@ from typing import Optional
 from urllib.parse import urlparse
 
 _log = logging.getLogger(__name__)
+
+# /api/library/<recording_id>/audio → Audiodatei der Aufnahme streamen
+_RE_AUDIO = re.compile(r"^/api/library/([^/]+)/audio$")
 
 
 class _ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
@@ -39,8 +44,45 @@ class _LibraryHandler(BaseHTTPRequestHandler):
             self._json_response(200, {"status": "ok"})
         elif path == "/api/library":
             self._antwort_library()
+        elif m := _RE_AUDIO.match(path):
+            self._antwort_audio(m.group(1))
         else:
             self._json_response(404, {"error": "Nicht gefunden"})
+
+    def _antwort_audio(self, recording_id: str) -> None:
+        """Streamt die abspielbare Datei der Aufnahme (main/mix.wav, sonst program.mp4)."""
+        library = getattr(self.server, "library", None)
+        if library is None:
+            self._json_response(503, {"error": "Library nicht verfügbar"})
+            return
+        try:
+            ordner = library.recording_dir(recording_id)
+        except Exception:
+            self._json_response(404, {"error": "Aufnahme nicht gefunden"})
+            return
+        kandidaten = [
+            (os.path.join(ordner, "main", "mix.wav"), "audio/wav"),
+            (os.path.join(ordner, "main", "program.mp4"), "video/mp4"),
+        ]
+        pfad, ctype = next(((p, c) for p, c in kandidaten if os.path.isfile(p)), (None, None))
+        if pfad is None:
+            self._json_response(404, {"error": "Keine abspielbare Datei"})
+            return
+        try:
+            groesse = os.path.getsize(pfad)
+            self.send_response(200)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Accept-Ranges", "bytes")
+            self.send_header("Content-Length", str(groesse))
+            self.end_headers()
+            with open(pfad, "rb") as f:
+                while True:
+                    chunk = f.read(65536)
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+        except (OSError, BrokenPipeError) as exc:
+            _log.debug("Audio-Stream abgebrochen (%s): %s", recording_id, exc)
 
     def _antwort_library(self) -> None:
         """Liefert alle Aufnahmen mit Branch-Baum als JSON."""

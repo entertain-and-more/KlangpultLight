@@ -131,6 +131,13 @@ async function _renderDetail(rec) {
 
   _detail.appendChild(el("h2", { textContent: rec.title || "Ohne Titel" }));
 
+  // Audio-Player (P2): Aufnahme direkt im Browser abspielen.
+  const audio = el("audio", { controls: "controls" });
+  audio.src = `/api/library/${rec.recording_id}/audio`;
+  audio.style.width = "100%";
+  audio.style.marginBottom = "8px";
+  _detail.appendChild(audio);
+
   // Metadaten
   _detail.appendChild(_detailSection("Aufnahme-ID", rec.recording_id));
   _detail.appendChild(_detailSection("Erstellt", formatDateTime(rec.created_at)));

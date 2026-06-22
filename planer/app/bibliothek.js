@@ -6,7 +6,7 @@
  * Kein Schreiben — die Bibliothek ist read-only (Aufnahmen entstehen im Recorder).
  */
 
-import { listRecordings } from "./api.js";
+import { listRecordings, listProjects, assignRecording } from "./api.js";
 import { formatDateTime, formatDuration, el } from "./util.js";
 
 // DOM-Referenzen (werden beim Mount gesetzt)
@@ -122,7 +122,7 @@ function _renderRecordingItem(rec) {
 // Detail-Panel
 // ---------------------------------------------------------------------------
 
-function _renderDetail(rec) {
+async function _renderDetail(rec) {
   if (!_detail) return;
   _detail.innerHTML = "";
   _detail.classList.add("open");
@@ -137,6 +137,39 @@ function _renderDetail(rec) {
   if (rec.description) _detail.appendChild(_detailSection("Beschreibung", rec.description));
   if (rec.tags && rec.tags.length > 0) {
     _detail.appendChild(_detailSection("Tags", rec.tags.join(", ")));
+  }
+
+  // Projekt-Zuordnung (P1): diese Aufnahme einem Projekt zuordnen.
+  _detail.appendChild(el("div", { className: "sep" }));
+  _detail.appendChild(el("h3", { textContent: "Projekt-Zuordnung" }));
+  const zuordnungStatus = el("div", { className: "list-item-meta" });
+  const projektSelect = el("select", {}, [
+    el("option", { value: "", textContent: "— Projekt wählen —" }),
+  ]);
+  const zuordnenBtn = el("button", {
+    className: "btn btn-primary",
+    textContent: "Zuordnen",
+    onClick: async () => {
+      const pid = projektSelect.value;
+      if (!pid) { zuordnungStatus.textContent = "Bitte ein Projekt wählen."; return; }
+      const r = await assignRecording(pid, rec.recording_id);
+      zuordnungStatus.textContent = r.ok ? "Zugeordnet ✓" : `Fehler: ${r.error}`;
+    },
+  });
+  _detail.appendChild(el("div", { className: "detail-actions" }, [projektSelect, zuordnenBtn]));
+  _detail.appendChild(zuordnungStatus);
+  // Projekte asynchron laden + Dropdown füllen
+  const projResult = await listProjects();
+  if (projResult.ok) {
+    const projekte = projResult.data.projects || [];
+    if (projekte.length === 0) {
+      zuordnungStatus.textContent = "Noch keine Projekte angelegt (Tab „Projekte").";
+    }
+    for (const p of projekte) {
+      projektSelect.appendChild(el("option", { value: p.project_id, textContent: p.title }));
+    }
+  } else {
+    zuordnungStatus.textContent = "Projekte konnten nicht geladen werden.";
   }
 
   _detail.appendChild(el("div", { className: "sep" }));

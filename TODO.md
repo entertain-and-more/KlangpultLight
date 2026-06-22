@@ -165,13 +165,13 @@ Offen (Details in BUGS.md):
 Aus User-Tests (Lukas). Reihenfolge = Priorität; Funktionen vor Politur (Premium zuletzt).
 
 ### Planer (Web)
-- [x] P1  Episoden **editieren UND löschen** — Backend (PUT/DELETE) + Frontend-Buttons. Commits 21ba558/28a8657. (Browser-Klicktest offen.)
-- [~] P1  **Projektzuordnung von Aufnahmen** — Backend fertig (POST/DELETE /recordings/{id}, 21ba558); **Frontend-UI (bibliothek.js) noch offen**.
-- [ ] P2  Aufnahme **abspielen** — browser-interner Player (Library-Audio-Endpunkt + `<audio>`) oder Start im externen Player.
+- [x] P1  Episoden **editieren UND löschen** — Backend (PUT/DELETE) + Frontend. **Browser-verifiziert** (playwright). Commits 21ba558/28a8657.
+- [x] P1  **Projektzuordnung von Aufnahmen** — Backend + Frontend-UI. **Browser-verifiziert** (Status „Zugeordnet ✓", recording_ids gesetzt). Commits 21ba558/ea7e369/efb12f0.
+- [x] P2  Aufnahme **abspielen** — Library-Audio-Endpunkt + `<audio>`-Player. **Browser-verifiziert** (duration/readyState). Commit ae0b809.
 
 ### Recorder (Desktop)
 - [x] P1  **Einspieler hinzufügbar** — Datei-Dialog → Pad → board.json. Commit bbe8d12.
 - [x] P1  Aufnahmen in der GUI **löschen/umbenennen/abspielen** (Kontextmenü + Doppelklick). Commit ac43edd.
-- [ ] P2  Bereiche **ein-/ausklappbar**; der freiwerdende Platz wird dynamisch genutzt.
-- [ ] P3  **Schöne Symbole** verwenden (von Codex generieren lassen).
-- [ ] P3  Premium (zuletzt): Fenster-im-Fenster **ablösbar** + wieder **andockbar** — Funktionen gehen vor.
+- [x] P2  Bereiche **ein-/ausklappbar** (checkbare GroupBox, schmaler Streifen, Platz an Nachbarn). Commit eddd2db.
+- [x] P3  **Symbole** — kohärenter 15er-SVG-Line-Icon-Satz in assets/icons/ (visuell geprüft). Commit eddd2db→Icons.
+- [x] P3  Premium: Panels **ablösbar/andockbar** (⧉-Button → Float-Fenster, X dockt an). Commit a6824c3. (Interaktiver Fenstertest beim User offen.)

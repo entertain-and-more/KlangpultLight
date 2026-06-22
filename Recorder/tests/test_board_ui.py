@@ -450,3 +450,25 @@ def test_einklappbar_ignoriert_nicht_groupbox(tmp_path, qt_app):
     fenster, _ = _erstelle_main_window(tmp_path, qt_app)
     w = QWidget()
     assert fenster._einklappbar(w) is w
+
+
+# ---------------------------------------------------------------------------
+# Ablösbare / andockbare Panels (P3, premium)
+# ---------------------------------------------------------------------------
+
+def test_panel_abloesen_und_andocken(tmp_path, qt_app):
+    """_panel_abloesen reparentet das Panel in ein Float-Fenster (raus aus dem
+    Layout); erneuter Aufruf (Toggle) dockt es an der Ursprungsposition wieder an."""
+    from ui.main_window import _FloatPanelWindow
+    fenster, _ = _erstelle_main_window(tmp_path, qt_app)
+    box = fenster._board_panel
+    assert fenster._haupt_layout.indexOf(box) >= 0
+
+    fenster._panel_abloesen(box)
+    assert isinstance(box.parent(), _FloatPanelWindow)
+    assert fenster._haupt_layout.indexOf(box) == -1
+    assert id(box) in fenster._float_panels
+
+    fenster._panel_abloesen(box)  # Toggle -> andocken
+    assert fenster._haupt_layout.indexOf(box) >= 0
+    assert len(fenster._float_panels) == 0

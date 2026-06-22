@@ -52,6 +52,30 @@ from video.video_manager import VideoManager
 from video.video_source import VideoSourceInfo
 
 
+class _FloatPanelWindow(QWidget):
+    """Frei schwebendes Fenster für ein abgelöstes Panel.
+
+    Schließt der User das Fenster (X), wird das Panel automatisch wieder
+    angedockt (redock_callback). Reines GUI, kein Hardware-Zugriff.
+    """
+
+    def __init__(self, box, redock_callback, parent=None) -> None:
+        super().__init__(parent, Qt.WindowType.Window)
+        self._box = box
+        self._redock = redock_callback
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(8, 8, 8, 8)
+        box.setParent(self)
+        lay.addWidget(box)
+        box.show()
+
+    def closeEvent(self, event) -> None:  # noqa: N802 — Qt-Konvention
+        try:
+            self._redock(self._box)
+        finally:
+            event.accept()
+
+
 class MainWindow(QMainWindow):
     """Hauptfenster des PodcastRecorders.
 
@@ -130,6 +154,9 @@ class MainWindow(QMainWindow):
         haupt_layout = QHBoxLayout(zentral)
         haupt_layout.setContentsMargins(12, 12, 12, 12)
         haupt_layout.setSpacing(12)
+        self._haupt_layout = haupt_layout
+        # Ablösbare Panels: id(box) -> (Float-Fenster, urspruenglicher Index, stretch)
+        self._float_panels: dict = {}
 
         # Alle Panels sind ein-/ausklappbar (Checkbox im Titel) — eingeklappt
         # schrumpfen sie zu einem schmalen Streifen, der frei werdende Platz geht
@@ -173,7 +200,52 @@ class MainWindow(QMainWindow):
             b.setMaximumWidth(16777215 if checked else 40)
 
         box.toggled.connect(_toggle)
+
+        # Ablös-/Andock-Button (⧉) oben im Panel.
+        lay = box.layout()
+        if lay is not None:
+            detach_btn = QPushButton("⧉")
+            detach_btn.setToolTip("Panel ablösen / wieder andocken")
+            detach_btn.setMaximumWidth(30)
+            detach_btn.clicked.connect(lambda _checked=False, b=box: self._panel_abloesen(b))
+            lay.insertWidget(0, detach_btn)
         return box
+
+    def _panel_abloesen(self, box) -> None:
+        """Löst ein Panel in ein eigenes schwebendes Fenster ab — oder dockt es
+        wieder an, wenn es bereits schwebt (Toggle)."""
+        if id(box) in self._float_panels:
+            self._panel_andocken(box)
+            return
+        haupt = getattr(self, "_haupt_layout", None)
+        if haupt is None:
+            return
+        idx = haupt.indexOf(box)
+        if idx < 0:
+            return
+        stretch = haupt.stretch(idx)
+        haupt.removeWidget(box)
+        win = _FloatPanelWindow(box, self._panel_andocken, self)
+        win.setWindowTitle(box.title() or "Panel")
+        win.resize(380, 500)
+        self._float_panels[id(box)] = (win, idx, stretch)
+        win.show()
+
+    def _panel_andocken(self, box) -> None:
+        """Dockt ein zuvor abgelöstes Panel wieder an seiner Ursprungsposition an."""
+        state = self._float_panels.pop(id(box), None)
+        if state is None:
+            return
+        win, idx, stretch = state
+        wlay = win.layout()
+        if wlay is not None:
+            wlay.removeWidget(box)
+        ziel = min(idx, self._haupt_layout.count())
+        box.setParent(None)
+        self._haupt_layout.insertWidget(ziel, box, stretch)
+        box.show()
+        win.hide()
+        win.deleteLater()
 
     def _baue_quellen_panel(self) -> QWidget:
         """Quellen-Panel: Capture-Umschalter je Quelle (SourcesConfig) + LOOPBACK_HINT."""

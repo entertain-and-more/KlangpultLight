@@ -372,3 +372,48 @@ def test_hotkeys_triggern_pads(tmp_path, qt_app):
         if shortcut_fn is not None:
             shortcut_fn()
             assert "hk0" in getriggerte_ids, "Hotkey '1' hat hk0 nicht getriggert"
+
+
+# ---------------------------------------------------------------------------
+# Einspieler hinzufügen (P1): Datei -> Pad -> Board + Persistenz
+# ---------------------------------------------------------------------------
+
+def test_einspieler_hinzufuegen_legt_pad_an_und_persistiert(tmp_path, qt_app):
+    """_einspieler_hinzufuegen() leitet den Pad-Typ aus der Endung ab, fügt das
+    Pad dem Board hinzu und schreibt board.json in den Workspace."""
+    import os
+    from board.board_model import Board
+    from board.board_player import BoardPlayer
+
+    board = Board(pads=[])
+    fenster, engine = _erstelle_main_window(tmp_path, qt_app, board=board)
+    fenster._board_player = BoardPlayer(engine=engine, board=board)
+
+    wav = _erstelle_test_wav(str(tmp_path / "jingle.wav"))
+    fenster._einspieler_hinzufuegen(wav)
+
+    treffer = [p for p in board.pads if p.asset_path == wav]
+    assert len(treffer) == 1, "genau ein neues Pad erwartet"
+    assert treffer[0].kind == "audio"
+    assert treffer[0].label == "jingle"
+    assert os.path.isfile(fenster._board_pfad()), "board.json wurde nicht persistiert"
+
+
+def test_einspieler_typ_aus_endung(tmp_path, qt_app):
+    """Video-/Bild-Endungen ergeben kind=video/image."""
+    from board.board_model import Board
+    from board.board_player import BoardPlayer
+
+    board = Board(pads=[])
+    fenster, engine = _erstelle_main_window(tmp_path, qt_app, board=board)
+    fenster._board_player = BoardPlayer(engine=engine, board=board)
+
+    # leere Dummy-Dateien genügen (Pfad/Endung zählt)
+    mp4 = tmp_path / "clip.mp4"; mp4.write_bytes(b"x")
+    png = tmp_path / "cover.png"; png.write_bytes(b"x")
+    fenster._einspieler_hinzufuegen(str(mp4))
+    fenster._einspieler_hinzufuegen(str(png))
+
+    kinds = {p.asset_path: p.kind for p in board.pads}
+    assert kinds[str(mp4)] == "video"
+    assert kinds[str(png)] == "image"

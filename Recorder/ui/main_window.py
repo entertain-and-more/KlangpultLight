@@ -369,19 +369,57 @@ class MainWindow(QMainWindow):
             layout.addStretch()
             return box
 
-        # Board-Objekt vom Player holen
+        # „+ Einspieler"-Button immer sichtbar (auch bei leerem Board).
+        add_btn = QPushButton("+ Einspieler hinzufügen")
+        add_btn.clicked.connect(self._neues_einspieler_pad)
+        layout.addWidget(add_btn)
+
+        # Refreshbarer Container für die Pad-Kacheln.
+        self._board_pads_container = QWidget()
+        self._board_pads_vbox = QVBoxLayout(self._board_pads_container)
+        self._board_pads_vbox.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self._board_pads_container)
+        layout.addStretch()
+
+        self._fuelle_board_pads()
+        return box
+
+    def _fuelle_board_pads(self) -> None:
+        """(Re)rendert die Pad-Kacheln in den refreshbaren Container.
+
+        Wird beim Aufbau und nach jedem Hinzufügen/Entfernen aufgerufen.
+        Verwaltet Hotkeys sauber (alte QShortcuts entfernen, neue setzen),
+        damit ein Refresh keine doppelten Trigger erzeugt."""
+        vbox = getattr(self, "_board_pads_vbox", None)
+        if vbox is None:
+            return
+        # Alte Pad-Widgets entfernen
+        while vbox.count():
+            item = vbox.takeAt(0)
+            w = item.widget()
+            if w is not None:
+                w.deleteLater()
+        self._pad_buttons.clear()
+        # Alte Hotkey-Objekte entfernen (sonst doppelte Trigger nach Refresh)
+        for sc in getattr(self, "_pad_shortcut_objs", []):
+            try:
+                sc.setParent(None)
+                sc.deleteLater()
+            except Exception:
+                pass
+        self._pad_shortcut_objs = []
+
         board = getattr(self._board_player, "_board", None)
         pads = board.pads if board is not None else []
 
         if not pads:
-            hinweis = QLabel("Board enthält keine Pads.")
+            hinweis = QLabel("Noch keine Einspieler — Button oben nutzen, um Pads anzulegen.")
             hinweis.setProperty("role", "sekundär")
-            layout.addWidget(hinweis)
-            layout.addStretch()
-            return box
+            vbox.addWidget(hinweis)
+            return
 
-        # Grid-Layout für Pad-Kacheln (bis zu 4 Spalten)
-        grid = QGridLayout()
+        grid_host = QWidget()
+        grid = QGridLayout(grid_host)
         grid.setSpacing(6)
         spalten = 4
 
@@ -392,8 +430,6 @@ class MainWindow(QMainWindow):
             btn = QPushButton(pad.label or pad.id)
             btn.setMinimumSize(80, 56)
             btn.setMaximumSize(120, 72)
-
-            # Pad-Farbe als Hintergrund (CSS-Farbe aus pad.color)
             farbe = pad.color or "#444444"
             btn.setStyleSheet(
                 f"QPushButton {{ background-color: {farbe}; color: #ffffff; "
@@ -401,14 +437,12 @@ class MainWindow(QMainWindow):
                 f"QPushButton[pad_aktiv='true'] {{ border: 2px solid #ffffff; }}"
             )
             btn.setProperty("pad_aktiv", False)
-
             pad_id = pad.id
 
             def _mache_trigger(pid=pad_id, p=pad):
                 def _on_click():
                     if self._board_player is not None:
                         self._board_player.trigger(pid)
-                    # Video/Bild-Pads: on_visual_pad aufrufen
                     if p.kind in ("video", "image"):
                         self._on_visual_pad(p)
                 return _on_click
@@ -419,15 +453,63 @@ class MainWindow(QMainWindow):
 
             # Hotkeys 1–8 für die ersten 8 Pads
             if idx < 8:
-                taste = str(idx + 1)
-                shortcut = QShortcut(QKeySequence(taste), self)
+                shortcut = QShortcut(QKeySequence(str(idx + 1)), self)
                 trigger_fn = _mache_trigger()
                 shortcut.activated.connect(trigger_fn)
                 self._pad_shortcuts[pad_id] = trigger_fn
+                self._pad_shortcut_objs.append(shortcut)
 
-        layout.addLayout(grid)
-        layout.addStretch()
-        return box
+        vbox.addWidget(grid_host)
+
+    def _board_pfad(self) -> str:
+        """Pfad der Board-Datei (workspace/board.json) — zum Persistieren."""
+        import os
+        return os.path.join(self._library._workspace, "board.json")
+
+    def _neues_einspieler_pad(self) -> None:
+        """Öffnet einen Datei-Dialog und legt daraus ein neues Einspieler-Pad an."""
+        from PySide6.QtWidgets import QFileDialog
+        pfad, _ = QFileDialog.getOpenFileName(
+            self,
+            "Einspieler wählen",
+            "",
+            "Medien (*.wav *.mp3 *.ogg *.flac *.m4a *.mp4 *.mov *.mkv *.avi "
+            "*.png *.jpg *.jpeg *.gif *.bmp);;Alle Dateien (*)",
+        )
+        if pfad:
+            self._einspieler_hinzufuegen(pfad)
+
+    def _einspieler_hinzufuegen(self, asset_path: str) -> None:
+        """Testbarer Kern: legt aus einer Datei ein Pad an, persistiert + rendert neu.
+
+        Der Pad-Typ wird aus der Dateiendung abgeleitet (audio/video/image)."""
+        import os
+        import uuid
+        from board.board_model import Pad, save_board
+
+        board = getattr(self._board_player, "_board", None)
+        if board is None:
+            return
+        name = os.path.splitext(os.path.basename(asset_path))[0]
+        ext = os.path.splitext(asset_path)[1].lower()
+        if ext in (".mp4", ".mov", ".mkv", ".avi"):
+            kind = "video"
+        elif ext in (".png", ".jpg", ".jpeg", ".gif", ".bmp"):
+            kind = "image"
+        else:
+            kind = "audio"
+        pad = Pad(
+            id=f"pad_{uuid.uuid4().hex[:8]}",
+            label=name,
+            kind=kind,
+            asset_path=asset_path,
+        )
+        board.add(pad)
+        try:
+            save_board(board, self._board_pfad())
+        except OSError:
+            pass  # Persistenz best-effort — UI trotzdem aktualisieren
+        self._fuelle_board_pads()
 
     def _on_visual_pad(self, pad) -> None:
         """Callback für Video/Bild-Pads: zeigt das Asset in der Vorschau-Kachel.

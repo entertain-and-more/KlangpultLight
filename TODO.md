@@ -152,3 +152,10 @@
 - **Live-STT-Last:** STT braucht CPU/GPU parallel zur Aufnahme — Modellgröße konservativ wählen,
   optional zuschaltbar, damit schwache Rechner die Aufnahme nicht gefährden.
 - **USB-Drift:** wie im Studio nur überwachen + warnen, kein Hard-Sync versprechen.
+
+## OFFENE BUGS (siehe BUGS.md) — ergänzt 2026-06-22
+
+Behoben: kombinierter START.bat-Fix (Recorder startete nicht), Recorder-Startfix (Kamera-Probing), Audio-Overflow-Logging.
+Offen (Details in BUGS.md):
+[ ] P3  WAV-Write hält Aufnahme-Lock während Platten-Write (Recorder/audio/engine.py).
+[ ] P3  Video: FFmpeg-stdin-Write blockiert im Capture-Thread, kein Drop-Logging (Recorder/video/video_recorder.py).

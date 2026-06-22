@@ -26,8 +26,11 @@ echo ============================================================
 echo  PodcastPackages starten
 echo ============================================================
 echo.
-echo [1/2] PodcastRecorder + Bridge starten (Hintergrund)...
-start "" /B cmd /C "call ""%~dp0Recorder\START.bat"""
+echo [1/2] PodcastRecorder + Bridge starten (eigenes Fenster)...
+REM Robust: Arbeitsverzeichnis per /D auf Recorder setzen und dort START.bat
+REM aufrufen. Die fruehere Form mit verschachtelten Quotes (cmd /C "call ""...""")
+REM brach den Aufruf -> Recorder startete mit System-Python + falschem Pfad.
+start "PodcastRecorder" /D "%~dp0Recorder" cmd /C START.bat
 
 echo [2/2] 3 Sekunden warten bis Bridge hochgefahren...
 timeout /t 3 /nobreak >nul

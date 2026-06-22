@@ -61,3 +61,24 @@ def test_log_utf8_ohne_bom(tmp_path):
     # Umlaute korrekt kodiert (keine \uXXXX-Escapes erforderlich, direkte UTF-8-Bytes)
     decoded = raw.decode("utf-8")
     assert "Äpfel" in decoded
+
+
+def test_log_zeitstempel_utc_aware(tmp_path):
+    """Zeitstempel in EventLog-Einträgen muss UTC-aware sein (enthält '+00:00' oder 'Z').
+
+    Belegt Bugsweep-Fix: EventLog nutzte datetime.now() (Lokalzeit, kein Timezone-Info)
+    statt datetime.now(timezone.utc) — inkonsistent mit library.py und projects_api.py.
+    """
+    from core.event_log import EventLog
+    pfad = str(tmp_path / "events.jsonl")
+    log = EventLog(pfad)
+    log.log("timezone_test")
+    log.close()
+
+    zeilen = Path(pfad).read_text(encoding="utf-8").strip().splitlines()
+    obj = json.loads(zeilen[0])
+    t = obj["t"]
+    # UTC-aware ISO-8601: endet auf +00:00 oder Z
+    assert "+" in t or t.endswith("Z"), (
+        f"Zeitstempel '{t}' ist nicht UTC-aware — muss '+00:00' oder 'Z' enthalten"
+    )

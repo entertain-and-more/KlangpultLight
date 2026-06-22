@@ -120,3 +120,22 @@ class TestUpdateMetadata:
         with open(meta_pfad, encoding="utf-8") as f:
             daten = json.load(f)
         assert daten["description"] == "Schöne Beschreibung mit ß"
+
+    def test_atomic_write_keine_tmp_datei(self, tmp_path):
+        """Nach update_metadata() darf keine metadata.json.tmp übrig bleiben.
+
+        Belegt Bugsweep-Fix: update_metadata() nutzt jetzt Temp-Datei + os.replace()
+        statt direktem Überschreiben.
+        """
+        lib = RecordingLibrary(str(tmp_path))
+        meta = lib.create_recording("Atomic-Test")
+        meta.title = "Geändert"
+        lib.update_metadata(meta)
+
+        rec_dir = lib.recording_dir(meta.recording_id)
+        tmp_datei = os.path.join(rec_dir, "metadata.json.tmp")
+        assert not os.path.exists(tmp_datei), (
+            f"metadata.json.tmp darf nach update_metadata() nicht existieren: {tmp_datei}"
+        )
+        # Die eigentliche Datei muss da sein
+        assert os.path.isfile(os.path.join(rec_dir, "metadata.json"))

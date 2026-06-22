@@ -233,7 +233,13 @@ PodcastPackages/
    **lokal** (faster-whisper, datenschutzfreundlich, offline) **und Cloud** (z. B. OpenAI/Deepgram, höhere
    Genauigkeit/Latenz). In den Einstellungen umschaltbar; Cloud nur opt-in mit Key. Standardvorauswahl: lokal,
    wenn kein Key konfiguriert ist.
-2. **Planer-Backend:** kleiner Python-Dienst, bevorzugt im Recorder gebündelt (eine zu startende Sache).
+2. **Planer-Backend / Start-Strategie (Phase-4-Entscheidung, 2026-06-20):** Das Ziel „eine zu startende
+   Sache" ist umgesetzt durch `START.bat` im Projektroot: startet Recorder+Bridge im Hintergrund,
+   wartet kurz, dann Planer. Die bestehenden Einzel-BATs (`START_RECORDER.bat`, `START_PLANER.bat`)
+   bleiben erhalten — sie ermöglichen unabhängigen Start beider Tools (KONZEPT §1: „jedes Tool alleine
+   lauffähig"). Die Einzel-BATs sind kein Widerspruch, sondern das Entwickler-/Debug-Interface.
+   Ein echtes Single-Prozess-Bundling (Recorder integriert den Planer-Dienst direkt) wäre Architektur-
+   Umbau und bleibt offen für später.
 3. **Workspace-Ort:** gemeinsamer lokaler Ordner, konfigurierbar (nicht in OneDrive wegen Locks/Größe).
 ```
 

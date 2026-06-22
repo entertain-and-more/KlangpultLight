@@ -169,9 +169,11 @@ class RecordingLibrary:
         return neuer_branch
 
     def update_metadata(self, meta: RecordingMetadata) -> None:
-        """Schreibt die Metadaten einer Aufnahme neu.
+        """Schreibt die Metadaten einer Aufnahme neu (atomic via Temp-Datei + Rename).
 
-        Überschreibt metadata.json im Aufnahme-Ordner (UTF-8 ohne BOM).
+        Schreibt zunächst in eine temporäre Datei neben metadata.json, dann
+        per ``os.replace()`` atomar umbenannt. Dadurch bleibt die bestehende
+        Datei bei einem vorzeitigen Absturz unverändert (kein truncated JSON).
 
         Args:
             meta: Zu speichernde Metadaten.
@@ -180,5 +182,9 @@ class RecordingLibrary:
         os.makedirs(aufnahme_ordner, exist_ok=True)
 
         meta_pfad = os.path.join(aufnahme_ordner, "metadata.json")
-        with open(meta_pfad, "w", encoding="utf-8") as f:
+        tmp_pfad = meta_pfad + ".tmp"
+        with open(tmp_pfad, "w", encoding="utf-8") as f:
             json.dump(meta.to_dict(), f, indent=2, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_pfad, meta_pfad)

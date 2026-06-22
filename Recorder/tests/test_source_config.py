@@ -200,6 +200,25 @@ def test_fehlende_datei_liefert_defaults(tmp_path):
     assert len(cfg.sources) > 0
 
 
+def test_save_atomic_keine_tmp_datei(tmp_path):
+    """Nach save_sources_config() darf keine .json.tmp-Datei übrig bleiben.
+
+    Belegt Bugsweep-Fix: save_sources_config() nutzt jetzt Temp-Datei + os.replace()
+    statt direktem Überschreiben.
+    """
+    from sources.source_config import load_sources_config, save_sources_config
+    import os as _os
+    cfg = load_sources_config(None)
+    pfad = str(tmp_path / "sources.json")
+    save_sources_config(cfg, pfad)
+
+    tmp_datei = pfad + ".tmp"
+    assert not _os.path.exists(tmp_datei), (
+        f".json.tmp-Datei darf nach save_sources_config() nicht existieren: {tmp_datei}"
+    )
+    assert _os.path.isfile(pfad), "sources.json muss existieren"
+
+
 def test_from_dict_unbekannte_felder_ignoriert():
     """from_dict ignoriert unbekannte Felder (Vorwärts-Kompatibilität)."""
     from sources.source_config import SourcesConfig

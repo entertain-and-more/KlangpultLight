@@ -338,6 +338,14 @@ class BoardPlayer:
         # Audio-Pad
         mode = pad.mode
 
+        # Deadlock-Vermeidung: feeder.stop() → thread.join() wartet auf den
+        # Feeder-Thread; der Feeder-Thread ruft on_finish() auf, die self._lock
+        # benötigt → Deadlock wenn wir noch den Lock halten während wir joinen.
+        # Lösung: Lock nur für Zustandsänderung halten, teure Operationen
+        # (join, thread.start) ausserhalb des Locks durchführen.
+        zu_stoppen: list[_PadFeeder] = []
+        neuer_feeder: Optional[_PadFeeder] = None
+
         with self._lock:
             laufende = self._feeder.get(pad_id, [])
             laufende = [f for f in laufende if f.is_alive()]
@@ -345,28 +353,29 @@ class BoardPlayer:
 
             if mode == "play_stop" or mode == "loop":
                 if laufende:
-                    # Toggle: stoppen
-                    for feeder in laufende:
-                        feeder.stop(timeout=2.0)
+                    # Toggle: stoppen — Feeder aus Liste entfernen, Lock freigeben, DANN joinen
+                    zu_stoppen = laufende
                     self._feeder[pad_id] = []
-                    return
-                # Sonst: starten (play_stop/loop → genau 1 Feeder)
-                feeder = self._neuer_feeder(pad)
-                self._feeder[pad_id] = [feeder]
-                # Duck registrieren bevor Feeder startet (kein Tick-Lücke)
-                if self._duck is not None and hasattr(self._engine, "register_duck"):
-                    self._engine.register_duck(self._duck)
-                feeder.start()
+                else:
+                    # Starten
+                    neuer_feeder = self._neuer_feeder(pad)
+                    self._feeder[pad_id] = [neuer_feeder]
+                    if self._duck is not None and hasattr(self._engine, "register_duck"):
+                        self._engine.register_duck(self._duck)
 
             elif mode == "overlap":
                 # Immer neuen Feeder starten, bestehende laufen weiter
-                feeder = self._neuer_feeder(pad)
-                laufende.append(feeder)
+                neuer_feeder = self._neuer_feeder(pad)
+                laufende.append(neuer_feeder)
                 self._feeder[pad_id] = laufende
-                # Duck registrieren wenn erster Feeder (overlap kann mehrfach aufrufen)
                 if self._duck is not None and hasattr(self._engine, "register_duck"):
                     self._engine.register_duck(self._duck)
-                feeder.start()
+
+        # AUSSERHALB des Locks: teure Operationen (join + thread.start)
+        for feeder in zu_stoppen:
+            feeder.stop(timeout=2.0)
+        if neuer_feeder is not None:
+            neuer_feeder.start()
 
     def stop(self, pad_id: str) -> None:
         """Stoppt alle laufenden Feeder für ein bestimmtes Pad.

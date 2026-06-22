@@ -73,3 +73,36 @@ def test_wav_erstellt_verzeichnis(tmp_path):
     rec.close()
     import os
     assert os.path.exists(pfad)
+
+
+def test_doppeltes_open_schliesst_alten_handle(tmp_path):
+    """Zweimaliges open() ohne close() schließt den alten Handle (kein Ressourcen-Leck).
+
+    Belegt Bugsweep-Fix: WavRecorder.open() schließt einen noch offenen Handle
+    bevor ein neuer geöffnet wird.
+    """
+    from audio.wav_recorder import WavRecorder
+    import os
+    pfad1 = str(tmp_path / "erste.wav")
+    pfad2 = str(tmp_path / "zweite.wav")
+
+    rec = WavRecorder(samplerate=48000, channels=2)
+    rec.open(pfad1)
+    rec.write(np.zeros((512, 2), dtype=np.float32))
+
+    # Zweites open() ohne close() — darf keinen Fehler werfen und
+    # muss den alten Handle schließen (Datei1 muss lesbar/komplett sein).
+    rec.open(pfad2)
+    rec.write(np.zeros((256, 2), dtype=np.float32))
+    rec.close()
+
+    # pfad1 muss existieren und lesbar sein (Handle war vorher geschlossen)
+    assert os.path.exists(pfad1), "Erste WAV-Datei existiert nicht"
+    data1, sr1 = sf.read(pfad1)
+    assert sr1 == 48000, "Erste WAV-Datei hat falsche Samplerate"
+    assert len(data1) == 512, f"Erste WAV hat {len(data1)} Frames, erwartet 512"
+
+    # pfad2 muss ebenfalls korrekt sein
+    assert os.path.exists(pfad2), "Zweite WAV-Datei existiert nicht"
+    data2, sr2 = sf.read(pfad2)
+    assert len(data2) == 256, f"Zweite WAV hat {len(data2)} Frames, erwartet 256"

@@ -54,7 +54,11 @@ def load_config(path: str | None = None) -> AppConfig:
 
 
 def save_config(cfg: AppConfig, path: str) -> None:
-    """Speichert AppConfig als UTF-8 JSON ohne BOM.
+    """Speichert AppConfig als UTF-8 JSON ohne BOM (atomic via Temp-Datei + Rename).
+
+    Schreibt zunächst in eine temporäre Datei neben dem Ziel, dann per
+    ``os.replace()`` atomar umbenannt. Verhindert korrupte Konfiguration
+    bei einem vorzeitigen Absturz.
 
     Args:
         cfg: Zu speichernde Konfiguration.
@@ -64,5 +68,9 @@ def save_config(cfg: AppConfig, path: str) -> None:
     if verzeichnis:
         os.makedirs(verzeichnis, exist_ok=True)
 
-    with open(path, "w", encoding="utf-8") as f:
+    tmp_pfad = path + ".tmp"
+    with open(tmp_pfad, "w", encoding="utf-8") as f:
         json.dump(asdict(cfg), f, indent=2, ensure_ascii=False)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp_pfad, path)

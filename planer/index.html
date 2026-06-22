@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PodcastPlaner</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header id="app-header">
+  <div class="logo">Podcast<span>Planer</span></div>
+
+  <!-- Tabs werden von main.js eingefügt -->
+  <nav id="nav-tabs" aria-label="Hauptnavigation"></nav>
+
+  <!-- Reload-Button -->
+  <button id="btn-reload" class="btn btn-ghost" title="Neu laden" style="margin-left: 0.5rem;">↺</button>
+
+  <!-- Recorder-Status -->
+  <div id="status-indicator">
+    <div id="status-dot" class="status-dot offline"></div>
+    <span id="status-text">Prüfe Verbindung…</span>
+  </div>
+</header>
+
+<!-- ===== MAIN ===== -->
+<main id="app-main">
+  <!--
+    View-Divs und Detail-Panel werden von main.js erzeugt / referenziert.
+    Das Detail-Panel muss im HTML stehen (letztes Kind von #app-main).
+  -->
+  <div id="detail-panel"></div>
+</main>
+
+<!-- ESM-Einstieg -->
+<script type="module" src="app/main.js"></script>
+
+</body>
+</html>

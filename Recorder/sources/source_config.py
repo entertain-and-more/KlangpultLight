@@ -159,7 +159,11 @@ def load_sources_config(path: Optional[str]) -> SourcesConfig:
 
 
 def save_sources_config(cfg: SourcesConfig, path: str) -> None:
-    """Speichert SourcesConfig als UTF-8 JSON ohne BOM.
+    """Speichert SourcesConfig als UTF-8 JSON ohne BOM (atomic via Temp-Datei + Rename).
+
+    Schreibt zunächst in eine temporäre Datei neben dem Ziel, dann per
+    ``os.replace()`` atomar umbenannt. Dadurch bleibt die bestehende Datei
+    bei einem vorzeitigen Absturz unverändert (kein truncated JSON).
 
     Args:
         cfg:  Zu speichernde Konfiguration.
@@ -169,5 +173,9 @@ def save_sources_config(cfg: SourcesConfig, path: str) -> None:
     if verzeichnis:
         os.makedirs(verzeichnis, exist_ok=True)
 
-    with open(path, "w", encoding="utf-8") as f:
+    tmp_pfad = path + ".tmp"
+    with open(tmp_pfad, "w", encoding="utf-8") as f:
         json.dump(cfg.to_dict(), f, indent=2, ensure_ascii=False)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp_pfad, path)

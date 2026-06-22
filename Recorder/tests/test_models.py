@@ -129,3 +129,26 @@ class TestRecordingMetadata:
         d = meta.to_dict()
         wieder = RecordingMetadata.from_dict(d)
         assert wieder.title == "Übung macht den Meister — Sonderzeichen äöü"
+
+    def test_from_dict_null_listfelder_kein_typeerror(self):
+        """from_dict wirft keinen TypeError wenn branches/sources/tags null sind.
+
+        Belegt Bugsweep-Fix: JSON null für Listenfelder kann aus korrupten oder
+        extern erzeugten Dateien kommen. `daten.get('branches', [])` gibt bei
+        `"branches": null` den Wert `None` zurück (nicht den Default `[]`),
+        was zu `TypeError: 'NoneType' object is not iterable` führte.
+        Nach dem Fix: `or []`-Fallback für alle Listenfelder.
+        """
+        d = {
+            "recording_id": "r_null",
+            "title": "Null-Test",
+            "created_at": "2024-01-01T00:00:00+00:00",
+            "branches": None,
+            "sources": None,
+            "tags": None,
+        }
+        meta = RecordingMetadata.from_dict(d)
+        assert meta.branches == []
+        assert meta.sources == []
+        assert meta.tags == []
+        assert meta.recording_id == "r_null"

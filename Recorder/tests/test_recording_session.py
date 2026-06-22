@@ -138,6 +138,41 @@ class TestRecordingSessionStartStop:
         assert aufnahmen[0].duration > 0
 
 
+class TestRecordingSessionStartRollback:
+    """Bugsweep-Fix Lauf 39: Partieller Start-Fehler blockiert nicht nächsten start()."""
+
+    def test_start_fehler_in_engine_blockiert_nicht_naechsten_start(self, tmp_path):
+        """Wenn engine.start_recording() wirft, muss ein erneuter start() funktionieren.
+
+        Früher: _aktuelle_meta wurde VOR engine.start_recording() gesetzt. Bei
+        einem Fehler blieb die Session im "läuft bereits"-Zustand — kein
+        Recover möglich ohne Session neu zu erstellen.
+        Fix: try/except in start() stellt sicher, dass _aktuelle_meta = None
+        bleibt wenn engine.start_recording() scheitert.
+        """
+        from unittest.mock import patch
+
+        engine, lib, session = _engine_und_session(tmp_path)
+        try:
+            # Ersten start()-Versuch sabotieren
+            with patch.object(engine, "start_recording", side_effect=RuntimeError("Engine sabotiert")):
+                with pytest.raises(RuntimeError, match="Engine sabotiert"):
+                    session.start("Sabotierter Start")
+
+            # Nach Fehler: _aktuelle_meta muss None sein
+            assert session._aktuelle_meta is None, (
+                "_aktuelle_meta muss None sein nach fehlgeschlagenem start()"
+            )
+
+            # Zweiter start() muss erfolgreich sein
+            meta = session.start("Zweiter Start")
+            assert meta.recording_id.startswith("recording_")
+            time.sleep(0.05)
+            session.stop()
+        finally:
+            engine.stop()
+
+
 class TestStoppeVideoUndMuxFehlerprotokoll:
     """2b-Minor 1: VideoRecorder.close()-RuntimeError darf nicht verschluckt werden."""
 

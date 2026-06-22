@@ -4,8 +4,9 @@ Start aus Recorder/ heraus: python main.py
 Kein `python -m`, Imports relativ zum Recorder/-Root.
 
 Headless-Selftest:
-  PODCAST_RECORDER_SELFTEST=1 + QT_QPA_PLATFORM=offscreen + PODCAST_RECORDER_MOCK_AUDIO=1
-  → startet App + MainWindow offscreen, führt eine Probe-Aufnahme durch,
+  PODCAST_RECORDER_SELFTEST=1
+  → setzt automatisch QT_QPA_PLATFORM=offscreen sowie Mock-Audio/Mock-Video,
+    startet App + MainWindow offscreen, führt eine Probe-Aufnahme durch,
     verifiziert list_recordings() >= 1 mit duration > 0, beendet mit Exit-Code 0.
   → Bei Fehler: Exit-Code 1.
 """
@@ -22,6 +23,27 @@ def _setup_sys_path() -> None:
 
 
 _setup_sys_path()
+
+
+def _selftest_requested() -> bool:
+    """True, wenn der Headless-Selftest angefordert wurde."""
+    return os.environ.get("PODCAST_RECORDER_SELFTEST", "").strip() == "1"
+
+
+def _prepare_selftest_environment() -> bool:
+    """Setzt robuste Defaults für den Headless-Selftest.
+
+    Die Umgebung muss vor dem PySide6-Import stehen, weil Qt das Platform-Plugin
+    beim Laden initialisiert.  Selftest ist immer hardwarefrei: Audio und Video
+    laufen über Mock-Pfade, damit Start-Smokes auch ohne Geräte reproduzierbar
+    sind.
+    """
+    selftest = _selftest_requested()
+    if selftest:
+        os.environ["QT_QPA_PLATFORM"] = "offscreen"
+        os.environ["PODCAST_RECORDER_MOCK_AUDIO"] = "1"
+        os.environ["PODCAST_RECORDER_MOCK_VIDEO"] = "1"
+    return selftest
 
 
 def _mock_loopback_route():
@@ -44,6 +66,8 @@ def _mock_loopback_route():
 
 def main() -> int:
     """Hauptfunktion — gibt Exit-Code zurück."""
+    selftest = _prepare_selftest_environment()
+
     from PySide6.QtWidgets import QApplication
 
     from audio.device_manager import DeviceManager
@@ -172,7 +196,6 @@ def main() -> int:
         )
 
     # --- Headless-Selftest ---
-    selftest = os.environ.get("PODCAST_RECORDER_SELFTEST", "").strip() == "1"
     if selftest:
         ergebnis = _selftest(
             engine, library, fenster, state, channels, board_player, bridge,

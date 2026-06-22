@@ -84,16 +84,21 @@ class RecordingMetadata:
 
     @classmethod
     def from_dict(cls, daten: dict[str, Any]) -> "RecordingMetadata":
-        """Deserialisiert Metadaten aus einem Dictionary."""
-        branches_roh = daten.get("branches", [])
+        """Deserialisiert Metadaten aus einem Dictionary.
+
+        Listenfelder (branches, sources, tags) können in korrupten oder
+        extern erzeugten JSON-Dateien als ``null`` vorliegen.
+        In diesem Fall wird eine leere Liste als Default verwendet.
+        """
+        branches_roh = daten.get("branches") or []
         branches = [Branch.from_dict(b) for b in branches_roh]
         return cls(
             recording_id=daten["recording_id"],
             title=daten["title"],
             created_at=daten["created_at"],
             duration=float(daten.get("duration", 0.0)),
-            sources=list(daten.get("sources", [])),
+            sources=list(daten.get("sources") or []),
             branches=branches,
-            tags=list(daten.get("tags", [])),
+            tags=list(daten.get("tags") or []),
             description=daten.get("description", ""),
         )

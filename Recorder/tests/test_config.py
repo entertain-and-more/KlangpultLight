@@ -53,3 +53,19 @@ def test_save_utf8_ohne_bom(tmp_path):
     raw = Path(pfad).read_bytes()
     # Kein BOM (EF BB BF am Anfang)
     assert not raw.startswith(b"\xef\xbb\xbf")
+
+
+def test_save_atomic_keine_tmp_datei(tmp_path):
+    """Nach save_config() darf keine .json.tmp-Datei übrig bleiben.
+
+    Belegt Bugsweep-Fix: save_config() nutzt jetzt Temp-Datei + os.replace().
+    """
+    from core.config import AppConfig, save_config
+    pfad = str(tmp_path / "config.json")
+    save_config(AppConfig(), pfad)
+
+    tmp_datei = pfad + ".tmp"
+    assert not os.path.exists(tmp_datei), (
+        f".json.tmp darf nach save_config() nicht existieren: {tmp_datei}"
+    )
+    assert os.path.isfile(pfad), "config.json muss existieren"

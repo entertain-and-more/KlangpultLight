@@ -15,6 +15,7 @@ import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 from typing import Optional
+from urllib.parse import urlparse
 
 _log = logging.getLogger(__name__)
 
@@ -33,9 +34,10 @@ class _LibraryHandler(BaseHTTPRequestHandler):
     """
 
     def do_GET(self) -> None:  # noqa: N802 — HTTP-Methoden-Konvention
-        if self.path == "/api/health":
+        path = urlparse(self.path).path
+        if path == "/api/health":
             self._json_response(200, {"status": "ok"})
-        elif self.path == "/api/library":
+        elif path == "/api/library":
             self._antwort_library()
         else:
             self._json_response(404, {"error": "Nicht gefunden"})
@@ -106,14 +108,20 @@ class LibraryApiServer:
 
         server = _ThreadingHTTPServer((host, port), _LibraryHandler)
         server.library = self._library  # type: ignore[attr-defined]
-        self._server = server
 
-        self._thread = threading.Thread(
+        thread = threading.Thread(
             target=server.serve_forever,
             name="LibraryApiServer",
             daemon=True,
         )
-        self._thread.start()
+        try:
+            thread.start()
+        except Exception:
+            server.server_close()
+            raise
+        # Erst nach erfolgreichem Thread-Start als "laufend" markieren.
+        self._server = server
+        self._thread = thread
         _log.info(
             "LibraryApiServer gestartet auf http://%s:%d",
             host,

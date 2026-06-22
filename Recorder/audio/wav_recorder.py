@@ -33,10 +33,20 @@ class WavRecorder:
         """Öffnet eine neue WAV-Datei zum Schreiben.
 
         Das übergeordnete Verzeichnis wird bei Bedarf angelegt.
+        Ein bereits offener Handle wird vor dem Öffnen geschlossen
+        (verhindert Ressourcen-Leck bei doppeltem open()-Aufruf).
 
         Args:
             path: Zielpfad der WAV-Datei.
         """
+        # Schutz gegen Doppelaufruf: alten Handle schließen, bevor ein neuer geöffnet wird.
+        if self._datei is not None:
+            try:
+                self._datei.close()
+            except Exception:
+                pass
+            self._datei = None
+
         verzeichnis = os.path.dirname(path)
         if verzeichnis:
             os.makedirs(verzeichnis, exist_ok=True)

@@ -92,13 +92,12 @@ class RecordingSession:
             raise RuntimeError("Aufnahme läuft bereits — zuerst stop() aufrufen.")
 
         meta = self._library.create_recording(title)
-        self._aktuelle_meta = meta
 
         # EventLog im Aufnahme-Ordner öffnen
         events_pfad = os.path.join(
             self._library.recording_dir(meta.recording_id), "events.jsonl"
         )
-        self._event_log = EventLog(events_pfad)
+        event_log = EventLog(events_pfad)
 
         # main/-Unterordner anlegen (Audio + Video landen hier)
         main_dir = os.path.join(
@@ -106,23 +105,39 @@ class RecordingSession:
         )
         os.makedirs(main_dir, exist_ok=True)
 
-        # Audio-Aufnahme starten
-        self._engine.start_recording(main_dir)
+        try:
+            # Audio-Aufnahme starten
+            self._engine.start_recording(main_dir)
 
-        # Video-Aufnahme starten (optional)
-        # video_sources (Liste) hat Vorrang; ≥2 → Multi, 1 → Single-Pfad.
-        quellen_liste: Optional[list] = None
-        if video_sources is not None and len(video_sources) > 0:
-            quellen_liste = list(video_sources)
-        elif video_source is not None:
-            quellen_liste = [video_source]
+            # Video-Aufnahme starten (optional)
+            # video_sources (Liste) hat Vorrang; ≥2 → Multi, 1 → Single-Pfad.
+            quellen_liste: Optional[list] = None
+            if video_sources is not None and len(video_sources) > 0:
+                quellen_liste = list(video_sources)
+            elif video_source is not None:
+                quellen_liste = [video_source]
 
-        if quellen_liste is not None:
-            self._video_pfad = os.path.join(main_dir, "program_video.mp4")
-            if len(quellen_liste) >= 2:
-                self._starte_video_multi(quellen_liste, self._video_pfad)
-            else:
-                self._starte_video(quellen_liste[0], self._video_pfad)
+            if quellen_liste is not None:
+                self._video_pfad = os.path.join(main_dir, "program_video.mp4")
+                if len(quellen_liste) >= 2:
+                    self._starte_video_multi(quellen_liste, self._video_pfad)
+                else:
+                    self._starte_video(quellen_liste[0], self._video_pfad)
+        except Exception:
+            # Partieller Start fehlgeschlagen — Zustand bereinigen damit
+            # ein erneuter start()-Aufruf nicht blockiert wird.
+            try:
+                event_log.close()
+            except Exception:
+                pass
+            self._video_pfad = None
+            self._video_capture = None
+            self._video_recorder = None
+            raise
+
+        # Erst nach vollständig erfolgreichem Start den Zustand committen.
+        self._aktuelle_meta = meta
+        self._event_log = event_log
 
         # AppState aktualisieren
         if self._state is not None:

@@ -70,7 +70,11 @@ class MultiSourceCaptureLoop:
     # -------------------------------------------------------------------------
 
     def start(self) -> None:
-        """Startet alle Kind-Loops und den Compositor-Thread."""
+        """Startet alle Kind-Loops und den Compositor-Thread.
+
+        Bei Fehler im Compositor-Thread-Start werden bereits gestartete
+        Kind-Loops gestoppt (kein Ressourcenleck bei partiellem Start).
+        """
         if self._gestartet:
             return
 
@@ -78,18 +82,31 @@ class MultiSourceCaptureLoop:
 
         # Kind-Loops starten (ein VideoCaptureLoop pro Quelle)
         from video.video_capture_loop import VideoCaptureLoop
-        for source in self._sources:
-            loop = VideoCaptureLoop(source=source, ziel_fps=self._ziel_fps)
-            loop.start()
-            self._kind_loops.append(loop)
+        neue_kind_loops = []
+        try:
+            for source in self._sources:
+                loop = VideoCaptureLoop(source=source, ziel_fps=self._ziel_fps)
+                loop.start()
+                neue_kind_loops.append(loop)
 
-        # Compositor-Thread starten
-        self._compositor_thread = threading.Thread(
-            target=self._compositor_loop,
-            name="MultiSourceCompositor",
-            daemon=True,
-        )
-        self._compositor_thread.start()
+            # Compositor-Thread starten
+            compositor = threading.Thread(
+                target=self._compositor_loop,
+                name="MultiSourceCompositor",
+                daemon=True,
+            )
+            compositor.start()
+        except Exception:
+            # Rollback: alle gestarteten Kind-Loops stoppen
+            for loop in neue_kind_loops:
+                try:
+                    loop.stop()
+                except Exception:
+                    pass
+            raise
+
+        self._kind_loops = neue_kind_loops
+        self._compositor_thread = compositor
         self._gestartet = True
 
     def stop(self) -> None:

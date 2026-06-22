@@ -66,8 +66,18 @@ class VideoCaptureLoop:
             name="VideoCaptureLoop",
             daemon=True,
         )
+        try:
+            self._thread.start()
+        except Exception:
+            # Thread-Start gescheitert — Quelle wieder schließen und Zustand
+            # konsistent halten (kein _laeuft=True bei totem Thread).
+            self._thread = None
+            try:
+                self._source.close()
+            except Exception:
+                pass
+            raise
         self._laeuft = True
-        self._thread.start()
 
     def stop(self) -> None:
         """Signalisiert Abbruch, wartet auf Thread-Ende und schließt Quelle.

@@ -119,3 +119,24 @@ def test_capture_loop_latest_frame_ist_kopie():
     # frame2 soll nicht durch frame1-Mutation beeinflusst worden sein
     if frame2 is not None:
         assert not np.all(frame2 == 0), "latest_frame() muss Kopie zurückgeben, nicht Referenz"
+
+
+def test_start_thread_fehler_schliesst_quelle():
+    """Wenn thread.start() fehlschlägt, wird die Quelle geschlossen und is_running False.
+
+    Belegt Bugsweep-Fix: _laeuft wurde vorher BEFORE thread.start() auf True gesetzt —
+    bei einem Thread-Start-Fehler blieb is_running=True inkonsistent.
+    """
+    import unittest.mock as mock
+    from video.video_capture_loop import VideoCaptureLoop
+
+    source = _mock_source()
+    loop = VideoCaptureLoop(source=source, ziel_fps=30)
+
+    # thread.start() mit RuntimeError simulieren
+    with mock.patch.object(threading.Thread, "start", side_effect=RuntimeError("OS-Ressource erschöpft")):
+        with pytest.raises(RuntimeError, match="OS-Ressource"):
+            loop.start()
+
+    # Nach fehlgeschlagenem start(): is_running muss False bleiben
+    assert not loop.is_running, "is_running muss False sein wenn thread.start() fehlschlug"

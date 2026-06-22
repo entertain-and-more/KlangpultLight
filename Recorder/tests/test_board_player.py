@@ -609,3 +609,45 @@ def test_trigger_unbekannte_id(tmp_path):
     player.trigger("existiert_nicht")
     player.stop("existiert_nicht")
     player.stop_all()
+
+
+def test_play_stop_toggle_kein_deadlock(tmp_path):
+    """trigger() im play_stop-Mode führt keinen Deadlock durch on_finish → Lock.
+
+    Belegt Bugsweep-Fix: Früher rief trigger() feeder.stop() INNERHALB des Locks
+    auf. feeder.stop() → thread.join() → Feeder-Thread ruft on_finish() →
+    on_finish() braucht den Lock → Deadlock (→ timeout nach 2 s ohne korrekten
+    Stop). Nach dem Fix: join() erfolgt AUSSERHALB des Locks.
+
+    Test: Toggle zweimal in kurzer Zeit — kein Hängen.
+    """
+    from board.board_model import Board, Pad
+    from board.board_player import BoardPlayer
+
+    from board.board_model import Board, Pad
+
+    wav_pfad = str(tmp_path / "jingle.wav")
+    _erstelle_test_wav(wav_pfad, dauer_frames=48000)  # 1 s
+
+    pad = Pad(id="jingle_dl", label="Jingle", kind="audio", mode="play_stop", asset_path=wav_pfad)
+    engine, board, _ = _engine_und_board(tmp_path, [pad])
+    engine.start()
+    player = BoardPlayer(engine=engine, board=board)
+
+    try:
+        # Starten
+        player.trigger("jingle_dl")
+        time.sleep(0.05)  # kurz spielen lassen
+
+        # Stoppen (Toggle) — darf nicht hängen
+        done = threading.Event()
+        def _stoppe():
+            player.trigger("jingle_dl")  # Toggle → stop
+            done.set()
+
+        t = threading.Thread(target=_stoppe, daemon=True)
+        t.start()
+        assert done.wait(timeout=3.0), "trigger() (Toggle-Stop) hat > 3 s gedauert — möglicher Deadlock"
+    finally:
+        player.stop_all()
+        engine.stop()

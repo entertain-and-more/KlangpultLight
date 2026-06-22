@@ -115,3 +115,49 @@ def test_engine_peaks_ohne_start():
     engine = AudioEngine(cfg, kanaele)
     peaks = engine.latest_peaks()
     assert len(peaks) == 1
+
+
+def test_engine_start_rollback_bei_mock_thread_fehler(tmp_path):
+    """Wenn der Mock-Thread nicht gestartet werden kann, bleibt is_running() False.
+
+    Belegt Bugsweep-Fix: Früher wurde der MixWorker gestartet und _laeuft blieb
+    False — ein erneutes start() startete einen zweiten MixWorker auf demselben
+    _kanal_puffer. Nach dem Fix: bei Fehler wird _stop_event gesetzt und der
+    MixWorker gestoppt → sauberer Rollback.
+    """
+    import threading
+    import unittest.mock as mock
+    from core.config import AppConfig
+    from audio.mixer_channel import MixerChannel
+    from audio.engine import AudioEngine
+
+    cfg = AppConfig(mock_audio=True, workspace_dir=str(tmp_path))
+    kanaele = [MixerChannel(source_id="mic1", name="Mikrofon 1")]
+    engine = AudioEngine(cfg, kanaele)
+
+    # Zweiten Thread-Start (Mock-Thread) sabotieren, ersten (MixWorker) durchlassen
+    original_start = threading.Thread.start
+    call_count = [0]
+
+    def selektiver_fehler(self):
+        call_count[0] += 1
+        if call_count[0] == 2:
+            raise RuntimeError("Simulierter Mock-Thread-Start-Fehler")
+        return original_start(self)
+
+    with mock.patch.object(threading.Thread, "start", selektiver_fehler):
+        with pytest.raises(RuntimeError, match="Simulierter Mock-Thread-Start-Fehler"):
+            engine.start()
+
+    # Nach Rollback: is_running() muss False sein
+    assert not engine.is_running(), "is_running() muss nach fehlgeschlagenem start() False sein"
+    assert engine._mix_worker_thread is None, "_mix_worker_thread muss nach Rollback None sein"
+
+    # Zweites start() muss funktionieren (kein blockierter Zustand)
+    engine.start()
+    try:
+        import time
+        time.sleep(0.05)
+        assert engine.is_running(), "is_running() muss nach zweitem start() True sein"
+    finally:
+        engine.stop()

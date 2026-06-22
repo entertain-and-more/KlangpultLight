@@ -40,3 +40,7 @@ node_modules/
 Plan.txt
 _archive/
 LOCK*.txt
+
+# Auto-generierte Berichte/Reviews (TICKET-MASTER) - nicht versionieren
+_codex/
+_reports/

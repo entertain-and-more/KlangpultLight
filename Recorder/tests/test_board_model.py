@@ -185,6 +185,24 @@ def test_save_board_echte_umlaute(tmp_path):
     assert "Ä" in inhalt and "ß" in inhalt, "Umlaute wurden escaped statt als echte Zeichen gespeichert"
 
 
+def test_save_board_atomic_keine_tmp_datei(tmp_path):
+    """Nach save_board() darf keine .json.tmp-Datei übrig bleiben.
+
+    Belegt Bugsweep-Fix: save_board() nutzt jetzt Temp-Datei + os.replace().
+    """
+    from board.board_model import Board, Pad, save_board
+    import os as _os
+    pfad = str(tmp_path / "board.json")
+    board = Board(pads=[Pad(id="p1", label="Test")])
+    save_board(board, pfad)
+
+    tmp_datei = pfad + ".tmp"
+    assert not _os.path.exists(tmp_datei), (
+        f".json.tmp darf nach save_board() nicht existieren: {tmp_datei}"
+    )
+    assert _os.path.isfile(pfad), "board.json muss existieren"
+
+
 # ---------------------------------------------------------------------------
 # import_from_workspace / export_to_workspace
 # ---------------------------------------------------------------------------

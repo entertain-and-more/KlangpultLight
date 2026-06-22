@@ -113,7 +113,11 @@ def load_board(path: str) -> Board:
 
 
 def save_board(board: Board, path: str) -> None:
-    """Speichert ein Board als UTF-8 JSON ohne BOM.
+    """Speichert ein Board als UTF-8 JSON ohne BOM (atomic via Temp-Datei + Rename).
+
+    Schreibt zunächst in eine temporäre Datei neben dem Ziel, dann per
+    ``os.replace()`` atomar umbenannt. Verhindert korruptes Board-JSON
+    bei einem vorzeitigen Absturz.
 
     Args:
         board: Zu speicherndes Board.
@@ -124,8 +128,12 @@ def save_board(board: Board, path: str) -> None:
         os.makedirs(verzeichnis, exist_ok=True)
 
     daten = {"pads": [p.to_dict() for p in board.pads]}
-    with open(path, "w", encoding="utf-8") as f:
+    tmp_pfad = path + ".tmp"
+    with open(tmp_pfad, "w", encoding="utf-8") as f:
         json.dump(daten, f, indent=2, ensure_ascii=False)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp_pfad, path)
 
 
 # ---------------------------------------------------------------------------

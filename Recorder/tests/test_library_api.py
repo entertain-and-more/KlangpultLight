@@ -119,6 +119,51 @@ def test_library_endpoint_ohne_aufnahmen(tmp_path):
     assert daten["recordings"] == [], f"Erwartet leere Liste: {daten}"
 
 
+def test_health_endpoint_mit_query_string(tmp_path):
+    """GET /api/health?x=1 liefert HTTP 200 — Query-String darf Routing nicht brechen.
+
+    Belegt library_api.py-Fix: urlparse(self.path).path strippt den Query-String,
+    sodass der Pfad-Vergleich auch bei ?-Suffix korrekt matcht.
+    """
+    from bridge.library_api import LibraryApiServer
+    library, _ = _erstelle_mock_library(tmp_path)
+
+    server = LibraryApiServer(library=library)
+    server.start(host="127.0.0.1", port=0)
+    port = server.port
+
+    try:
+        url = f"http://127.0.0.1:{port}/api/health?x=1&debug=true"
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            assert resp.status == 200
+            daten = json.loads(resp.read().decode("utf-8"))
+        assert daten == {"status": "ok"}, f"Unerwartete Antwort: {daten}"
+    finally:
+        server.stop()
+
+
+def test_library_endpoint_mit_query_string(tmp_path):
+    """GET /api/library?refresh=1 liefert HTTP 200 — Query-String darf Routing nicht brechen.
+
+    Belegt library_api.py-Fix (Query-Strip via urlparse) für den /api/library-Pfad.
+    """
+    from bridge.library_api import LibraryApiServer
+    library, _ = _erstelle_mock_library(tmp_path)
+
+    server = LibraryApiServer(library=library)
+    server.start(host="127.0.0.1", port=0)
+    port = server.port
+
+    try:
+        url = f"http://127.0.0.1:{port}/api/library?refresh=1"
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            assert resp.status == 200
+            daten = json.loads(resp.read().decode("utf-8"))
+        assert "recordings" in daten, f"'recordings'-Schlüssel fehlt: {daten}"
+    finally:
+        server.stop()
+
+
 def test_unbekannter_pfad_liefert_404(tmp_path):
     """GET /nichtvorhanden liefert HTTP 404."""
     from bridge.library_api import LibraryApiServer
@@ -142,6 +187,32 @@ def test_unbekannter_pfad_liefert_404(tmp_path):
 # ---------------------------------------------------------------------------
 # Test: Sauberer Stop — kein Orphan-Thread
 # ---------------------------------------------------------------------------
+
+def test_thread_start_fehler_blockiert_nicht_naechsten_start(tmp_path):
+    """Wenn thread.start() wirft, muss _server None bleiben.
+
+    Belegt Bugsweep-Fix: self._server wurde vor thread.start() gesetzt.
+    Bei Fehler war _server != None → zweites start() gab sofort zurück.
+    """
+    import unittest.mock as mock
+    from bridge.library_api import LibraryApiServer
+    library, _ = _erstelle_mock_library(tmp_path)
+
+    server_obj = LibraryApiServer(library=library)
+
+    with mock.patch("threading.Thread.start", side_effect=RuntimeError("Sabotage")):
+        with pytest.raises(RuntimeError, match="Sabotage"):
+            server_obj.start(host="127.0.0.1", port=0)
+
+    assert server_obj._server is None, "_server muss None sein nach fehlgeschlagenem start()"
+
+    # Zweites start() muss klappen
+    server_obj.start(host="127.0.0.1", port=0)
+    try:
+        assert server_obj.port is not None and server_obj.port > 0
+    finally:
+        server_obj.stop()
+
 
 def test_kein_orphan_thread_nach_stop(tmp_path):
     """Nach stop() läuft kein LibraryApiServer-Thread mehr."""

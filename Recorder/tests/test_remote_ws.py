@@ -237,6 +237,60 @@ def test_kein_orphan_thread_nach_stop(tmp_path):
 # Test: Client-Disconnect löst keinen Server-Absturz aus
 # ---------------------------------------------------------------------------
 
+def test_stop_setzt_thread_auf_none():
+    """Nach stop() ist _thread auf None gesetzt (kein verwaister Thread-Verweis).
+
+    Belegt Bugsweep-Fix: stop() setzt _thread = None VOR dem join() statt danach.
+    Das verhindert ein Fenster wo _thread gesetzt ist aber der Thread bereits
+    heruntergefahren wird.
+    """
+    server, port = _starte_server(interval=10.0)
+
+    # Vor stop(): _thread ist gesetzt
+    assert server._thread is not None, "_thread muss nach start() gesetzt sein"
+    server.stop()
+
+    # Nach stop(): _thread = None
+    assert server._thread is None, "_thread muss nach stop() None sein"
+
+
+def test_thread_start_fehler_blockiert_nicht_naechsten_start():
+    """Thread-Start-Fehler hinterlässt _thread = None, so dass start() nochmals funktioniert.
+
+    Belegt Bugsweep-Fix Lauf 35: Früher wurde self._thread gesetzt, bevor thread.start()
+    aufgerufen wurde. Bei einem Fehler in start() blieb _thread non-None → nächster
+    start()-Aufruf gab sofort zurück ohne zu starten.
+    """
+    import unittest.mock as mock
+    from bridge.remote_ws import RemoteWsServer
+
+    server = RemoteWsServer()
+
+    original_start = threading.Thread.start
+    call_count = [0]
+
+    def mock_start(self_thread):
+        call_count[0] += 1
+        if call_count[0] == 1:
+            raise RuntimeError("Thread-Start sabotiert")
+        return original_start(self_thread)
+
+    with mock.patch.object(threading.Thread, "start", mock_start):
+        with pytest.raises(RuntimeError, match="Thread-Start sabotiert"):
+            server.start(host="127.0.0.1", port=0)
+
+    # Nach fehlgeschlagenem start(): _thread muss None sein
+    assert server._thread is None, "_thread muss None sein nach fehlgeschlagenem start()"
+
+    # Zweiter start()-Aufruf muss erfolgreich sein
+    server.start(host="127.0.0.1", port=0)
+    try:
+        assert server._thread is not None, "_thread muss nach erfolgreichem start() gesetzt sein"
+        assert server.port is not None and server.port > 0, "Port muss nach start() gesetzt sein"
+    finally:
+        server.stop()
+
+
 def test_client_disconnect_kein_absturz(tmp_path):
     """Wenn ein Client die Verbindung trennt, läuft der Server weiter."""
     server, port = _starte_server(interval=0.05)

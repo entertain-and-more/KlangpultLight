@@ -156,3 +156,39 @@ class TestMultiSourceCaptureLoop:
             out_size=(128, 72),
         )
         assert loop.latest_frame() is None
+
+    def test_partieller_start_rollback_stoppt_kind_loops(self):
+        """Wenn Compositor-Thread-Start wirft, werden Kind-Loops gestoppt.
+
+        Belegt Bugsweep-Fix: Früher wurden Kind-Loops ohne Rollback gestartet
+        — bei Fehler im Compositor-Thread liefen die Kind-Loops weiter.
+        """
+        import unittest.mock as mock
+        import threading
+        from video.multi_capture_loop import MultiSourceCaptureLoop
+
+        src0, src1 = _zwei_mock_quellen()
+        loop = MultiSourceCaptureLoop(
+            sources=[src0, src1],
+            out_size=(128, 72),
+        )
+
+        # Ersten Thread-Start (VideoCaptureLoop) durchlassen, Compositor sabotieren
+        original_start = threading.Thread.start
+        call_count = [0]
+        started_threads = []
+
+        def mock_start(self):
+            call_count[0] += 1
+            if self.name == "MultiSourceCompositor":
+                raise RuntimeError("Compositor sabotiert")
+            started_threads.append(self)
+            return original_start(self)
+
+        with mock.patch.object(threading.Thread, "start", mock_start):
+            with pytest.raises(RuntimeError, match="Compositor sabotiert"):
+                loop.start()
+
+        # Nach Rollback: _gestartet muss False sein
+        assert not loop._gestartet, "_gestartet muss False nach fehlgeschlagenem start() sein"
+        assert loop._kind_loops == [], "_kind_loops muss leer sein nach Rollback"

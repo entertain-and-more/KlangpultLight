@@ -5,7 +5,7 @@ Geeignet für Debugging, Audits und spätere Analyse.
 """
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 
@@ -41,7 +41,7 @@ class EventLog:
             **felder: Beliebige zusätzliche Schlüssel-Wert-Paare.
         """
         eintrag: dict[str, Any] = {
-            "t": datetime.now().isoformat(),
+            "t": datetime.now(timezone.utc).isoformat(),
             "type": event_type,
             **felder,
         }

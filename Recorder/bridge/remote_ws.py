@@ -101,13 +101,19 @@ class RemoteWsServer:
         self._stop_event.clear()
         self._port_ready.clear()
 
-        self._thread = threading.Thread(
+        thread = threading.Thread(
             target=self._run_loop,
             args=(host, port),
             name="RemoteWsServer",
             daemon=True,
         )
-        self._thread.start()
+        try:
+            thread.start()
+        except Exception:
+            # Thread-Start fehlgeschlagen: self._thread bleibt None,
+            # damit ein erneuter start()-Aufruf nicht blockiert wird.
+            raise
+        self._thread = thread
 
         # Warten bis Server gebunden ist
         if not self._port_ready.wait(timeout=10.0):
@@ -119,8 +125,14 @@ class RemoteWsServer:
 
         # Thread joinieren — der asyncio-Loop beendet sich selbst via Polling des stop_event
         if self._thread is not None:
-            self._thread.join(timeout=5.0)
+            thread = self._thread
             self._thread = None
+            thread.join(timeout=5.0)
+            if thread.is_alive():
+                _log.warning(
+                    "RemoteWsServer: Thread hat nach 5 s Timeout nicht beendet — "
+                    "möglicher Orphan-Thread."
+                )
 
         self._loop = None
         self._ws_server = None

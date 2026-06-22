@@ -465,3 +465,79 @@ def test_unbekannter_pfad_liefert_404(tmp_path):
         assert status == 404
     finally:
         server.stop()
+
+
+# ---------------------------------------------------------------------------
+# Episoden-Edit/Delete + Aufnahme-Zuordnung (P1)
+# ---------------------------------------------------------------------------
+
+def test_episode_aktualisieren_und_loeschen(tmp_path):
+    server = _starte_server(tmp_path)
+    port = server.port
+    try:
+        _, proj = _post(port, "/api/projects", {"title": "P"})
+        pid = proj["project_id"]
+        s, ep = _post(port, f"/api/projects/{pid}/episodes", {"title": "Folge 1"})
+        assert s == 201
+        eid = ep["episode_id"]
+
+        s, ep2 = _put(
+            port, f"/api/projects/{pid}/episodes/{eid}",
+            {"title": "Folge 1 (neu)", "status": "fertig"},
+        )
+        assert s == 200
+        assert ep2["title"] == "Folge 1 (neu)"
+        assert ep2["status"] == "fertig"
+
+        s, liste = _get(port, f"/api/projects/{pid}/episodes")
+        assert liste["episodes"][0]["title"] == "Folge 1 (neu)"
+
+        assert _delete(port, f"/api/projects/{pid}/episodes/{eid}") == 204
+        s, liste = _get(port, f"/api/projects/{pid}/episodes")
+        assert liste["episodes"] == []
+    finally:
+        server.stop()
+
+
+def test_episode_aktualisieren_unbekannt_404(tmp_path):
+    server = _starte_server(tmp_path)
+    port = server.port
+    try:
+        _, proj = _post(port, "/api/projects", {"title": "P"})
+        pid = proj["project_id"]
+        s, _ = _put(port, f"/api/projects/{pid}/episodes/gibtsnicht", {"title": "X"})
+        assert s == 404
+    finally:
+        server.stop()
+
+
+def test_aufnahme_zuordnen_idempotent_und_entfernen(tmp_path):
+    server = _starte_server(tmp_path)
+    port = server.port
+    try:
+        _, proj = _post(port, "/api/projects", {"title": "P"})
+        pid = proj["project_id"]
+
+        s, p2 = _post(port, f"/api/projects/{pid}/recordings/rec_123", {})
+        assert s == 200
+        assert "rec_123" in p2["recording_ids"]
+
+        # idempotent — kein Duplikat
+        _, p3 = _post(port, f"/api/projects/{pid}/recordings/rec_123", {})
+        assert p3["recording_ids"].count("rec_123") == 1
+
+        assert _delete(port, f"/api/projects/{pid}/recordings/rec_123") == 200
+        _, p4 = _get(port, f"/api/projects/{pid}")
+        assert "rec_123" not in (p4.get("recording_ids") or [])
+    finally:
+        server.stop()
+
+
+def test_aufnahme_zuordnen_unbekanntes_projekt_404(tmp_path):
+    server = _starte_server(tmp_path)
+    port = server.port
+    try:
+        s, _ = _post(port, "/api/projects/gibtsnicht/recordings/rec_1", {})
+        assert s == 404
+    finally:
+        server.stop()

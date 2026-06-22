@@ -37,6 +37,8 @@ _log = logging.getLogger(__name__)
 # Regulärer Ausdruck für Projekt-Pfade
 _RE_PROJEKT = re.compile(r"^/api/projects/([^/]+)$")
 _RE_EPISODEN = re.compile(r"^/api/projects/([^/]+)/episodes$")
+_RE_EPISODE = re.compile(r"^/api/projects/([^/]+)/episodes/([^/]+)$")
+_RE_PROJEKT_RECORDING = re.compile(r"^/api/projects/([^/]+)/recordings/([^/]+)$")
 
 
 # ---------------------------------------------------------------------------
@@ -194,6 +196,67 @@ class _ProjektStore:
             _json_schreiben(self._episoden_pfad(project_id), episoden)
         return episode
 
+    def episode_aktualisieren(
+        self, project_id: str, episode_id: str, title: str,
+        notes: str = "", status: str = "geplant",
+    ) -> Optional[dict]:
+        """Aktualisiert eine Episode. None, wenn Projekt/Episode fehlt."""
+        with self._lock:
+            if self._projekt_holen_nolock(project_id) is None:
+                return None
+            episoden = self._episoden_lesen(project_id)
+            for ep in episoden:
+                if ep.get("episode_id") == episode_id:
+                    ep["title"] = title
+                    ep["notes"] = notes
+                    ep["status"] = status
+                    ep["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    _json_schreiben(self._episoden_pfad(project_id), episoden)
+                    return ep
+            return None
+
+    def episode_loeschen(self, project_id: str, episode_id: str) -> bool:
+        """Löscht eine Episode. False, wenn Projekt/Episode fehlt."""
+        with self._lock:
+            if self._projekt_holen_nolock(project_id) is None:
+                return False
+            episoden = self._episoden_lesen(project_id)
+            neu = [e for e in episoden if e.get("episode_id") != episode_id]
+            if len(neu) == len(episoden):
+                return False
+            _json_schreiben(self._episoden_pfad(project_id), neu)
+            return True
+
+    # -- Aufnahmen-Zuordnung (recording_ids je Projekt) --
+
+    def aufnahme_zuordnen(self, project_id: str, recording_id: str) -> Optional[dict]:
+        """Ordnet eine Aufnahme einem Projekt zu (idempotent). None wenn Projekt fehlt."""
+        with self._lock:
+            projekte = self._projekte_lesen()
+            for p in projekte:
+                if p.get("project_id") == project_id:
+                    ids = list(p.get("recording_ids") or [])
+                    if recording_id not in ids:
+                        ids.append(recording_id)
+                    p["recording_ids"] = ids
+                    p["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    self._projekte_schreiben(projekte)
+                    return p
+            return None
+
+    def aufnahme_entfernen(self, project_id: str, recording_id: str) -> Optional[dict]:
+        """Entfernt die Zuordnung einer Aufnahme. None wenn Projekt fehlt."""
+        with self._lock:
+            projekte = self._projekte_lesen()
+            for p in projekte:
+                if p.get("project_id") == project_id:
+                    p["recording_ids"] = [
+                        r for r in (p.get("recording_ids") or []) if r != recording_id
+                    ]
+                    self._projekte_schreiben(projekte)
+                    return p
+            return None
+
 
 # ---------------------------------------------------------------------------
 # HTTP-Handler
@@ -225,19 +288,27 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
             self._handle_projekt_post()
         elif m := _RE_EPISODEN.match(path):
             self._handle_episode_post(m.group(1))
+        elif m := _RE_PROJEKT_RECORDING.match(path):
+            self._handle_recording_assign(m.group(1), m.group(2))
         else:
             self._json(404, {"error": "Nicht gefunden"})
 
     def do_PUT(self) -> None:  # noqa: N802
         path = self._path()
-        if m := _RE_PROJEKT.match(path):
+        if m := _RE_EPISODE.match(path):
+            self._handle_episode_put(m.group(1), m.group(2))
+        elif m := _RE_PROJEKT.match(path):
             self._handle_projekt_put(m.group(1))
         else:
             self._json(404, {"error": "Nicht gefunden"})
 
     def do_DELETE(self) -> None:  # noqa: N802
         path = self._path()
-        if m := _RE_PROJEKT.match(path):
+        if m := _RE_EPISODE.match(path):
+            self._handle_episode_delete(m.group(1), m.group(2))
+        elif m := _RE_PROJEKT_RECORDING.match(path):
+            self._handle_recording_unassign(m.group(1), m.group(2))
+        elif m := _RE_PROJEKT.match(path):
             self._handle_projekt_delete(m.group(1))
         else:
             self._json(404, {"error": "Nicht gefunden"})
@@ -333,6 +404,51 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
             self.end_headers()
         else:
             self._json(404, {"error": "Projekt nicht gefunden"})
+
+    def _handle_episode_put(self, project_id: str, episode_id: str) -> None:
+        body = self._lese_body()
+        if body is None:
+            return
+        title = body.get("title", "").strip()
+        if not title:
+            self._json(400, {"error": "Pflichtfeld 'title' fehlt oder leer"})
+            return
+        store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
+        episode = store.episode_aktualisieren(
+            project_id=project_id,
+            episode_id=episode_id,
+            title=title,
+            notes=body.get("notes", ""),
+            status=body.get("status", "geplant"),
+        )
+        if episode is None:
+            self._json(404, {"error": "Projekt oder Episode nicht gefunden"})
+        else:
+            self._json(200, episode)
+
+    def _handle_episode_delete(self, project_id: str, episode_id: str) -> None:
+        store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
+        if store.episode_loeschen(project_id, episode_id):
+            self.send_response(204)
+            self.end_headers()
+        else:
+            self._json(404, {"error": "Projekt oder Episode nicht gefunden"})
+
+    def _handle_recording_assign(self, project_id: str, recording_id: str) -> None:
+        store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
+        projekt = store.aufnahme_zuordnen(project_id, recording_id)
+        if projekt is None:
+            self._json(404, {"error": "Projekt nicht gefunden"})
+        else:
+            self._json(200, projekt)
+
+    def _handle_recording_unassign(self, project_id: str, recording_id: str) -> None:
+        store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
+        projekt = store.aufnahme_entfernen(project_id, recording_id)
+        if projekt is None:
+            self._json(404, {"error": "Projekt nicht gefunden"})
+        else:
+            self._json(200, projekt)
 
     # -- Hilfsmethoden --
 

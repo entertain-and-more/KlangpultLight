@@ -165,13 +165,13 @@ Offen (Details in BUGS.md):
 Aus User-Tests (Lukas). Reihenfolge = Priorität; Funktionen vor Politur (Premium zuletzt).
 
 ### Planer (Web)
-- [ ] P1  Episoden **editieren UND löschen** — fehlt/funktioniert nicht mehr in der Weboberfläche.
-- [ ] P1  **Projektzuordnung von Aufnahmen** als Aktion in der Weboberfläche (Aufnahme → Projekt zuordnen).
-- [ ] P2  Aufnahme **abspielen** — browser-interner Player (einfacher umzusetzen) oder Start im externen Player.
+- [x] P1  Episoden **editieren UND löschen** — Backend (PUT/DELETE) + Frontend-Buttons. Commits 21ba558/28a8657. (Browser-Klicktest offen.)
+- [~] P1  **Projektzuordnung von Aufnahmen** — Backend fertig (POST/DELETE /recordings/{id}, 21ba558); **Frontend-UI (bibliothek.js) noch offen**.
+- [ ] P2  Aufnahme **abspielen** — browser-interner Player (Library-Audio-Endpunkt + `<audio>`) oder Start im externen Player.
 
 ### Recorder (Desktop)
-- [ ] P1  **Einspieler hinzufügbar** machen (aktuell nur Stub — kein echtes Hinzufügen).
-- [ ] P1  Aufnahmen in der GUI: **löschen** + nachträglich **umbenennen** + **abspielen** (Doppelklick → externer Player).
+- [x] P1  **Einspieler hinzufügbar** — Datei-Dialog → Pad → board.json. Commit bbe8d12.
+- [x] P1  Aufnahmen in der GUI **löschen/umbenennen/abspielen** (Kontextmenü + Doppelklick). Commit ac43edd.
 - [ ] P2  Bereiche **ein-/ausklappbar**; der freiwerdende Platz wird dynamisch genutzt.
 - [ ] P3  **Schöne Symbole** verwenden (von Codex generieren lassen).
 - [ ] P3  Premium (zuletzt): Fenster-im-Fenster **ablösbar** + wieder **andockbar** — Funktionen gehen vor.

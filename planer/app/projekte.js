@@ -7,7 +7,7 @@
 
 import {
   listProjects, createProject, updateProject, deleteProject,
-  listEpisodes, createEpisode,
+  listEpisodes, createEpisode, updateEpisode, deleteEpisode,
 } from "./api.js";
 import { formatDateTime, statusBadgeClass, el, bestätigen } from "./util.js";
 
@@ -207,12 +207,12 @@ async function _renderDetail(project) {
 
   const epList = el("div", { className: "item-list" });
   for (const ep of _episodes) {
-    epList.appendChild(_renderEpisodeItem(ep));
+    epList.appendChild(_renderEpisodeItem(ep, project));
   }
   _detail.appendChild(epList);
 }
 
-function _renderEpisodeItem(episode) {
+function _renderEpisodeItem(episode, project) {
   const badgeClass = statusBadgeClass(episode.status || "geplant");
   return el("div", { className: "list-item" }, [
     el("div", { className: "list-item-main" }, [
@@ -224,7 +224,32 @@ function _renderEpisodeItem(episode) {
           : null,
       ]),
     ]),
+    el("div", { className: "list-item-actions" }, [
+      el("button", {
+        className: "btn btn-ghost",
+        textContent: "✏",
+        title: "Episode bearbeiten",
+        onClick: (e) => { e.stopPropagation(); _openEpisodeModal(project, episode); },
+      }),
+      el("button", {
+        className: "btn btn-danger",
+        textContent: "🗑",
+        title: "Episode löschen",
+        onClick: (e) => { e.stopPropagation(); _deleteEpisode(project, episode); },
+      }),
+    ]),
   ]);
+}
+
+async function _deleteEpisode(project, episode) {
+  const ok = await bestätigen(`Episode „${episode.title}" wirklich löschen?`);
+  if (!ok) return;
+  const result = await deleteEpisode(project.project_id, episode.episode_id);
+  if (!result.ok) {
+    alert(`Fehler beim Löschen: ${result.error}`);
+    return;
+  }
+  await _renderDetail(project);
 }
 
 // ---------------------------------------------------------------------------
@@ -288,17 +313,24 @@ function _openProjektModal(project) {
 // ---------------------------------------------------------------------------
 
 function _openNeuEpisodeModal(project) {
-  const titelInput = el("input", { type: "text", placeholder: "Episodentitel" });
+  _openEpisodeModal(project, null);
+}
+
+function _openEpisodeModal(project, episode = null) {
+  const isNeu = !episode;
+  const titelInput = el("input", { type: "text", placeholder: "Episodentitel", value: episode?.title || "" });
   const notesInput = el("textarea", { placeholder: "Notizen (optional)" });
+  if (episode?.notes) notesInput.value = episode.notes;
   const statusSelect = el("select", {}, [
     el("option", { value: "geplant", textContent: "Geplant" }),
     el("option", { value: "laufend", textContent: "Laufend" }),
     el("option", { value: "fertig", textContent: "Fertig" }),
   ]);
+  if (episode?.status) statusSelect.value = episode.status;
 
   const episodeErrorBanner = el("div", { className: "error-banner", style: "display:none" });
 
-  const modal = _createModal("Neue Episode", [
+  const modal = _createModal(isNeu ? "Neue Episode" : "Episode bearbeiten", [
     episodeErrorBanner,
     el("div", { className: "form-group" }, [
       el("label", { textContent: "Titel *" }),
@@ -316,12 +348,9 @@ function _openNeuEpisodeModal(project) {
     const title = titelInput.value.trim();
     if (!title) { titelInput.focus(); return; }
 
-    const result = await createEpisode(
-      project.project_id,
-      title,
-      notesInput.value.trim(),
-      statusSelect.value,
-    );
+    const result = isNeu
+      ? await createEpisode(project.project_id, title, notesInput.value.trim(), statusSelect.value)
+      : await updateEpisode(project.project_id, episode.episode_id, title, notesInput.value.trim(), statusSelect.value);
 
     if (!result.ok) {
       episodeErrorBanner.textContent = `Fehler: ${result.error}`;

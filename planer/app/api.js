@@ -128,3 +128,21 @@ export async function createEpisode(projectId, title, notes = "", status = "gepl
     title, notes, status,
   });
 }
+
+// --- Episode aktualisieren / löschen (P1) ---
+export async function updateEpisode(projectId, episodeId, title, notes = "", status = "geplant") {
+  return _request("PUT", `/api/projects/${projectId}/episodes/${episodeId}`, { title, notes, status });
+}
+
+export async function deleteEpisode(projectId, episodeId) {
+  return _request("DELETE", `/api/projects/${projectId}/episodes/${episodeId}`);
+}
+
+// --- Aufnahme einem Projekt zuordnen / Zuordnung entfernen (P1) ---
+export async function assignRecording(projectId, recordingId) {
+  return _request("POST", `/api/projects/${projectId}/recordings/${recordingId}`, {});
+}
+
+export async function unassignRecording(projectId, recordingId) {
+  return _request("DELETE", `/api/projects/${projectId}/recordings/${recordingId}`);
+}

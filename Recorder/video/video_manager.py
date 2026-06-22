@@ -28,7 +28,7 @@ class VideoManager:
     """
 
     def list_camera_sources(
-        self, verify: bool = True, max_index: int = 5
+        self, verify: bool = True, max_index: int = 3
     ) -> list[VideoSourceInfo]:
         """Listet verfügbare Kamera-Quellen.
 
@@ -47,6 +47,13 @@ class VideoManager:
             import cv2  # noqa: F401
         except ImportError:
             return []
+
+        # obsensor-/Backend-Fehlerspam beim Probing nicht vorhandener Indizes
+        # unterdrücken (würde sonst die Konsole fluten und den Start verzögern).
+        try:
+            cv2.utils.logging.setLogLevel(cv2.utils.logging.LOG_LEVEL_SILENT)
+        except Exception:
+            pass
 
         quellen: list[VideoSourceInfo] = []
         for idx in range(max_index):

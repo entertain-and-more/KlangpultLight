@@ -163,27 +163,40 @@ class AudioEngine:
 
         self._stop_event.clear()
 
-        # MixWorker immer starten (Mock und Real)
-        self._mix_worker_thread = threading.Thread(
+        # MixWorker immer starten (Mock und Real).
+        # WICHTIG: _laeuft wird erst NACH erfolgreichem Start aller Threads gesetzt.
+        # Bei einem Fehler im Mock-/Stream-Start wird der bereits laufende MixWorker
+        # über _stop_event gestoppt, damit kein Orphan-Thread entsteht und ein
+        # erneutes start() sauber funktioniert.
+        mix_worker = threading.Thread(
             target=self._mix_worker_loop,
             name="MixWorker",
             daemon=True,
         )
-        self._mix_worker_thread.start()
+        mix_worker.start()
+        self._mix_worker_thread = mix_worker
 
-        if self._nutze_mock():
-            self._mock_thread = threading.Thread(
-                target=self._mock_loop,
-                name="AudioEngine-Mock",
-                daemon=True,
-            )
-            self._mock_thread.start()
-        else:
-            # Reale sounddevice-Streams (Task 3b).
-            # ACHTUNG: WASAPI-Loopback ist nur auf Windows-Hardware verifizierbar —
-            # im Mock-Pfad (PODCAST_RECORDER_MOCK_AUDIO=1) wird ein synthetischer
-            # System-Kanal erzeugt; der reale Pfad hier ist für Produktionsbetrieb.
-            self._starte_echte_streams()
+        try:
+            if self._nutze_mock():
+                mock_thread = threading.Thread(
+                    target=self._mock_loop,
+                    name="AudioEngine-Mock",
+                    daemon=True,
+                )
+                mock_thread.start()
+                self._mock_thread = mock_thread
+            else:
+                # Reale sounddevice-Streams (Task 3b).
+                # ACHTUNG: WASAPI-Loopback ist nur auf Windows-Hardware verifizierbar —
+                # im Mock-Pfad (PODCAST_RECORDER_MOCK_AUDIO=1) wird ein synthetischer
+                # System-Kanal erzeugt; der reale Pfad hier ist für Produktionsbetrieb.
+                self._starte_echte_streams()
+        except Exception:
+            # Rollback: MixWorker stoppen, damit kein Orphan-Thread entsteht
+            self._stop_event.set()
+            mix_worker.join(timeout=2.0)
+            self._mix_worker_thread = None
+            raise
 
         self._laeuft = True
 
@@ -678,9 +691,17 @@ class AudioEngine:
         Kein GUI-Aufruf im Callback — Thread-Sicherheit via bounded deque.
         """
         def _callback(indata, frames, time_info, status):
+            if status:  # PortAudio input overflow o.ä. — nicht still verschlucken
+                _log.warning("Audio-Callback-Status auf %s: %s", source_id, status)
             block = indata.copy()
             puffer = self._kanal_puffer.get(source_id)
             if puffer is not None:
+                # Überlauf sichtbar machen: deque(maxlen) verwirft sonst still den
+                # ältesten Frame, wenn der MixWorker nicht hinterherkommt.
+                if puffer.maxlen is not None and len(puffer) >= puffer.maxlen:
+                    _log.warning(
+                        "Kanalpuffer %s voll — Frame verworfen (Writer zu langsam)", source_id
+                    )
                 puffer.append(block)
 
         return _callback

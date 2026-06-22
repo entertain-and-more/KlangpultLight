@@ -91,7 +91,14 @@ class CameraSource(VideoSource):
                 "OpenCV (cv2) ist nicht installiert — Kamera-Quelle nicht verfügbar."
             ) from exc
 
-        self._cap = cv2.VideoCapture(self._index)
+        # Auf Windows den DirectShow-Backend erzwingen: schneller und vermeidet
+        # den lauten/langsamen obsensor-Backend (cv::obsensor … index out of range),
+        # der beim Probing nicht vorhandener Indizes den Start blockiert.
+        import sys
+        if sys.platform == "win32":
+            self._cap = cv2.VideoCapture(self._index, cv2.CAP_DSHOW)
+        else:
+            self._cap = cv2.VideoCapture(self._index)
         if not self._cap.isOpened():
             self._cap = None
             raise RuntimeError(

@@ -168,6 +168,58 @@ class RecordingLibrary:
         self.update_metadata(meta)
         return neuer_branch
 
+    def rename_recording(self, recording_id: str, new_title: str) -> RecordingMetadata:
+        """Benennt eine Aufnahme nachträglich um (nur der Anzeige-Titel).
+
+        Der Ordnername/die ID bleibt unverändert (stabile Referenzen). Nur das
+        ``title``-Feld in metadata.json wird neu geschrieben.
+
+        Args:
+            recording_id: ID der Aufnahme.
+            new_title:    Neuer Anzeigename (nicht leer).
+
+        Returns:
+            Aktualisierte RecordingMetadata.
+
+        Raises:
+            ValueError: Wenn die Aufnahme fehlt oder der Titel leer ist.
+        """
+        titel = (new_title or "").strip()
+        if not titel:
+            raise ValueError("Neuer Titel darf nicht leer sein.")
+        aufnahmen = self.list_recordings()
+        meta = next((m for m in aufnahmen if m.recording_id == recording_id), None)
+        if meta is None:
+            raise ValueError(f"Aufnahme '{recording_id}' nicht gefunden.")
+        meta.title = titel
+        self.update_metadata(meta)
+        return meta
+
+    def delete_recording(self, recording_id: str) -> None:
+        """Löscht eine Aufnahme samt Ordner (Audio/Video/Metadaten) endgültig.
+
+        Args:
+            recording_id: ID der zu löschenden Aufnahme.
+
+        Raises:
+            ValueError: Wenn die Aufnahme nicht existiert.
+        """
+        import shutil
+        import time
+
+        ordner = self.recording_dir(recording_id)
+        if not os.path.isdir(ordner):
+            raise ValueError(f"Aufnahme '{recording_id}' nicht gefunden.")
+        # OneDrive-/Windows-Lock: kurzer Retry, falls eine Datei noch gehalten wird.
+        for versuch in range(3):
+            try:
+                shutil.rmtree(ordner)
+                return
+            except OSError:
+                if versuch == 2:
+                    raise
+                time.sleep(0.3)
+
     def update_metadata(self, meta: RecordingMetadata) -> None:
         """Schreibt die Metadaten einer Aufnahme neu (atomic via Temp-Datei + Rename).
 

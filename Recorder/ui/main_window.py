@@ -472,6 +472,8 @@ class MainWindow(QMainWindow):
         self._aufnahme_tree.customContextMenuRequested.connect(
             self._zeige_aufnahme_kontextmenu
         )
+        # Doppelklick auf eine Aufnahme öffnet sie im externen Standard-Player.
+        self._aufnahme_tree.itemDoubleClicked.connect(self._on_aufnahme_doppelklick)
 
         layout.addWidget(self._aufnahme_tree)
 
@@ -735,7 +737,11 @@ class MainWindow(QMainWindow):
             return
 
         menu = QMenu(self._aufnahme_tree)
+        aktion_abspielen = menu.addAction("Abspielen")
+        aktion_umbenennen = menu.addAction("Umbenennen…")
         aktion_branch = menu.addAction("Branch anlegen")
+        menu.addSeparator()
+        aktion_loeschen = menu.addAction("Löschen…")
         gewaehlt = menu.exec(self._aufnahme_tree.viewport().mapToGlobal(pos))
 
         if gewaehlt == aktion_branch:
@@ -748,6 +754,31 @@ class MainWindow(QMainWindow):
             if ok:
                 final_name = name.strip() or "Neuer Branch"
                 self._branch_anlegen(recording_id, final_name)
+        elif gewaehlt == aktion_abspielen:
+            self._aufnahme_abspielen(recording_id)
+        elif gewaehlt == aktion_umbenennen:
+            aktuell = next(
+                (m.title for m in self._library.list_recordings()
+                 if m.recording_id == recording_id),
+                "",
+            )
+            neuer, ok = QInputDialog.getText(
+                self, "Aufnahme umbenennen", "Neuer Titel:", text=aktuell
+            )
+            if ok and neuer.strip():
+                self._aufnahme_umbenennen(recording_id, neuer.strip())
+        elif gewaehlt == aktion_loeschen:
+            from PySide6.QtWidgets import QMessageBox
+            antwort = QMessageBox.question(
+                self,
+                "Aufnahme löschen",
+                "Diese Aufnahme endgültig löschen (inkl. Audio/Video)?\n\n"
+                f"{recording_id}",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if antwort == QMessageBox.StandardButton.Yes:
+                self._aufnahme_loeschen(recording_id)
 
     def _branch_anlegen(self, recording_id: str, name: str) -> None:
         """Legt einen Branch über die Library an und aktualisiert die Liste.
@@ -761,6 +792,61 @@ class MainWindow(QMainWindow):
             # Aufnahme nicht gefunden — still ignorieren (Liste ggf. veraltet)
             return
         self._lade_aufnahmeliste()
+
+    def _aufnahme_umbenennen(self, recording_id: str, neuer_titel: str) -> None:
+        """Benennt eine Aufnahme um (über die Library) und aktualisiert die Liste.
+
+        Separater, offscreen-testbarer Einstiegspunkt (ohne Dialog)."""
+        try:
+            self._library.rename_recording(recording_id, neuer_titel)
+        except ValueError:
+            return
+        self._lade_aufnahmeliste()
+
+    def _aufnahme_loeschen(self, recording_id: str) -> None:
+        """Löscht eine Aufnahme (über die Library) und aktualisiert die Liste.
+
+        Separater, offscreen-testbarer Einstiegspunkt (ohne Bestätigungsdialog)."""
+        try:
+            self._library.delete_recording(recording_id)
+        except (ValueError, OSError):
+            return
+        self._lade_aufnahmeliste()
+
+    def _aufnahme_audio_pfad(self, recording_id: str) -> Optional[str]:
+        """Pfad zur abspielbaren Datei der Aufnahme (Original: main/mix.wav,
+        sonst main/program.mp4). None, wenn nichts (mehr) vorhanden ist."""
+        import os
+        ordner = self._library.recording_dir(recording_id)
+        for rel in (("main", "mix.wav"), ("main", "program.mp4")):
+            pfad = os.path.join(ordner, *rel)
+            if os.path.isfile(pfad):
+                return pfad
+        return None
+
+    def _aufnahme_abspielen(self, recording_id: str) -> None:
+        """Öffnet die Aufnahme im externen Standard-Player des Systems."""
+        pfad = self._aufnahme_audio_pfad(recording_id)
+        if not pfad:
+            return
+        import os
+        import sys
+        import subprocess
+        try:
+            if sys.platform == "win32":
+                os.startfile(pfad)  # type: ignore[attr-defined]
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", pfad])
+            else:
+                subprocess.Popen(["xdg-open", pfad])
+        except OSError:
+            pass  # Kein Player verfügbar — UI nicht blockieren
+
+    def _on_aufnahme_doppelklick(self, item, _spalte: int) -> None:
+        """Doppelklick auf eine Aufnahme/einen Branch → externen Player öffnen."""
+        recording_id = self._ermittle_recording_id(item)
+        if recording_id:
+            self._aufnahme_abspielen(recording_id)
 
     @staticmethod
     def _formatiere_dauer(sekunden: float) -> str:

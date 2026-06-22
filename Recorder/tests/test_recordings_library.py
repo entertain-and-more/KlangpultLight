@@ -139,3 +139,51 @@ class TestUpdateMetadata:
         )
         # Die eigentliche Datei muss da sein
         assert os.path.isfile(os.path.join(rec_dir, "metadata.json"))
+
+
+class TestRenameRecording:
+    def test_umbenennen_aendert_titel_nicht_id(self, tmp_path):
+        lib = RecordingLibrary(str(tmp_path))
+        meta = lib.create_recording("Alt")
+        rid = meta.recording_id
+        lib.rename_recording(rid, "Neu")
+        liste = lib.list_recordings()
+        treffer = next(m for m in liste if m.recording_id == rid)
+        assert treffer.title == "Neu"
+        assert treffer.recording_id == rid  # ID/Ordner unveraendert
+
+    def test_leerer_titel_wirft(self, tmp_path):
+        lib = RecordingLibrary(str(tmp_path))
+        meta = lib.create_recording("Alt")
+        with pytest.raises(ValueError):
+            lib.rename_recording(meta.recording_id, "   ")
+
+    def test_unbekannte_aufnahme_wirft(self, tmp_path):
+        lib = RecordingLibrary(str(tmp_path))
+        with pytest.raises(ValueError):
+            lib.rename_recording("recording_gibt_es_nicht", "X")
+
+
+class TestDeleteRecording:
+    def test_loeschen_entfernt_ordner_und_aus_liste(self, tmp_path):
+        lib = RecordingLibrary(str(tmp_path))
+        meta = lib.create_recording("Weg damit")
+        rid = meta.recording_id
+        assert os.path.isdir(lib.recording_dir(rid))
+        lib.delete_recording(rid)
+        assert not os.path.isdir(lib.recording_dir(rid))
+        assert all(m.recording_id != rid for m in lib.list_recordings())
+
+    def test_loeschen_unbekannt_wirft(self, tmp_path):
+        lib = RecordingLibrary(str(tmp_path))
+        with pytest.raises(ValueError):
+            lib.delete_recording("recording_gibt_es_nicht")
+
+    def test_andere_aufnahmen_bleiben(self, tmp_path):
+        lib = RecordingLibrary(str(tmp_path))
+        a = lib.create_recording("A")
+        b = lib.create_recording("B")
+        lib.delete_recording(a.recording_id)
+        ids = {m.recording_id for m in lib.list_recordings()}
+        assert b.recording_id in ids
+        assert a.recording_id not in ids

@@ -40,3 +40,11 @@ Angelegt: 2026-06-22.
   sichtbares Drop-Logging.
 - **Fix-Idee:** Frame-Drop-Erkennung über Soll-/Ist-Framezahl beim `close()`;
   optional bounded Writer-Queue mit bewusstem Drop-Zähler.
+
+## Offen — aus User-Tests 2026-06-22 (Funktionslücken)
+
+- **[P1] Planer:** Episoden lassen sich nicht (mehr) editieren/löschen (Weboberfläche).
+- **[P1] Planer:** Keine Aktion „Aufnahme einem Projekt zuordnen" in der Weboberfläche.
+- **[P1] Recorder:** „Einspieler hinzufügen" ist nur ein Stub — fügt nichts hinzu.
+- **[P1] Recorder:** Aufnahmen in der GUI nicht löschbar / nicht umbenennbar / nicht abspielbar.
+- Details + Feature-Wünsche (einklappbare Bereiche, Symbole, ablösbare Fenster) siehe TODO.md „User-Test-Feedback 2026-06-22".

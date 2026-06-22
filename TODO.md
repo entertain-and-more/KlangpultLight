@@ -159,3 +159,19 @@ Behoben: kombinierter START.bat-Fix (Recorder startete nicht), Recorder-Startfix
 Offen (Details in BUGS.md):
 [ ] P3  WAV-Write hält Aufnahme-Lock während Platten-Write (Recorder/audio/engine.py).
 [ ] P3  Video: FFmpeg-stdin-Write blockiert im Capture-Thread, kein Drop-Logging (Recorder/video/video_recorder.py).
+
+## User-Test-Feedback 2026-06-22 (Task 11) — offene Funktionen
+
+Aus User-Tests (Lukas). Reihenfolge = Priorität; Funktionen vor Politur (Premium zuletzt).
+
+### Planer (Web)
+- [ ] P1  Episoden **editieren UND löschen** — fehlt/funktioniert nicht mehr in der Weboberfläche.
+- [ ] P1  **Projektzuordnung von Aufnahmen** als Aktion in der Weboberfläche (Aufnahme → Projekt zuordnen).
+- [ ] P2  Aufnahme **abspielen** — browser-interner Player (einfacher umzusetzen) oder Start im externen Player.
+
+### Recorder (Desktop)
+- [ ] P1  **Einspieler hinzufügbar** machen (aktuell nur Stub — kein echtes Hinzufügen).
+- [ ] P1  Aufnahmen in der GUI: **löschen** + nachträglich **umbenennen** + **abspielen** (Doppelklick → externer Player).
+- [ ] P2  Bereiche **ein-/ausklappbar**; der freiwerdende Platz wird dynamisch genutzt.
+- [ ] P3  **Schöne Symbole** verwenden (von Codex generieren lassen).
+- [ ] P3  Premium (zuletzt): Fenster-im-Fenster **ablösbar** + wieder **andockbar** — Funktionen gehen vor.

@@ -163,7 +163,7 @@ async function _renderDetail(rec) {
   if (projResult.ok) {
     const projekte = projResult.data.projects || [];
     if (projekte.length === 0) {
-      zuordnungStatus.textContent = "Noch keine Projekte angelegt (Tab „Projekte").";
+      zuordnungStatus.textContent = "Noch keine Projekte angelegt — siehe Tab Projekte.";
     }
     for (const p of projekte) {
       projektSelect.appendChild(el("option", { value: p.project_id, textContent: p.title }));

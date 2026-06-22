@@ -417,3 +417,36 @@ def test_einspieler_typ_aus_endung(tmp_path, qt_app):
     kinds = {p.asset_path: p.kind for p in board.pads}
     assert kinds[str(mp4)] == "video"
     assert kinds[str(png)] == "image"
+
+
+# ---------------------------------------------------------------------------
+# Einklappbare Panels (P2)
+# ---------------------------------------------------------------------------
+
+def test_panel_einklappbar_versteckt_inhalt(tmp_path, qt_app):
+    """_einklappbar macht eine GroupBox checkable; eingeklappt wird der Inhalt
+    versteckt und die Breite schrumpft auf einen schmalen Streifen."""
+    from PySide6.QtWidgets import QGroupBox, QLabel, QVBoxLayout
+    fenster, _ = _erstelle_main_window(tmp_path, qt_app)
+    gb = QGroupBox("T")
+    lay = QVBoxLayout(gb)
+    lab = QLabel("inhalt")
+    lay.addWidget(lab)
+
+    fenster._einklappbar(gb)
+    assert gb.isCheckable()
+
+    gb.setChecked(False)
+    assert lab.isHidden() is True
+    assert gb.maximumWidth() == 40
+
+    gb.setChecked(True)
+    assert lab.isHidden() is False
+
+
+def test_einklappbar_ignoriert_nicht_groupbox(tmp_path, qt_app):
+    """Nicht-GroupBox-Panels werden unveraendert durchgereicht (kein Crash)."""
+    from PySide6.QtWidgets import QWidget
+    fenster, _ = _erstelle_main_window(tmp_path, qt_app)
+    w = QWidget()
+    assert fenster._einklappbar(w) is w

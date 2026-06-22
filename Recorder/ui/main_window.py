@@ -131,25 +131,49 @@ class MainWindow(QMainWindow):
         haupt_layout.setContentsMargins(12, 12, 12, 12)
         haupt_layout.setSpacing(12)
 
+        # Alle Panels sind ein-/ausklappbar (Checkbox im Titel) — eingeklappt
+        # schrumpfen sie zu einem schmalen Streifen, der frei werdende Platz geht
+        # an die Nachbar-Panels (stretch).
         # --- Linkes Panel: Audio-Quellen ---
-        haupt_layout.addWidget(self._baue_quellen_panel(), stretch=2)
+        haupt_layout.addWidget(self._einklappbar(self._baue_quellen_panel()), stretch=2)
 
         # --- Mittleres Panel: Aufnahme ---
-        haupt_layout.addWidget(self._baue_aufnahme_panel(), stretch=3)
+        haupt_layout.addWidget(self._einklappbar(self._baue_aufnahme_panel()), stretch=3)
 
         # --- Board-Panel (Einspieler) ---
-        self._board_panel = self._baue_board_panel()
+        self._board_panel = self._einklappbar(self._baue_board_panel())
         haupt_layout.addWidget(self._board_panel, stretch=3)
 
         # --- Video-Panel ---
-        haupt_layout.addWidget(self._baue_video_panel(), stretch=3)
+        haupt_layout.addWidget(self._einklappbar(self._baue_video_panel()), stretch=3)
 
         # --- Rechtes Panel: Aufnahmeliste ---
-        haupt_layout.addWidget(self._baue_aufnahmeliste(), stretch=3)
+        haupt_layout.addWidget(self._einklappbar(self._baue_aufnahmeliste()), stretch=3)
 
         # Statusleiste
         self._statusleiste = QStatusBar()
         self.setStatusBar(self._statusleiste)
+
+    def _einklappbar(self, box: "QGroupBox") -> "QGroupBox":
+        """Macht ein Panel ein-/ausklappbar: die GroupBox bekommt eine Checkbox im
+        Titel. Eingeklappt (unchecked) wird der Inhalt versteckt und das Panel
+        schrumpft auf einen schmalen Streifen — der frei werdende Platz geht über
+        die Layout-Stretch-Faktoren automatisch an die Nachbar-Panels.
+
+        Offscreen-/Headless-sicher (rein deklarativ, kein Hardware-Zugriff)."""
+        if not isinstance(box, QGroupBox):
+            return box  # nur QGroupBox-Panels tragen die Collapse-Checkbox
+        box.setCheckable(True)
+        box.setChecked(True)
+
+        def _toggle(checked: bool, b=box) -> None:
+            for w in b.findChildren(QWidget):
+                w.setVisible(checked)
+            # 40 px = nur noch Titel/Checkbox sichtbar (schmaler Streifen)
+            b.setMaximumWidth(16777215 if checked else 40)
+
+        box.toggled.connect(_toggle)
+        return box
 
     def _baue_quellen_panel(self) -> QWidget:
         """Quellen-Panel: Capture-Umschalter je Quelle (SourcesConfig) + LOOPBACK_HINT."""

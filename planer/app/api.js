@@ -1,5 +1,5 @@
 /**
- * api.js — Zentrale API-Schicht des PodcastPlaners.
+ * api.js — Zentrale API-Schicht des Klangpult light – Planers.
  *
  * Alle Fetch-Aufrufe laufen über dieses Modul. Die Basis-URLs werden relativ
  * zur aktuellen Origin aufgebaut — der PlanerServer proxyt /api/* transparent.

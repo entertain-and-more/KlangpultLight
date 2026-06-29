@@ -8,7 +8,7 @@ from typing import Any
 
 
 class AppState:
-    """Thread-sicherer Zustandscontainer für den PodcastRecorder.
+    """Thread-sicherer Zustandscontainer für den Klangpult light – Recorder.
 
     Alle Getter und Setter sind thread-safe über einen RLock
     (wiedereintrittssicher, damit Komplex-Operationen nicht deadlocken).

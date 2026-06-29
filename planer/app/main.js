@@ -1,5 +1,5 @@
 /**
- * main.js — Einstiegspunkt des PodcastPlaners.
+ * main.js — Einstiegspunkt des Klangpult light – Planers.
  *
  * Verwaltet Tab-Navigation und Recorder-Verbindungsstatus.
  * Mounted die einzelnen Views (Bibliothek, Projekte) on demand.

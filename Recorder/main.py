@@ -1,4 +1,4 @@
-"""main.py — Entrypoint des PodcastRecorders.
+"""main.py — Entrypoint des Klangpult light – Recorders.
 
 Start aus Recorder/ heraus: python main.py
 Kein `python -m`, Imports relativ zum Recorder/-Root.
@@ -115,6 +115,9 @@ def main() -> int:
     for rolle, gerät in belegung_raw.items():
         if gerät is not None and hasattr(gerät, "index") and gerät.index is not None:
             device_assignment[rolle] = gerät.index
+    for eintrag in sources_config.enabled_sources():
+        if eintrag.device_index is not None:
+            device_assignment[eintrag.source_id] = eintrag.device_index
 
     channels = build_channels(
         sources_config=sources_config,

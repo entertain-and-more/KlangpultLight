@@ -1,8 +1,12 @@
-# CLAUDE.md — PodcastRecorder (Instructions für AI Coding Agents)
+# CLAUDE.md — Klangpult light – Recorder (Instructions für AI Coding Agents)
+
+Dieses Modul ist Teil von **Klangpult light** (Freeware). Klangpult light ist die kostenlose
+Freeware-Version (Funnel); das kostenpflichtige Gegenstück ist **Klangpult** (Vollversion).
+Lizenz: Proprietär/Freeware, Closed-Source. Kein öffentliches GitHub-Repo.
 
 ## Projekt
 
-**PodcastRecorder** — schlanke Desktop-App zum Aufnehmen (Audio + Video + gemeinsames
+**Klangpult light – Recorder** — schlanke Desktop-App zum Aufnehmen (Audio + Video + gemeinsames
 Audio-Videoboard, Aufnahmen mit Branches). Eigenständig, **kein** geteilter Code mit
 `DEV_USBPodcastStudio`. Bewährtes aus dem Studio darf als Vorbild dienen (gleiche `sounddevice`-/
 FFmpeg-Muster), aber neu und schlanker geschrieben.
@@ -20,6 +24,7 @@ da der Ordner großgeschrieben ist). Imports relativ zum `Recorder/`-Root (z. B.
 - **NIEMALS** venv in OneDrive — stets `C:\_Local_DEV\venvs\podcast_packages\`.
 - **NIEMALS** Credentials/`.env`/Keys committen.
 - **Aufnahmen nie überschreiben** — Original unveränderlich, Branches als Kinder.
+- **Kein öffentliches GitHub-Repo** — Klangpult light ist Closed-Source.
 - JSON immer UTF-8 ohne BOM.
 
 ## Thread-Sicherheit (kritisch)
@@ -39,7 +44,7 @@ da der Ordner großgeschrieben ist). Imports relativ zum `Recorder/`-Root (z. B.
 
 ## Tests
 
-- TDD: erst Tests, dann Implementierung. `python -m pytest recorder/tests -q`.
+- TDD: erst Tests, dann Implementierung. `python -m pytest Recorder/tests -q`.
 - Headless-Selftest: `PODCAST_RECORDER_SELFTEST=1` + `QT_QPA_PLATFORM=offscreen` → App startet,
   baut UI auf, beendet sich mit Exit-Code 0 ohne Fenster.
 - GUI-Tests laufen offscreen; Audio/Video gegen Mocks.

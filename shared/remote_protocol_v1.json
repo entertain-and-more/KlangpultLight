@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "podcastpackages-remote-v1",
-  "title": "PodcastPackages Remote Protocol v1",
-  "description": "WebSocket-Protokoll zwischen PodcastRecorder (Desktop) und PodcastPlaner (Web). Erweitert das Studio-Protokoll um transcript_chunk (Live-STT als Motor für Monitor/Teleprompter).",
+  "$id": "klangpultlight-remote-v1",
+  "title": "Klangpult light Remote Protocol v1",
+  "description": "WebSocket-Protokoll zwischen Klangpult light – Recorder (Desktop) und Klangpult light – Planer (Web). Erweitert das Studio-Protokoll um transcript_chunk (Live-STT als Motor für Monitor/Teleprompter).",
   "definitions": {
     "DesktopToCompanion": {
       "type": "object",

@@ -139,6 +139,36 @@ def test_mic_device_index_aus_assignment():
     assert ch_map["mic_2"].device_index == 4
 
 
+def test_mic_device_index_aus_config_hat_vorrang():
+    """SourceEntry.device_index überschreibt die automatische Assignment-Belegung."""
+    from sources.build_channels import build_channels
+    cfg = _default_cfg()
+    mic = cfg.get("mic_1")
+    assert mic is not None
+    mic.device_index = 9
+
+    channels = build_channels(
+        cfg,
+        device_assignment={"mic_1": 2},
+        loopback_route=None,
+    )
+    ch_map = {c.source_id: c for c in channels}
+    assert ch_map["mic_1"].device_index == 9
+
+
+def test_mic_capture_false_bleibt_stumm_schaltbarer_kanal():
+    """Deaktivierte Mic-Quelle bleibt als gemuteter Kanal für Live-Umschaltung erhalten."""
+    from sources.build_channels import build_channels
+    cfg = _default_cfg()
+    cfg.set_capture("mic_2", False)
+
+    channels = build_channels(cfg, device_assignment={}, loopback_route=None)
+    ch_map = {c.source_id: c for c in channels}
+
+    assert "mic_2" in ch_map
+    assert ch_map["mic_2"].mute is True
+
+
 def test_mic_ohne_assignment_device_index_none():
     """Mic ohne assignment-Eintrag → device_index bleibt None."""
     from sources.build_channels import build_channels

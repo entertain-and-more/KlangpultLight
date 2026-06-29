@@ -1,4 +1,4 @@
-"""planer/start.py — Startet den PodcastPlaner-Webserver.
+"""planer/start.py — Startet den Klangpult light – Planer-Webserver.
 
 Öffnet http://127.0.0.1:8770 im Standard-Browser und wartet auf Ctrl+C.
 
@@ -42,7 +42,7 @@ def main() -> None:
     srv.start(host="127.0.0.1", port=port)
 
     url = f"http://127.0.0.1:{srv.port}"
-    print(f"\nPodcastPlaner läuft auf {url}")
+    print(f"\nKlangpult light – Planer läuft auf {url}")
     print("Stoppen mit Ctrl+C\n")
 
     if not os.environ.get("PLANER_NO_BROWSER"):
@@ -51,7 +51,7 @@ def main() -> None:
     try:
         threading.Event().wait()
     except KeyboardInterrupt:
-        print("\nBeende PodcastPlaner…")
+        print("\nBeende Klangpult light – Planer…")
         srv.stop()
 
 

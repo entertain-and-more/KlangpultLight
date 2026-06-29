@@ -1,4 +1,4 @@
-"""ui.main_window — Hauptfenster des PodcastRecorders (PySide6).
+"""ui.main_window — Hauptfenster des Klangpult light – Recorders (PySide6).
 
 Thread-Modell:
   - Pegel-Updates und Video-Vorschau nur über QTimer (nie direkt aus Audio-/Video-Callbacks).
@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QListWidget,
     QListWidgetItem,
+    QComboBox,
     QScrollArea,
     QMenu,
     QInputDialog,
@@ -77,7 +78,7 @@ class _FloatPanelWindow(QWidget):
 
 
 class MainWindow(QMainWindow):
-    """Hauptfenster des PodcastRecorders.
+    """Hauptfenster des Klangpult light – Recorders.
 
     Layout (schlank):
       Links  — Quellen-Panel (verifizierte Geräte + Default-Belegung)
@@ -144,7 +145,7 @@ class MainWindow(QMainWindow):
     # -------------------------------------------------------------------------
 
     def _setup_ui(self) -> None:
-        self.setWindowTitle("PodcastRecorder")
+        self.setWindowTitle("Klangpult light – Recorder")
         self.setMinimumSize(900, 560)
         self.setStyleSheet(APP_QSS)
 
@@ -253,6 +254,8 @@ class MainWindow(QMainWindow):
         outer_layout = QVBoxLayout(box)
         outer_layout.setSpacing(8)
 
+        geraete = self._device_manager.list_input_devices(verify=True)
+
         if self._sources_config is not None:
             # --- SourcesConfig-Checkboxen: pro Quelle ein Capture-Umschalter ---
             capture_label = QLabel("Mitschneiden:")
@@ -292,11 +295,33 @@ class MainWindow(QMainWindow):
                     gerät_lbl.setProperty("role", "sekundär")
                     zeile.addWidget(gerät_lbl)
                 else:
-                    gerät_info = belegung.get(source_id)
-                    if gerät_info is not None:
-                        gerät_lbl = QLabel(f"  [{gerät_info.name}]")
-                        gerät_lbl.setProperty("role", "sekundär")
-                        zeile.addWidget(gerät_lbl)
+                    combo = QComboBox()
+                    combo.setObjectName(f"audio_device_{source_id}")
+                    combo.setMinimumWidth(180)
+                    combo.addItem("Automatisch", None)
+                    for gerät in geraete:
+                        if not gerät.verified:
+                            continue
+                        mock_hint = " (Mock)" if gerät.is_mock else ""
+                        combo.addItem(f"{gerät.name}{mock_hint}", gerät.index)
+
+                    vorauswahl = eintrag.device_index
+                    if vorauswahl is None:
+                        gerät_info = belegung.get(source_id)
+                        if gerät_info is not None:
+                            vorauswahl = gerät_info.index
+                    combo.blockSignals(True)
+                    for idx in range(combo.count()):
+                        if combo.itemData(idx) == vorauswahl:
+                            combo.setCurrentIndex(idx)
+                            break
+                    combo.blockSignals(False)
+                    combo.currentIndexChanged.connect(
+                        lambda _idx, sid=source_id, feld=combo: self._audio_geraet_waehlen(
+                            sid, feld.currentData()
+                        )
+                    )
+                    zeile.addWidget(combo)
 
                 zeile.addStretch()
                 outer_layout.addLayout(zeile)
@@ -313,7 +338,6 @@ class MainWindow(QMainWindow):
             outer_layout.addSpacing(8)
 
         # --- Verfügbare Hardware-Eingänge (Info, immer sichtbar) ---
-        geraete = self._device_manager.list_input_devices(verify=True)
         trenn = QLabel("Verfügbare Eingänge:")
         trenn.setProperty("role", "überschrift")
         outer_layout.addWidget(trenn)
@@ -335,6 +359,33 @@ class MainWindow(QMainWindow):
         if self._sources_config is None:
             return
         self._sources_config.set_capture(source_id, checked)
+        if hasattr(self._engine, "set_channel_capture_enabled"):
+            self._engine.set_channel_capture_enabled(source_id, checked)
+        self._aktualisiere_status()
+        self._speichere_sources_config()
+
+    def _audio_geraet_waehlen(self, source_id: str, device_index) -> None:
+        """Persistiert die Geräteauswahl einer Quelle."""
+        if self._sources_config is None:
+            return
+        if device_index is not None:
+            device_index = int(device_index)
+        self._sources_config.set_device_index(source_id, device_index)
+        self._speichere_sources_config()
+        sofort_angewendet = False
+        if not self._aufnahme_läuft and hasattr(self._engine, "set_channel_device_index"):
+            sofort_angewendet = bool(
+                self._engine.set_channel_device_index(source_id, device_index)
+            )
+        if getattr(self, "_statusleiste", None) is not None:
+            if sofort_angewendet:
+                text = "Audioquelle ausgewählt und für die laufende Engine übernommen."
+            else:
+                text = "Audioquelle gespeichert. Gerätewechsel wirkt nach der laufenden Aufnahme oder beim nächsten Start."
+            self._statusleiste.showMessage(text, 5000)
+
+    def _speichere_sources_config(self) -> None:
+        """Speichert SourcesConfig, ohne die UI bei Dateifehlern abstürzen zu lassen."""
         if self._sources_config_path is not None:
             try:
                 save_sources_config(self._sources_config, self._sources_config_path)
@@ -356,6 +407,20 @@ class MainWindow(QMainWindow):
         self._titel_eingabe = QLineEdit()
         self._titel_eingabe.setPlaceholderText("Aufnahmetitel …")
         layout.addWidget(self._titel_eingabe)
+
+        layout.addSpacing(12)
+
+        modus_label = QLabel("Aufnahme-Modus")
+        modus_label.setProperty("role", "überschrift")
+        layout.addWidget(modus_label)
+        self._aufnahme_modus = QComboBox()
+        self._aufnahme_modus.setObjectName("aufnahme_modus")
+        self._aufnahme_modus.addItem("Ton + Video", "audio_video")
+        self._aufnahme_modus.addItem("Nur Ton", "audio_only")
+        self._aufnahme_modus.addItem("Nur Video", "video_only")
+        self._aufnahme_modus.setToolTip("Wählt, ob Ton, Video oder beides aufgezeichnet wird.")
+        self._aufnahme_modus.currentIndexChanged.connect(lambda _idx: self._aktualisiere_status())
+        layout.addWidget(self._aufnahme_modus)
 
         layout.addSpacing(12)
 
@@ -802,20 +867,57 @@ class MainWindow(QMainWindow):
         finally:
             self._btn_aufnahme.setEnabled(True)
 
+    def _aufnahme_modus_wert(self) -> str:
+        """Gibt den aktuell gewählten Aufnahme-Modus zurück."""
+        combo = getattr(self, "_aufnahme_modus", None)
+        if combo is None:
+            return "audio_video"
+        wert = combo.currentData()
+        return str(wert or "audio_video")
+
+    def _aktive_audio_source_ids(self) -> list[str]:
+        """Liest die aktuell ausgewählten Audioquellen aus SourcesConfig."""
+        if self._sources_config is None:
+            if hasattr(self._engine, "active_channel_ids"):
+                return list(self._engine.active_channel_ids())
+            return []
+        ids: list[str] = []
+        for eintrag in self._sources_config.capture_sources():
+            if eintrag.kind != "video":
+                ids.append(eintrag.source_id)
+        return ids
+
+    def _wende_audio_auswahl_an(self) -> list[str]:
+        """Überträgt die UI-Audioauswahl auf die laufende Engine."""
+        ids = self._aktive_audio_source_ids()
+        if hasattr(self._engine, "set_active_capture_source_ids"):
+            self._engine.set_active_capture_source_ids(ids)
+            if hasattr(self._engine, "active_channel_ids"):
+                return list(self._engine.active_channel_ids())
+        return ids
+
     def _aufnahme_starten(self) -> None:
-        """Startet eine neue Aufnahme-Session mit optionalem Video."""
+        """Startet eine neue Aufnahme-Session im gewählten Modus."""
         if self._session is not None:
             return
 
         titel = self._titel_eingabe.text().strip() or "Aufnahme"
-        self._session = RecordingSession(
-            library=self._library,
-            engine=self._engine,
-            state=self._state,
-        )
+        modus = self._aufnahme_modus_wert()
+        audio_enabled = modus in ("audio_video", "audio_only")
+        video_enabled = modus in ("audio_video", "video_only")
 
-        # Vorschau-Loop stoppen — echte Kamera kann nicht doppelt geöffnet werden
-        if self._vorschau_loop is not None:
+        if audio_enabled:
+            aktive_audio_ids = self._wende_audio_auswahl_an()
+            if not aktive_audio_ids:
+                self._statusleiste.showMessage(
+                    "Keine Audioquelle aktiv — bitte mindestens eine Tonquelle auswählen.",
+                    6000,
+                )
+                return
+
+        # Vorschau-Loop nur stoppen, wenn Video wirklich aufgezeichnet wird.
+        # Echte Kamera kann nicht gleichzeitig Preview und Aufnahme bedienen.
+        if video_enabled and self._vorschau_loop is not None:
             try:
                 self._vorschau_loop.stop()
             except Exception:
@@ -826,17 +928,46 @@ class MainWindow(QMainWindow):
         # Aktuell kann in der UI genau eine Quelle gewählt werden;
         # die Liste ist der Erweiterungspunkt für spätere Mehrfachauswahl.
         video_quellen: list = []
-        if self._gewählte_video_quelle is not None:
+        if video_enabled and self._gewählte_video_quelle is not None:
             try:
                 quelle = self._video_manager.open_source(self._gewählte_video_quelle)
                 video_quellen.append(quelle)
             except Exception:
-                pass
+                self._statusleiste.showMessage(
+                    "Videoquelle konnte nicht geöffnet werden — Aufnahme nicht gestartet.",
+                    6000,
+                )
+                self._starte_vorschau_loop()
+                return
 
-        if video_quellen:
-            self._session.start(titel, video_sources=video_quellen)
-        else:
-            self._session.start(titel)
+        if video_enabled and not video_quellen:
+            self._statusleiste.showMessage(
+                "Keine Videoquelle aktiv — wähle eine Videoquelle oder den Modus Nur Ton.",
+                6000,
+            )
+            self._starte_vorschau_loop()
+            return
+
+        session = RecordingSession(
+            library=self._library,
+            engine=self._engine,
+            state=self._state,
+        )
+        try:
+            if video_quellen:
+                session.start(
+                    titel,
+                    video_sources=video_quellen,
+                    audio_enabled=audio_enabled,
+                )
+            else:
+                session.start(titel, audio_enabled=audio_enabled)
+        except Exception as exc:
+            self._statusleiste.showMessage(f"Aufnahme konnte nicht starten: {exc}", 6000)
+            self._starte_vorschau_loop()
+            return
+
+        self._session = session
         self._aufnahme_läuft = True
         self._btn_aufnahme.setText("Aufnahme stoppen")
         self._btn_aufnahme.setProperty("recording", "true")
@@ -1060,6 +1191,13 @@ class MainWindow(QMainWindow):
         geraete = self._device_manager.list_input_devices(verify=False)
         verifiziert = sum(1 for g in geraete if g.verified)
         teile.append(f"{verifiziert} verifizierte Quelle{'n' if verifiziert != 1 else ''}")
+
+        modus_text = {
+            "audio_video": "Ton + Video",
+            "audio_only": "Nur Ton",
+            "video_only": "Nur Video",
+        }.get(self._aufnahme_modus_wert(), "Ton + Video")
+        teile.append(f"Modus: {modus_text}")
 
         # Aufnahme-Status
         if self._aufnahme_läuft:

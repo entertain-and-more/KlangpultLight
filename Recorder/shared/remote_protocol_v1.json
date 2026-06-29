@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "remote_protocol_v1",
-  "description": "WebSocket-Protokoll zwischen PodcastRecorder (Desktop) und Companion (Mobilgerät/Web-Planer). Alle Nachrichten sind JSON-Objekte mit einem 'type'-Feld.",
+  "description": "WebSocket-Protokoll zwischen Klangpult light – Recorder (Desktop) und Companion (Mobilgerät/Web-Planer). Alle Nachrichten sind JSON-Objekte mit einem 'type'-Feld.",
   "version": "1.0.0",
   "messages": {
     "desktop_to_companion": {

@@ -57,12 +57,15 @@ class RecordingSession:
         self._video_capture = None    # VideoCaptureLoop oder MultiSourceCaptureLoop
         self._video_recorder = None   # VideoRecorder-Instanz
         self._video_pfad: Optional[str] = None  # Pfad zur stummen Video-MP4
+        self._audio_enabled = True
+        self._last_video_duration = 0.0
 
     def start(
         self,
         title: str,
         video_source=None,
         video_sources: Optional[list] = None,
+        audio_enabled: bool = True,
     ) -> RecordingMetadata:
         """Startet eine neue Aufnahme.
 
@@ -75,12 +78,15 @@ class RecordingSession:
             Compositor → komponiertes program_video.mp4.
           - video_sources=[src] (1 Element): wie video_source (Single-Source-Pfad).
           - Beide None: Audio-only.
+          - audio_enabled=False + Videoquelle: Video-only, ohne AudioEngine-WAV.
 
         Args:
             title: Titel der Aufnahme.
             video_source: Optionale einzelne VideoSource-Instanz (Einzelquelle).
             video_sources: Optionale Liste von VideoSource-Instanzen (Multi-Quelle).
                            Überschreibt video_source wenn gesetzt und nicht leer.
+            audio_enabled: Wenn False, wird keine Audioaufnahme gestartet. Das ist
+                           nur mit mindestens einer Videoquelle gültig.
 
         Returns:
             RecordingMetadata der gestarteten Aufnahme.
@@ -90,6 +96,15 @@ class RecordingSession:
         """
         if self._aktuelle_meta is not None:
             raise RuntimeError("Aufnahme läuft bereits — zuerst stop() aufrufen.")
+
+        quellen_liste: Optional[list] = None
+        if video_sources is not None and len(video_sources) > 0:
+            quellen_liste = list(video_sources)
+        elif video_source is not None:
+            quellen_liste = [video_source]
+
+        if not audio_enabled and not quellen_liste:
+            raise ValueError("Video-only erfordert mindestens eine Videoquelle.")
 
         meta = self._library.create_recording(title)
 
@@ -106,19 +121,17 @@ class RecordingSession:
         os.makedirs(main_dir, exist_ok=True)
 
         try:
+            self._audio_enabled = audio_enabled
+            self._last_video_duration = 0.0
+
             # Audio-Aufnahme starten
-            self._engine.start_recording(main_dir)
+            if audio_enabled:
+                self._engine.start_recording(main_dir)
 
             # Video-Aufnahme starten (optional)
-            # video_sources (Liste) hat Vorrang; ≥2 → Multi, 1 → Single-Pfad.
-            quellen_liste: Optional[list] = None
-            if video_sources is not None and len(video_sources) > 0:
-                quellen_liste = list(video_sources)
-            elif video_source is not None:
-                quellen_liste = [video_source]
-
             if quellen_liste is not None:
-                self._video_pfad = os.path.join(main_dir, "program_video.mp4")
+                dateiname = "program_video.mp4" if audio_enabled else "program.mp4"
+                self._video_pfad = os.path.join(main_dir, dateiname)
                 if len(quellen_liste) >= 2:
                     self._starte_video_multi(quellen_liste, self._video_pfad)
                 else:
@@ -133,6 +146,11 @@ class RecordingSession:
             self._video_pfad = None
             self._video_capture = None
             self._video_recorder = None
+            if audio_enabled:
+                try:
+                    self._engine.stop_recording()
+                except Exception:
+                    pass
             raise
 
         # Erst nach vollständig erfolgreichem Start den Zustand committen.
@@ -164,14 +182,20 @@ class RecordingSession:
             raise RuntimeError("Keine Aufnahme aktiv — zuerst start() aufrufen.")
 
         # Audio stoppen
-        ergebnis = self._engine.stop_recording()
-        dauer = float(ergebnis.get("duration", 0.0))
-        mix_pfad = ergebnis.get("mix", "")
+        if self._audio_enabled:
+            ergebnis = self._engine.stop_recording()
+            dauer = float(ergebnis.get("duration", 0.0))
+            mix_pfad = ergebnis.get("mix", "")
+        else:
+            dauer = 0.0
+            mix_pfad = ""
 
         # Video stoppen und muxen (wenn aktiv)
         program_mp4 = ""
         if self._video_capture is not None or self._video_recorder is not None:
             program_mp4 = self._stoppe_video_und_mux(mix_pfad, dauer)
+            if not self._audio_enabled:
+                dauer = self._last_video_duration
 
         # Original-Branch mit Ergebnis aktualisieren
         meta = self._aktuelle_meta
@@ -203,6 +227,8 @@ class RecordingSession:
             self._event_log = None
 
         self._aktuelle_meta = None
+        self._audio_enabled = True
+        self._last_video_duration = 0.0
         return meta
 
     # -------------------------------------------------------------------------
@@ -308,7 +334,7 @@ class RecordingSession:
 
         video_pfad = self._video_pfad or ""
         try:
-            self._video_recorder.close()
+            self._last_video_duration = float(self._video_recorder.close())
         except Exception as exc:
             # 2b-Minor: Fehler nicht verschlucken — im EventLog protokollieren,
             # damit ffmpeg-Fehler nicht lautlos verloren gehen.
@@ -324,6 +350,9 @@ class RecordingSession:
 
         if not video_pfad or not os.path.exists(video_pfad):
             return ""
+        if not self._audio_enabled:
+            self._video_pfad = None
+            return video_pfad
         if not mix_pfad or not os.path.exists(mix_pfad):
             return ""
 

@@ -1,4 +1,4 @@
-"""bridge — Lokaler Dienst-Layer des PodcastRecorders.
+"""bridge — Lokaler Dienst-Layer des Klangpult light – Recorders.
 
 Enthält:
     LibraryApiServer  — HTTP-Dienst (GET /api/library, GET /api/health)

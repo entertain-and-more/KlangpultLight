@@ -1,4 +1,4 @@
-# BUGS — PodcastPackages (Recorder + Planer)
+# BUGS — Klangpult light (Recorder + Planer)
 
 Offene/zurückgestellte Bugs. Behobene siehe Git-Historie.
 Angelegt: 2026-06-22.
@@ -10,9 +10,9 @@ Angelegt: 2026-06-22.
 - **[FIXED] Kombinierter Start (`START.bat`) startete den Recorder nicht.** Die
   Hintergrund-Launch-Zeile nutzte verschachtelte Quotes
   (`cmd /C "call ""%~dp0Recorder\START.bat"""`) → der Aufruf brach, der Recorder
-  fiel auf **System-Python + falschen Pfad** (`PodcastPackages\main.py` statt
+  fiel auf **System-Python + falschen Pfad** (`Klangpult light\main.py` statt
   `Recorder\main.py`) zurück; nur der Planer lief (Proxy-Fehler zu 8767/8769).
-  Fix: `start "PodcastRecorder" /D "%~dp0Recorder" cmd /C START.bat`.
+  Fix: `start "Klangpult light - Recorder" /D "%~dp0Recorder" cmd /C START.bat`.
 - **[FIXED] Recorder-Startfix:** Kamera-`obsensor`-Probing blockierte den GUI-Start
   („schwarze Konsole"). Fix: DSHOW-Backend (`video/video_source.py`), cv2-Log
   SILENT + `max_index` 5→3 (`video/video_manager.py`).
@@ -20,6 +20,10 @@ Angelegt: 2026-06-22.
   jetzt geloggt (`audio/engine.py`). Hauptbug der Schwestersoftware (GUI-Thread-
   Drain) war hier NICHT vorhanden — der Recorder nutzt bereits einen dedizierten
   MixWorker-Thread.
+- **[FIXED] Recorder-Aufnahmemodi und Audioquellenauswahl (2026-06-29):**
+  Audioquellen sind im Quellenpanel auswählbar und wirken sofort auf die Engine.
+  Der Recorder kann jetzt `Ton + Video`, `Nur Ton` oder `Nur Video` starten.
+  Video-only erzeugt `program.mp4` ohne Audio-WAV-Dummy.
 
 ---
 

@@ -134,6 +134,8 @@ class AudioEngine:
         # Initialer Peak-Eintrag (Nullen der Kanal-Länge) — damit
         # latest_peaks() schon vor start() eine gültige Liste liefert.
         self._peak_deque.append([0.0] * len(channels))
+        if self._state is not None:
+            self._state.active_source_ids = self.active_channel_ids()
 
         # Guard: Shape-Mismatch zwischen Board-Block und Mix-Block nur einmal loggen
         # (kein Spam pro verworfenen Block).
@@ -364,6 +366,71 @@ class AudioEngine:
             Anzahl der registrierten MixerChannels.
         """
         return len(self._channels)
+
+    def channel_ids(self) -> list[str]:
+        """Gibt die registrierten Kanal-IDs in Mixer-Reihenfolge zurück."""
+        return [kanal.source_id for kanal in self._channels]
+
+    def active_channel_ids(self) -> list[str]:
+        """Gibt die aktuell nicht stumm geschalteten Kanal-IDs zurück."""
+        return [kanal.source_id for kanal in self._channels if not kanal.mute]
+
+    def set_channel_capture_enabled(self, source_id: str, enabled: bool) -> bool:
+        """Schaltet eine Audioquelle für den Mix an oder aus.
+
+        Die Quelle bleibt als Kanal vorhanden, wird aber bei ``enabled=False``
+        stumm geschaltet. Das wirkt sofort auf Monitoring, Mix und Aufnahme.
+
+        Returns:
+            True, wenn ein Kanal mit source_id gefunden wurde.
+        """
+        gefunden = False
+        for kanal in self._channels:
+            if kanal.source_id == source_id:
+                kanal.mute = not enabled
+                gefunden = True
+        if self._state is not None:
+            self._state.active_source_ids = self.active_channel_ids()
+        return gefunden
+
+    def set_channel_device_index(self, source_id: str, device_index: Optional[int]) -> bool:
+        """Setzt das Eingabegerät eines bestehenden Kanals.
+
+        Bei realen Streams wird außerhalb einer laufenden Aufnahme neu geöffnet,
+        damit die Auswahl sofort wirkt. Im Mock-Modus genügt die Feldänderung.
+
+        Returns:
+            True, wenn ein Kanal mit source_id gefunden wurde.
+        """
+        gefunden = False
+        for kanal in self._channels:
+            if kanal.source_id == source_id:
+                kanal.device_index = device_index
+                gefunden = True
+        if not gefunden:
+            return False
+
+        with self._aufnahme_lock:
+            nimmt_auf = self._recording
+
+        if self._laeuft and not nimmt_auf and not self._nutze_mock():
+            for stream in self._echte_streams:
+                try:
+                    stream.stop()
+                    stream.close()
+                except Exception as exc:
+                    _log.warning("Stream-close-Fehler beim Gerätewechsel: %s", exc)
+            self._echte_streams = []
+            self._starte_echte_streams()
+        return True
+
+    def set_active_capture_source_ids(self, source_ids: list[str]) -> None:
+        """Setzt alle Audioquellen anhand einer erlaubten source_id-Liste."""
+        erlaubt = set(source_ids)
+        for kanal in self._channels:
+            kanal.mute = kanal.source_id not in erlaubt
+        if self._state is not None:
+            self._state.active_source_ids = self.active_channel_ids()
 
     def is_running(self) -> bool:
         """Gibt zurück, ob die Engine läuft.

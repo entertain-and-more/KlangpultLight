@@ -1,4 +1,4 @@
-"""ui.styles — Schlankes Dark-Theme für den PodcastRecorder.
+"""ui.styles — Schlankes Dark-Theme für den Klangpult light – Recorder.
 
 Frisches, ruhiges Design. Kein alter Studio-PySide-Look.
 """

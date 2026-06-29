@@ -1,4 +1,4 @@
-# TODO.md — PodcastPackages Umsetzungsplan
+# TODO.md — Klangpult light Umsetzungsplan
 
 **Stand:** 2026-06-17 · Konzept: [KONZEPT.md](./KONZEPT.md)
 
@@ -13,7 +13,7 @@
 
 ## Phase 0 — Setup & Gerüst
 
-- [ ] `PodcastPackages` als `.SOFTWARE`-Projekt registrieren (releases.json / PROJECT_STATUS.md)
+- [ ] `Klangpult light` als `.SOFTWARE`-Projekt registrieren (releases.json / PROJECT_STATUS.md)
 - [ ] Ordnerstruktur anlegen (siehe KONZEPT §7): `recorder/`, `planer/`, `shared/`, `workspace/`
 - [ ] `.gitignore` SOFORT: `workspace/`, `*.env`, `venv/`, Build-Artefakte, große Medien
 - [ ] Minimale `AGENTS.md` als Redirect auf CLAUDE.md (User-Standard) + Projekt-`README.md` (Stub)
@@ -141,6 +141,21 @@
 
 ---
 
+## CASH-Strategie Querverweis (2026-06-27)
+
+> Strategische Entscheidung — Rebrand zu Klangpult light (2026-06-27).
+
+- [x] **light-Variante übernimmt finalen Flaggschiff-Namen + " light"** → **Klangpult light**
+  (Entscheidung Lukas, 2026-06-27; Hauptapp = Klangpult). Verweise/Branding entsprechend gesetzt.
+  Vollständige CASH-Strategie: `../DEV_USBPodcastStudio/ROADMAP.md`
+  (Abschnitt „CASH-Strategie & Rebranding 2026-06-27").
+- [x] **Rebrand abgeschlossen (2026-06-27):** Klangpult light = Freeware-Funnel (Closed-Source,
+  kein öffentliches GitHub-Repo). Sub-Tools: Klangpult light – Recorder, Klangpult light – Planer.
+- [ ] **Lizenzmodell abstimmen:** Die light-Variante ist Proprietär/Freeware — LICENSE-Datei
+  nach finalem Entscheid synchronisieren.
+
+---
+
 ## Risiken / Wachpunkte
 
 - **Loopback-Realität:** Systemton-Mitschnitt ohne virtuelles Gerät nicht möglich → ehrlich kommunizieren,
@@ -172,6 +187,8 @@ Aus User-Tests (Lukas). Reihenfolge = Priorität; Funktionen vor Politur (Premiu
 ### Recorder (Desktop)
 - [x] P1  **Einspieler hinzufügbar** — Datei-Dialog → Pad → board.json. Commit bbe8d12.
 - [x] P1  Aufnahmen in der GUI **löschen/umbenennen/abspielen** (Kontextmenü + Doppelklick). Commit ac43edd.
+- [x] P1  **Audioquellen auswählbar + Aufnahmemodi** — Quellen-Checkboxen wirken sofort auf die Engine,
+      Gerätezuweisung wird persistiert und direkt übernommen; Modi `Ton + Video`, `Nur Ton`, `Nur Video` getestet (2026-06-29).
 - [x] P2  Bereiche **ein-/ausklappbar** (checkbare GroupBox, schmaler Streifen, Platz an Nachbarn). Commit eddd2db.
 - [x] P3  **Symbole** — kohärenter 15er-SVG-Line-Icon-Satz in assets/icons/ (visuell geprüft). Commit eddd2db→Icons.
 - [x] P3  Premium: Panels **ablösbar/andockbar** (⧉-Button → Float-Fenster, X dockt an). Commit a6824c3. (Interaktiver Fenstertest beim User offen.)

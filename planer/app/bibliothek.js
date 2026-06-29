@@ -1,5 +1,5 @@
 /**
- * bibliothek.js — Aufnahmen-Bibliothek-View des PodcastPlaners.
+ * bibliothek.js — Aufnahmen-Bibliothek-View des Klangpult light – Planers.
  *
  * Zeigt alle Aufnahmen aus /api/library mit Branch-Baum.
  * Beim Klick auf eine Aufnahme öffnet sich das Detail-Panel rechts.
@@ -51,7 +51,7 @@ async function render() {
     const banner = el("div", { className: "error-banner" }, [
       `Bibliothek nicht erreichbar: ${result.error}`,
       el("br"),
-      el("small", { textContent: "Bitte PodcastRecorder starten (Bridge läuft auf Port 8767)." }),
+      el("small", { textContent: "Bitte Klangpult light – Recorder starten (Bridge läuft auf Port 8767)." }),
     ]);
     _container.appendChild(banner);
     return;
@@ -64,7 +64,7 @@ async function render() {
     _container.appendChild(
       el("div", { className: "empty-state" }, [
         el("div", { className: "empty-icon", textContent: "🎙" }),
-        el("p", { textContent: "Noch keine Aufnahmen vorhanden. Starte den PodcastRecorder, um deine erste Aufnahme zu machen." }),
+        el("p", { textContent: "Noch keine Aufnahmen vorhanden. Starte den Klangpult light – Recorder, um deine erste Aufnahme zu machen." }),
       ])
     );
     return;

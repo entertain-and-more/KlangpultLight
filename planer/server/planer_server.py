@@ -121,7 +121,7 @@ class PlanerHandler(BaseHTTPRequestHandler):
             self._fehler(
                 502,
                 f"Backend-Dienst nicht erreichbar (Port {backend_port}). "
-                "Bitte PodcastRecorder starten.",
+                "Bitte Klangpult light – Recorder starten.",
             )
 
     # -------------------------------------------------------------------------
@@ -288,7 +288,7 @@ if __name__ == "__main__":
     srv = PlanerServer(library_port=library_port, projects_port=projects_port)
     srv.start(host="127.0.0.1", port=port)
 
-    print(f"PodcastPlaner läuft auf http://127.0.0.1:{srv.port}")
+    print(f"Klangpult light – Planer läuft auf http://127.0.0.1:{srv.port}")
     print("Stoppen mit Ctrl+C")
     try:
         threading.Event().wait()

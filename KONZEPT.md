@@ -1,13 +1,16 @@
-# KONZEPT.md — PodcastPackages
+# KONZEPT.md — Klangpult light
 
 **Version:** 0.1.0 (Konzept) · **Datum:** 2026-06-17 · **Autor:** Lukas Geiger (+ Claude)
 
+> **Klangpult light** ist die kostenlose Freeware-Version (Funnel). Gegenstück: Klangpult (proprietäre Vollversion, kostenpflichtig).
+> Lizenz: Proprietär/Freeware, Closed-Source. Kein öffentliches GitHub-Repo.
+
 > **Kurzfassung:** Das `DEV_USBPodcastStudio` ist mächtig, aber komplex geworden und wird oft nur
-> in Teilen gebraucht. `PodcastPackages` zerlegt es in **zwei schlanke, eigenständige Tools**, die
+> in Teilen gebraucht. `Klangpult light` zerlegt es in **zwei schlanke, eigenständige Tools**, die
 > je einen klaren Zweck erfüllen und unabhängig voneinander gestartet werden können:
 >
-> 1. **PodcastRecorder** — Desktop-App: aufnehmen (Audio + Video + gemeinsames Board, Aufnahmen mit Branches).
-> 2. **PodcastPlaner** — Web-App: planen (Bibliothek, Projektplanung, Assets/Line, KI-Monitor, Teleprompter).
+> 1. **Klangpult light – Recorder** — Desktop-App: aufnehmen (Audio + Video + gemeinsames Board, Aufnahmen mit Branches).
+> 2. **Klangpult light – Planer** — Web-App: planen (Bibliothek, Projektplanung, Assets/Line, KI-Monitor, Teleprompter).
 >
 > **Bewusst weggelassen:** Postproduction, Cutter, Transkription (siehe „Abgrenzung").
 
@@ -23,8 +26,8 @@ Die Trennung folgt dem natürlichen Arbeitsablauf:
 
 | Phase | Tool | Wann |
 |---|---|---|
-| **Vorbereitung** | PodcastPlaner (Web) | vor der Aufnahme — Themen, Ablauf, Assets, Teleprompter-Text, Monitor-Briefing |
-| **Aufnahme** | PodcastRecorder (Desktop) | während der Aufnahme — Quellen mischen, Board spielen, mitschneiden |
+| **Vorbereitung** | Klangpult light – Planer (Web) | vor der Aufnahme — Themen, Ablauf, Assets, Teleprompter-Text, Monitor-Briefing |
+| **Aufnahme** | Klangpult light – Recorder (Desktop) | während der Aufnahme — Quellen mischen, Board spielen, mitschneiden |
 | **Live-Unterstützung** | Planer ↔ Recorder gekoppelt | Teleprompter & KI-Monitor laufen im Planer (Web), gesteuert/gespeist vom Recorder |
 
 Jedes Tool ist **alleine lauffähig**. Die Kopplung ist optional und additiv.
@@ -61,7 +64,7 @@ am sinnvollsten denselben, den der Recorder ohnehin für die Live-Bridge exponie
 - **Gemeinsamer Workspace-Ordner** (lokal, konfigurierbar): Recorder schreibt Aufnahmen/Metadaten hinein,
   Planer liest/listet sie und legt Pläne/Teleprompter-Texte daneben.
 - **Austauschformate (aus dem Studio übernommen, da bereits spezifiziert):**
-  - `usbpodcaststudio-workspace-v1` (JSON-Payload) — **Plan → Recorder** (Soundboard-Pads, Teleprompter-Text).
+  - `klangpultlight-workspace-v1` (JSON-Payload) — **Plan → Recorder** (Soundboard-Pads, Teleprompter-Text).
   - `remote_protocol_v1` (WebSocket) — **Live**, Recorder ↔ Planer (Pegel, Prompter-Zeile, Pad-Trigger,
     Aufnahme-Status, Kapitelmarker, **Live-Transkriptions-Chunks**). Das Protokoll wird um einen
     `transcript_chunk`-Nachrichtentyp erweitert.
@@ -70,7 +73,7 @@ am sinnvollsten denselben, den der Recorder ohnehin für die Live-Bridge exponie
 
 ---
 
-## 3. PodcastRecorder (Desktop-App)
+## 3. Klangpult light – Recorder (Desktop-App)
 
 **Zweck:** Aufnehmen. Nichts weiter. Maximal automatisiert, minimal zu konfigurieren.
 
@@ -109,7 +112,7 @@ dem Studio (falls gewünscht) oder externen Tools überlassen.
 
 ---
 
-## 4. PodcastPlaner (Web-App)
+## 4. Klangpult light – Planer (Web-App)
 
 **Zweck:** Planen und live unterstützen. Daten/Text/Listen — keine Audio-Engine.
 
@@ -165,7 +168,7 @@ Transkript-Dokument als Ergebnis erzeugt/exportiert.
 
 ## 6. Feature-Mapping: Studio-Tab → neues Tool (Abhak-Zielmarke)
 
-| Studio-Tab / Feature | → PodcastRecorder | → PodcastPlaner | Status-Ziel |
+| Studio-Tab / Feature | → Klangpult light – Recorder | → Klangpult light – Planer | Status-Ziel |
 |---|:--:|:--:|---|
 | Mixer (USB-Mics, Fader/Mute/Solo/Pegel) | ✅ | — | muss erreicht |
 | Voice-FX (Gate/Comp/Limiter/EQ) | ❌ | — | bewusst NICHT enthalten (Postproduction/Komplexität vermieden) |
@@ -190,11 +193,11 @@ Transkript-Dokument als Ergebnis erzeugt/exportiert.
 ## 7. Ordnerstruktur (Vorschlag)
 
 ```
-PodcastPackages/
+Klangpult light/
 ├── KONZEPT.md              # dieses Dokument
 ├── TODO.md                 # Umsetzungsplan
 ├── README.md               # (später) Kurzüberblick + Quickstart
-├── recorder/               # PodcastRecorder — Desktop-App (Python/PySide6)
+├── recorder/               # Klangpult light – Recorder — Desktop-App (Python/PySide6)
 │   ├── main.py
 │   ├── audio/              # DeviceManager (+ Verifikation), Mixer, Loopback-Erkennung
 │   ├── video/              # Kamera/Screen-Quellen
@@ -203,7 +206,7 @@ PodcastPackages/
 │   ├── sources/            # Quellen-Config-Modell (was wird wie mitgeschnitten)
 │   ├── bridge/             # lokaler Dienst (WebSocket + Bibliothek-API)
 │   └── ui/                 # neues, schlankes Design
-├── planer/                 # PodcastPlaner — Web-App
+├── planer/                 # Klangpult light – Planer — Web-App
 │   ├── index.html
 │   ├── app/                # JS-Module (Bibliothek, Projekt, Assets, Line, Monitor, Prompter)
 │   ├── styles/

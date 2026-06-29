@@ -50,7 +50,7 @@ def test_index_html_wird_ausgeliefert(planer_server):
         ct = resp.headers.get("Content-Type", "")
         assert "html" in ct.lower(), f"Unerwarteter Content-Type: {ct}"
         body = resp.read().decode("utf-8")
-    assert "PodcastPlaner" in body, "Erwartete 'PodcastPlaner' im HTML-Body"
+    assert "Klangpult light" in body, "Erwartete 'Klangpult light' im HTML-Body"
 
 
 def test_css_wird_ausgeliefert(planer_server):

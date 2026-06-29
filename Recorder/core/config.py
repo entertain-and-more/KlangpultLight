@@ -9,7 +9,7 @@ from dataclasses import dataclass, asdict
 
 @dataclass
 class AppConfig:
-    """Zentrale Konfiguration des PodcastRecorders.
+    """Zentrale Konfiguration des Klangpult light – Recorders.
 
     Alle Felder haben sinnvolle Standardwerte, sodass die App sofort
     ohne Konfigurationsdatei startet.

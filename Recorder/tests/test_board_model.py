@@ -212,7 +212,7 @@ def test_import_from_workspace_basis():
     from board.board_model import import_from_workspace
 
     payload = {
-        "format": "podcastpackages-workspace-v1",
+        "format": "klangpultlight-workspace-v1",
         "version": 1,
         "board": {
             "pads": [
@@ -257,7 +257,7 @@ def test_import_export_roundtrip():
     from board.board_model import Board, Pad, import_from_workspace, export_to_workspace
 
     original_payload = {
-        "format": "podcastpackages-workspace-v1",
+        "format": "klangpultlight-workspace-v1",
         "version": 1,
         "board": {
             "pads": [
@@ -292,5 +292,5 @@ def test_import_from_workspace_leer_board():
     """import_from_workspace mit fehlendem 'board'-Feld: leeres Board."""
     from board.board_model import import_from_workspace
 
-    board = import_from_workspace({"format": "podcastpackages-workspace-v1", "version": 1})
+    board = import_from_workspace({"format": "klangpultlight-workspace-v1", "version": 1})
     assert len(board.pads) == 0

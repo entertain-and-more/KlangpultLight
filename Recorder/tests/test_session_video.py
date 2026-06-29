@@ -133,6 +133,40 @@ class TestSessionVideoIntegration:
         original = next(b for b in meta.branches if b.is_original)
         assert os.path.isfile(original.audio_path), f"mix.wav fehlt: {original.audio_path}"
 
+    def test_session_video_only_ohne_audio_path(self, tmp_path):
+        """Video-only erzeugt program.mp4, aber keine Audio-WAV im Original-Branch."""
+        if not _ffmpeg_verfuegbar():
+            pytest.skip("ffmpeg nicht im PATH — Test übersprungen")
+
+        engine, lib, session = _engine_und_session(tmp_path)
+        try:
+            video_source = _mock_video_source()
+            session.start(
+                "Video-Only-Test",
+                video_source=video_source,
+                audio_enabled=False,
+            )
+            time.sleep(0.25)
+            meta = session.stop()
+        finally:
+            engine.stop()
+
+        original = next(b for b in meta.branches if b.is_original)
+        assert original.audio_path == ""
+        assert original.video_path.endswith("program.mp4")
+        assert os.path.isfile(original.video_path)
+        assert os.path.getsize(original.video_path) > 0
+        assert meta.duration > 0
+
+    def test_session_video_only_ohne_videoquelle_ungueltig(self, tmp_path):
+        """audio_enabled=False ohne Videoquelle wird abgelehnt statt leere Aufnahme zu erzeugen."""
+        engine, _lib, session = _engine_und_session(tmp_path)
+        try:
+            with pytest.raises(ValueError, match="Video-only"):
+                session.start("Ungültig", audio_enabled=False)
+        finally:
+            engine.stop()
+
     def test_session_video_aufnahme_in_library_auffindbar(self, tmp_path):
         """Nach Video-Aufnahme ist die Aufnahme über list_recordings() auffindbar."""
         if not _ffmpeg_verfuegbar():

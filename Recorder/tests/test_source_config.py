@@ -69,6 +69,21 @@ def test_set_capture_unbekannte_id():
     cfg.set_capture("nicht_vorhanden", True)  # kein Exception
 
 
+def test_set_device_index_roundtrip(tmp_path):
+    """Geräteauswahl einer Quelle wird persistiert und wieder geladen."""
+    from sources.source_config import load_sources_config, save_sources_config
+    cfg = load_sources_config(None)
+    cfg.set_device_index("mic_1", 7)
+
+    pfad = str(tmp_path / "sources.json")
+    save_sources_config(cfg, pfad)
+    geladen = load_sources_config(pfad)
+
+    mic = geladen.get("mic_1")
+    assert mic is not None
+    assert mic.device_index == 7
+
+
 # ---------------------------------------------------------------------------
 # capture_sources / enabled_sources
 # ---------------------------------------------------------------------------

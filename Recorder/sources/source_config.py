@@ -87,6 +87,16 @@ class SourcesConfig:
         if eintrag is not None:
             eintrag.capture = value
 
+    def set_device_index(self, source_id: str, device_index: Optional[int]) -> None:
+        """Setzt das gebundene Audio-Gerät einer Quelle.
+
+        ``None`` bedeutet automatische Belegung durch DeviceManager.
+        Unbekannte source_id wird still ignoriert.
+        """
+        eintrag = self.get(source_id)
+        if eintrag is not None:
+            eintrag.device_index = device_index
+
     def to_dict(self) -> dict:
         """Serialisiert die gesamte Konfiguration als dict."""
         return {"sources": [e.to_dict() for e in self.sources]}

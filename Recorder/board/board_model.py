@@ -2,7 +2,7 @@
 
 Keine GUI-Imports. Nur stdlib + dataclasses.
 
-Kompatibel zu shared/workspace_v1.json (podcastpackages-workspace-v1, Version 1).
+Kompatibel zu shared/workspace_v1.json (klangpultlight-workspace-v1, Version 1).
 """
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from dataclasses import dataclass, field, asdict
 from typing import Optional
 
 # Literal-Konstanten aus workspace_v1.json
-WORKSPACE_FORMAT = "podcastpackages-workspace-v1"
+WORKSPACE_FORMAT = "klangpultlight-workspace-v1"
 WORKSPACE_VERSION = 1
 
 

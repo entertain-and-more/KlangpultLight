@@ -484,7 +484,7 @@ class _ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
 
 
 class ProjectsApiServer:
-    """HTTP-Dienst für die Projektplanung des PodcastPlaners.
+    """HTTP-Dienst für die Projektplanung des Klangpult light – Planers.
 
     Läuft in einem eigenen Daemon-Thread. Sauberes stop() wartet auf Shutdown.
     Persistenz via JSON-Dateien in ``data_dir`` (UTF-8 ohne BOM).

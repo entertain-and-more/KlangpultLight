@@ -1,5 +1,5 @@
 /**
- * projekte.js — Projektplanung-View des PodcastPlaners.
+ * projekte.js — Projektplanung-View des Klangpult light – Planers.
  *
  * CRUD für Projekte und deren Episoden gegen /api/projects (Port 8769).
  * Kein Framework — reines Vanilla JS ESM.
@@ -60,7 +60,7 @@ async function render() {
       el("div", { className: "error-banner" }, [
         `Projektdienst nicht erreichbar: ${result.error}`,
         el("br"),
-        el("small", { textContent: "Bitte PodcastRecorder starten (Bridge auf Port 8769)." }),
+        el("small", { textContent: "Bitte Klangpult light – Recorder starten (Bridge auf Port 8769)." }),
       ])
     );
     return;

@@ -1,22 +1,26 @@
-# PodcastPackages
+# Klangpult light
+
+> **Klangpult light** ist die kostenlose Freeware-Version (Funnel).
+> Gegenstück: **Klangpult** (proprietäre Vollversion, kostenpflichtig).
+> Lizenz: Proprietär/Freeware, Closed-Source. Kein öffentliches GitHub-Repo.
 
 Schlanke Aufspaltung des `DEV_USBPodcastStudio` in **zwei eigenständige Tools**:
 
-- **`Recorder/`** — PodcastRecorder, Desktop-App (Python/PySide6): aufnehmen
+- **`Recorder/`** — Klangpult light – Recorder, Desktop-App (Python/PySide6): aufnehmen
   (Audio + Video + gemeinsames Audio-Videoboard, Aufnahmen mit Branches,
   Quellen-Auto-Erkennung, „aufnehmen was am PC läuft", Live-Transkription als
   Motor für Monitor/Teleprompter).
-- **`Planung/`** — PodcastPlaner, Web-App (später): planen (Bibliothek,
+- **`planer/`** — Klangpult light – Planer, Web-App: planen (Bibliothek,
   Projektplanung, Assets/Line, KI-Monitor, Teleprompter).
 
 **Bewusst weggelassen:** Postproduction, Cutter, Batch-Transkription (SRT/TXT-Export), OCR, Upload.
 
 Konzept: [KONZEPT.md](./KONZEPT.md) · Umsetzungsplan: [TODO.md](./TODO.md)
 
-## Planer — Quickstart
+## Klangpult light – Planer — Quickstart
 
 ```powershell
-# Einfachster Start (PodcastRecorder muss vorher laufen)
+# Einfachster Start (Klangpult light – Recorder muss vorher laufen)
 .\START_PLANER.bat
 
 # Oder manuell
@@ -28,11 +32,11 @@ python planer/start.py
 #   PLANER_PORT=8770  LIBRARY_PORT=8767  PROJECTS_PORT=8769
 ```
 
-Der Planer erfordert einen laufenden PodcastRecorder (Bridge auf Ports 8767 + 8769).
+Der Planer erfordert einen laufenden Klangpult light – Recorder (Bridge auf Ports 8767 + 8769).
 Ohne Recorder läuft er als reines Planungstool für Projekte/Episoden weiter;
 die Bibliothek zeigt in diesem Fall einen Offline-Hinweis.
 
-## Recorder — Quickstart
+## Klangpult light – Recorder — Quickstart
 
 ```powershell
 # Einfachster Start

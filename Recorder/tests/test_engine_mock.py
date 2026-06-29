@@ -117,6 +117,44 @@ def test_engine_peaks_ohne_start():
     assert len(peaks) == 1
 
 
+def test_engine_capture_quellen_laufzeit_schaltbar():
+    """set_active_capture_source_ids mutet nicht ausgewählte Kanäle sofort."""
+    from core.config import AppConfig
+    from core.app_state import AppState
+    from audio.mixer_channel import MixerChannel
+    from audio.engine import AudioEngine
+
+    state = AppState()
+    cfg = AppConfig(mock_audio=True)
+    kanaele = [
+        MixerChannel(source_id="mic_1", name="Mikrofon 1"),
+        MixerChannel(source_id="mic_2", name="Mikrofon 2"),
+    ]
+    engine = AudioEngine(cfg, kanaele, state=state)
+
+    engine.set_active_capture_source_ids(["mic_2"])
+
+    assert engine.active_channel_ids() == ["mic_2"]
+    assert state.active_source_ids == ["mic_2"]
+    assert kanaele[0].mute is True
+    assert kanaele[1].mute is False
+
+
+def test_engine_device_index_laufzeit_schaltbar():
+    """set_channel_device_index setzt die Geräteauswahl am bestehenden Kanal."""
+    from core.config import AppConfig
+    from audio.mixer_channel import MixerChannel
+    from audio.engine import AudioEngine
+
+    cfg = AppConfig(mock_audio=True)
+    kanal = MixerChannel(source_id="mic_1", name="Mikrofon 1", device_index=1)
+    engine = AudioEngine(cfg, [kanal])
+
+    assert engine.set_channel_device_index("mic_1", 5) is True
+    assert kanal.device_index == 5
+    assert engine.set_channel_device_index("unbekannt", 2) is False
+
+
 def test_engine_start_rollback_bei_mock_thread_fehler(tmp_path):
     """Wenn der Mock-Thread nicht gestartet werden kann, bleibt is_running() False.
 

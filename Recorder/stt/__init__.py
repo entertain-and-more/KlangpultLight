@@ -1,4 +1,4 @@
-"""stt — Live-STT-Modul für den PodcastRecorder.
+"""stt — Live-STT-Modul für den Klangpult light – Recorder.
 
 Exportiert die wichtigsten Klassen und Hilfsfunktionen:
 

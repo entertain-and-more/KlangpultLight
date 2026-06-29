@@ -92,6 +92,15 @@ class AudioEngine:
         self._consumed: int = 0
         self._backlog_lock = threading.Lock()
 
+        # Roh-Capture-Diagnose pro Kanal: zaehlt Nullen im ROHEN Callback-Input
+        # (VOR jeder Verarbeitung). Beantwortet WASAPI/Treiber vs. App: hoher
+        # Roh-Null-Anteil => Stille kommt schon aus dem Capture/Treiber.
+        self._capture_metrics: dict[str, dict] = {
+            kanal.source_id: {"callbacks": 0, "total": 0, "zeros": 0,
+                              "status_count": 0, "statuses": []}
+            for kanal in channels
+        }
+
         # Aufnahme-Zustand
         self._recording = False
         self._mix_recorder: Optional[WavRecorder] = None
@@ -260,6 +269,9 @@ class AudioEngine:
             os.makedirs(out_dir, exist_ok=True)
             self._aufnahme_dir = out_dir
 
+            # Roh-Capture-Diagnose für dieses Take frisch starten.
+            self.reset_capture_metrics()
+
             sr = self._config.samplerate
             ch = self._config.channels
 
@@ -356,6 +368,31 @@ class AudioEngine:
         """
         with self._backlog_lock:
             return max(0, self._produced - self._consumed)
+
+    def reset_capture_metrics(self) -> None:
+        """Setzt die Roh-Capture-Diagnose aller Kanäle zurück (bei Aufnahmestart)."""
+        for sid in self._capture_metrics:
+            self._capture_metrics[sid] = {
+                "callbacks": 0, "total": 0, "zeros": 0,
+                "status_count": 0, "statuses": [],
+            }
+
+    def capture_metrics(self) -> dict:
+        """Roh-Capture-Diagnose pro Kanal inkl. Roh-Null-Anteil in Prozent.
+
+        zero_pct = Anteil Exakt-Null-Samples bereits im PortAudio-Input (vor jeder
+        Verarbeitung). Hoch => Stille kommt aus Treiber/WASAPI (Capture-Underrun);
+        ~0 trotz Aussetzern in den Stems => Verarbeitung/Mix erzeugt die Nullen.
+        Im Mock-Modus bleiben die Zähler 0 (kein realer Callback).
+        """
+        out: dict[str, dict] = {}
+        for sid, m in self._capture_metrics.items():
+            total = m["total"]
+            out[sid] = {
+                **{k: v for k, v in m.items()},
+                "zero_pct": round(100.0 * m["zeros"] / total, 2) if total else 0.0,
+            }
+        return out
 
     def channel_count(self) -> int:
         """Gibt die Anzahl der MixerChannels zurück.
@@ -732,6 +769,7 @@ class AudioEngine:
                         blocksize=block_size,
                         device=kanal.device_index,
                         extra_settings=extra,
+                        latency="high",  # größerer Puffer → Jitter-Toleranz gegen Aussetzer
                         callback=self._stream_callback_factory(kanal.source_id),
                     )
                 else:
@@ -742,6 +780,7 @@ class AudioEngine:
                         dtype="float32",
                         blocksize=block_size,
                         device=kanal.device_index,
+                        latency="high",  # größerer Puffer → Jitter-Toleranz gegen Aussetzer
                         callback=self._stream_callback_factory(kanal.source_id),
                     )
                 stream.start()
@@ -757,9 +796,32 @@ class AudioEngine:
         kein Mixen im Callback (Task 3c Fix).
         Kein GUI-Aufruf im Callback — Thread-Sicherheit via bounded deque.
         """
+        metrics = self._capture_metrics.get(source_id)
+        warn_state = {"next": 0.0, "dropped": 0}  # Drossel-Status (max 1x/2s)
+
         def _callback(indata, frames, time_info, status):
-            if status:  # PortAudio input overflow o.ä. — nicht still verschlucken
-                _log.warning("Audio-Callback-Status auf %s: %s", source_id, status)
+            if status:  # PortAudio input overflow o.ä. — GEDROSSELT melden
+                # Logging (I/O) im RT-Callback ist heikel und verstärkt unter
+                # Dropout-Last genau das Problem; daher max. 1x/2s pro Kanal.
+                if metrics is not None:
+                    metrics["status_count"] += 1
+                    s = str(status)
+                    if s not in metrics["statuses"]:
+                        metrics["statuses"].append(s)
+                jetzt = time.monotonic()
+                if jetzt >= warn_state["next"]:
+                    extra = f" (+{warn_state['dropped']} unterdrückt)" if warn_state["dropped"] else ""
+                    warn_state["dropped"] = 0
+                    warn_state["next"] = jetzt + 2.0
+                    _log.warning("Audio-Callback-Status auf %s: %s%s", source_id, status, extra)
+                else:
+                    warn_state["dropped"] += 1
+            # Roh-Capture-Diagnose VOR jeder Verarbeitung: Nullen im Input zählen.
+            if metrics is not None:
+                n = indata.size
+                metrics["callbacks"] += 1
+                metrics["total"] += n
+                metrics["zeros"] += n - int(np.count_nonzero(indata))
             block = indata.copy()
             puffer = self._kanal_puffer.get(source_id)
             if puffer is not None:

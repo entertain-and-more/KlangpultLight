@@ -157,6 +157,15 @@ class RecordingSession:
         self._aktuelle_meta = meta
         self._event_log = event_log
 
+        # Aufnahme-Schutz: Prozess-Priorität anheben, damit konkurrierende
+        # Systemlast den Audio-Callback nicht aushungert (Stille-Aussetzer-Schutz).
+        if audio_enabled:
+            try:
+                from core.process_priority import boost_priority
+                boost_priority()
+            except Exception:
+                pass
+
         # AppState aktualisieren
         if self._state is not None:
             self._state.recording = True
@@ -209,6 +218,28 @@ class RecordingSession:
 
         meta.duration = dauer
         self._library.update_metadata(meta)
+
+        # Roh-Capture-Diagnose dieses Takes sichern (WASAPI/Treiber vs. App):
+        # capture_metrics.json mit Roh-Null-Anteil je Kanal (vor jeder Verarbeitung).
+        if self._audio_enabled:
+            try:
+                import json as _json
+                main_dir = os.path.join(
+                    self._library.recording_dir(meta.recording_id), "main"
+                )
+                metrics = self._engine.capture_metrics()
+                with open(os.path.join(main_dir, "capture_metrics.json"),
+                          "w", encoding="utf-8") as _fh:
+                    _json.dump(metrics, _fh, ensure_ascii=False, indent=2)
+            except Exception:
+                pass
+
+        # Aufnahme-Schutz aufheben (kein Dauer-CPU-Vorrang im Leerlauf).
+        try:
+            from core.process_priority import restore_priority
+            restore_priority()
+        except Exception:
+            pass
 
         # AppState aktualisieren
         if self._state is not None:

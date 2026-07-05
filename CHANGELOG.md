@@ -32,7 +32,7 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 - Recorder: auswählbare Audioquellen pro Mic-/Line-Quelle mit persistenter und direkt übernommener Gerätezuweisung.
 
 ### Geändert / Changed
-- Nichts.
+- Root-Registry-Status synchronisiert: `KlangpultLight` ist in `releases.json` registriert und `PROJECT_STATUS.md` führt das Projekt jetzt konsistent mit Registry `ja`; GitHub bleibt bewusst kein Ziel für die Closed-Source-Freeware.
 
 ### Behoben / Fixed
 - Recorder: Videoaufnahme ist nicht mehr implizit immer aktiv; `Nur Ton` startet ohne Videoquelle.

@@ -13,7 +13,7 @@
 
 ## Phase 0 — Setup & Gerüst
 
-- [ ] `Klangpult light` als `.SOFTWARE`-Projekt registrieren (releases.json / PROJECT_STATUS.md)
+- [x] `Klangpult light` als `.SOFTWARE`-Projekt registrieren (releases.json / PROJECT_STATUS.md) — DONE 2026-07-05: `releases.json` war bereits korrekt; `PROJECT_STATUS.md` auf Registry `ja` synchronisiert.
 - [ ] Ordnerstruktur anlegen (siehe KONZEPT §7): `recorder/`, `planer/`, `shared/`, `workspace/`
 - [ ] `.gitignore` SOFORT: `workspace/`, `*.env`, `venv/`, Build-Artefakte, große Medien
 - [ ] Minimale `AGENTS.md` als Redirect auf CLAUDE.md (User-Standard) + Projekt-`README.md` (Stub)

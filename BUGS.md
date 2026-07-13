@@ -24,18 +24,17 @@ Angelegt: 2026-06-22.
   Audioquellen sind im Quellenpanel auswählbar und wirken sofort auf die Engine.
   Der Recorder kann jetzt `Ton + Video`, `Nur Ton` oder `Nur Video` starten.
   Video-only erzeugt `program.mp4` ohne Audio-WAV-Dummy.
+- **[FIXED] WAV-Write hielt den Aufnahmezustandslock während des Disk-Writes
+  (2026-07-14):** `AudioEngine._mix_one_tick()` führte `WavRecorder.write()`
+  unter `_aufnahme_lock` aus; bei langsamer Platte blockierte damit unnötig der
+  gesamte Aufnahmezustand. Fix: Recorder-I/O läuft jetzt unter separatem
+  `_recorder_io_lock`, laufende Schreibvorgänge werden vor `stop_recording()`
+  über eine Pending-Write-Koordination sauber ausgeräumt. Regression:
+  `Recorder/tests/test_mix_loop.py::test_wav_write_laueft_nicht_unter_aufnahme_lock`.
 
 ---
 
 ## Offen
-
-### P3 — WAV-Write hält das Aufnahme-Lock während des Platten-Writes
-- **Datei:** `Recorder/audio/engine.py` (`_mix_one_tick`, `_aufnahme_lock`)
-- **Problem:** Die WAV-`write()`-Aufrufe laufen unter `_aufnahme_lock`. Bei einer
-  langsamen Platte staut sich der MixWorker → indirekter Druck auf die Eingangs-
-  Puffer. Bei lokaler SSD unkritisch; riskant nur, wenn fälschlich nach OneDrive
-  aufgenommen würde (Regel: nie nach OneDrive aufnehmen).
-- **Fix-Idee:** WAV-Schreiben in einen separaten Writer-Thread mit eigener Queue.
 
 ### P3 — Video: FFmpeg-stdin-Write blockiert im Capture-Thread (kein Drop-Logging)
 - **Datei:** `Recorder/video/video_recorder.py` (`write_frame` → `stdin.write`)

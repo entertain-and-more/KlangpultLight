@@ -96,6 +96,20 @@ def _engine_mit_zwei_kanaelen(tmp_path):
     return engine, channels, cfg
 
 
+class _LockProbeRecorder:
+    """Minimaler Recorder-Dummy, der den Lock-Zustand beim write() mitschreibt."""
+
+    def __init__(self, engine):
+        self._engine = engine
+        self.lock_states: list[bool] = []
+
+    def write(self, block) -> None:
+        self.lock_states.append(self._engine._aufnahme_lock.locked())
+
+    def close(self) -> float:
+        return 0.0
+
+
 # ---------------------------------------------------------------------------
 # Test 1: Mix-Korrektheit synchron (Kern-Anforderung aus Task 3c)
 # ---------------------------------------------------------------------------
@@ -287,3 +301,38 @@ def test_clipping_bei_uebersteuerung(tmp_path):
     )
     # Wert muss nah an 1.0 liegen (nicht 0 wegen Rounding)
     assert np.max(data_mix) > 0.9, "Nach Clipping: Wert sollte ≈ 1.0 sein"
+
+
+def test_wav_write_laueft_nicht_unter_aufnahme_lock(tmp_path):
+    """Disk-I/O darf den Aufnahmezustandslock nicht halten.
+
+    Reproduziert den Bugsweep-Befund: _mix_one_tick() soll Recorder.write()
+    außerhalb von _aufnahme_lock ausführen, damit langsame Dateisysteme den
+    Aufnahmezustand nicht unnötig blockieren.
+    """
+    engine, cfg = _engine_direkt(tmp_path)
+    mix_probe = _LockProbeRecorder(engine)
+    kanal_a_probe = _LockProbeRecorder(engine)
+    kanal_b_probe = _LockProbeRecorder(engine)
+
+    engine._mix_recorder = mix_probe
+    engine._kanal_recorder = {
+        "kanal_a": kanal_a_probe,
+        "kanal_b": kanal_b_probe,
+    }
+    engine._recording = True
+
+    block_size = cfg.block_size
+    audio_ch = cfg.channels
+    engine._kanal_puffer["kanal_a"].append(
+        np.full((block_size, audio_ch), 0.4, dtype=np.float32)
+    )
+    engine._kanal_puffer["kanal_b"].append(
+        np.full((block_size, audio_ch), 0.2, dtype=np.float32)
+    )
+
+    engine._mix_one_tick()
+
+    assert mix_probe.lock_states == [False]
+    assert kanal_a_probe.lock_states == [False]
+    assert kanal_b_probe.lock_states == [False]

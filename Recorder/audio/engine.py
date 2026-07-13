@@ -107,6 +107,11 @@ class AudioEngine:
         self._kanal_recorder: dict[str, WavRecorder] = {}
         self._aufnahme_dir: Optional[str] = None
         self._aufnahme_lock = threading.Lock()
+        self._aufnahme_condition = threading.Condition(self._aufnahme_lock)
+        self._pending_recording_writes = 0
+        # Trennt Recorder-I/O vom Aufnahme-Zustandslock, damit langsame Disk-Writes
+        # nicht den gesamten Aufnahmezustand blockieren.
+        self._recorder_io_lock = threading.Lock()
 
         # Thread-Steuerung
         self._mix_worker_thread: Optional[threading.Thread] = None
@@ -305,32 +310,37 @@ class AudioEngine:
                 return {"duration": 0.0, "mix": "", "channels": {}}
 
             self._recording = False
+            while self._pending_recording_writes > 0:
+                self._aufnahme_condition.wait()
 
             if self._state is not None:
                 self._state.recording = False
 
-            # Mix-Datei schließen
-            mix_dauer = 0.0
-            mix_pfad = ""
-            if self._mix_recorder is not None:
-                mix_dauer = self._mix_recorder.close()
-                mix_pfad = os.path.join(self._aufnahme_dir or "", "mix.wav")
-                self._mix_recorder = None
-
-            # Kanal-Dateien schließen
-            kanal_pfade: dict[str, str] = {}
-            for source_id, rec in self._kanal_recorder.items():
-                rec.close()
-                kanal_pfade[source_id] = os.path.join(
-                    self._aufnahme_dir or "", f"{source_id}.wav"
-                )
+            aufnahme_dir = self._aufnahme_dir or ""
+            mix_recorder = self._mix_recorder
+            kanal_recorder = dict(self._kanal_recorder)
+            self._mix_recorder = None
             self._kanal_recorder = {}
 
-            return {
-                "duration": mix_dauer,
-                "mix": mix_pfad,
-                "channels": kanal_pfade,
-            }
+        # Recorder-I/O außerhalb von _aufnahme_lock ausführen, damit langsame
+        # Dateisystemoperationen den Aufnahmezustand nicht unnötig blockieren.
+        mix_dauer = 0.0
+        mix_pfad = ""
+        kanal_pfade: dict[str, str] = {}
+        with self._recorder_io_lock:
+            if mix_recorder is not None:
+                mix_dauer = mix_recorder.close()
+                mix_pfad = os.path.join(aufnahme_dir, "mix.wav")
+
+            for source_id, rec in kanal_recorder.items():
+                rec.close()
+                kanal_pfade[source_id] = os.path.join(aufnahme_dir, f"{source_id}.wav")
+
+        return {
+            "duration": mix_dauer,
+            "mix": mix_pfad,
+            "channels": kanal_pfade,
+        }
 
     # -------------------------------------------------------------------------
     # Peaks (für GUI-QTimer-Polling)
@@ -679,19 +689,36 @@ class AudioEngine:
         if self._state is not None:
             self._state.peaks = peaks
 
-        # Aufnahme schreiben (Lock für close-Schutz).
-        # _recording wird konsistent unter _aufnahme_lock geprüft und geschrieben,
-        # damit kein lock-freier Lesezugriff auf eine veränderliche Variable (M-5).
+        # Aufnahmezustand unter _aufnahme_lock lesen, Recorder-I/O aber getrennt
+        # ausführen, damit langsame Disk-Writes den Aufnahmezustandslock nicht
+        # über die eigentliche Zustandsprüfung hinaus halten.
+        mix_recorder = None
+        kanal_schreibplan: list[tuple[WavRecorder, np.ndarray]] = []
+        hat_aufnahme_write = False
         with self._aufnahme_lock:
             if self._recording:
-                if self._mix_recorder is not None:
-                    self._mix_recorder.write(mix_block)
+                mix_recorder = self._mix_recorder
                 for kanal in self._channels:
                     rec = self._kanal_recorder.get(kanal.source_id)
-                    if rec is not None:
-                        blk = verarbeitete.get(kanal.source_id)
-                        if blk is not None:
-                            rec.write(blk)
+                    blk = verarbeitete.get(kanal.source_id)
+                    if rec is not None and blk is not None:
+                        kanal_schreibplan.append((rec, blk))
+                self._pending_recording_writes += 1
+                hat_aufnahme_write = True
+
+        try:
+            if mix_recorder is not None or kanal_schreibplan:
+                with self._recorder_io_lock:
+                    if mix_recorder is not None:
+                        mix_recorder.write(mix_block)
+                    for rec, blk in kanal_schreibplan:
+                        rec.write(blk)
+        finally:
+            if hat_aufnahme_write:
+                with self._aufnahme_lock:
+                    self._pending_recording_writes -= 1
+                    if self._pending_recording_writes == 0:
+                        self._aufnahme_condition.notify_all()
 
         return True
 

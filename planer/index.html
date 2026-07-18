@@ -16,10 +16,10 @@
   <nav id="nav-tabs" aria-label="Hauptnavigation"></nav>
 
   <!-- Reload-Button -->
-  <button id="btn-reload" class="btn btn-ghost" title="Neu laden" style="margin-left: 0.5rem;">↺</button>
+  <button id="btn-reload" class="btn btn-ghost" type="button" title="Aktuelle Ansicht neu laden" aria-label="Aktuelle Ansicht neu laden" style="margin-left: 0.5rem;">↺</button>
 
   <!-- Recorder-Status -->
-  <div id="status-indicator">
+  <div id="status-indicator" role="status" aria-live="polite" aria-atomic="true">
     <div id="status-dot" class="status-dot offline"></div>
     <span id="status-text">Prüfe Verbindung…</span>
   </div>

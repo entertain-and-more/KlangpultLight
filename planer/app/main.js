@@ -53,6 +53,8 @@ for (const [id, tab] of Object.entries(TABS)) {
   btn.className = "nav-tab";
   btn.textContent = tab.label;
   btn.dataset.tab = id;
+  btn.type = "button";
+  btn.setAttribute("aria-pressed", "false");
   btn.addEventListener("click", () => switchTab(id));
   navTabs.appendChild(btn);
 }
@@ -68,7 +70,10 @@ function switchTab(id) {
   if (_currentTab && TABS[_currentTab]) {
     TABS[_currentTab].unmount();
     viewEls[_currentTab].classList.remove("active");
-    navTabs.querySelector(`[data-tab="${_currentTab}"]`)?.classList.remove("active");
+    const previousButton = navTabs.querySelector(`[data-tab="${_currentTab}"]`);
+    previousButton?.classList.remove("active");
+    previousButton?.setAttribute("aria-pressed", "false");
+    previousButton?.removeAttribute("aria-current");
   }
 
   // Detail-Panel leeren
@@ -77,7 +82,10 @@ function switchTab(id) {
 
   _currentTab = id;
   viewEls[id].classList.add("active");
-  navTabs.querySelector(`[data-tab="${id}"]`)?.classList.add("active");
+  const activeButton = navTabs.querySelector(`[data-tab="${id}"]`);
+  activeButton?.classList.add("active");
+  activeButton?.setAttribute("aria-pressed", "true");
+  activeButton?.setAttribute("aria-current", "page");
 
   // Neuen View mounten
   viewEls[id].innerHTML = "";

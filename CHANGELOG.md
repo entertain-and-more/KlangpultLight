@@ -13,6 +13,15 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Behoben / Fixed (Review-Loop 2026-07-23)
+- `build_exe.bat`: kaputte Umlaute (`Abh?ngigkeiten` → `Abhängigkeiten`, ASCII-Mojibake
+  ohne Zusammenhang mit den übrigen Skripten) korrigiert.
+- `TODO.md`: veraltete „offen"-Markierung für den bereits am 2026-07-14 behobenen
+  WAV-Write-Lock-Bug entfernt (stand im Widerspruch zu `BUGS.md`).
+- `assets/`: 6 unreferenzierte Expo/React-Native-Icon-PNGs (`android-icon-*`,
+  `favicon.png`, `icon.png`, `splash-icon.png` — falscher Tech-Stack, keine Codereferenz)
+  nach `_archive/unreferenzierte-expo-icons_2026-07-23/` verschoben (gitignored, nicht gelöscht).
+
 ### Hinzugefügt / Added
 - **Recorder Aufnahme-Robustheit (portiert aus Vollversion-Review, 2026-06-30):**
   - **Roh-Capture-Diagnose:** `AudioEngine` zählt Nullen im ROHEN sounddevice-Callback-Input

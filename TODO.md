@@ -135,7 +135,8 @@
 
 - [ ] End-to-End-Durchlauf mit **frischen Subagenten** (unbelastet) gegen die Feature-Mapping-Tabelle (KONZEPT §6)
 - [ ] README + Quickstart je Tool, Datenschutz-Hinweise
-- [ ] Recorder: PyInstaller-EXE-Build (onedir + onefile), Desktop-Verknüpfung
+- [x] Recorder: lokaler Onefile-PyInstaller-Build + Root-EXE + README-Screenshot
+- [ ] Optional ergänzen: zusätzlicher onedir-Build und Desktop-Verknüpfung
 - [ ] Planer: lokaler Start dokumentiert (eine zu startende Sache, idealerweise vom Recorder mitgestartet)
 - [ ] Eintrag in `.SOFTWARE`-Registry aktualisieren; Memory/Hub-Index ergänzen
 
@@ -168,11 +169,11 @@
   optional zuschaltbar, damit schwache Rechner die Aufnahme nicht gefährden.
 - **USB-Drift:** wie im Studio nur überwachen + warnen, kein Hard-Sync versprechen.
 
-## OFFENE BUGS (siehe BUGS.md) — ergänzt 2026-06-22
+## OFFENE BUGS (siehe BUGS.md) — Stand 2026-07-23
 
-Behoben: kombinierter START.bat-Fix (Recorder startete nicht), Recorder-Startfix (Kamera-Probing), Audio-Overflow-Logging.
-Offen (Details in BUGS.md):
-[ ] P3  WAV-Write hält Aufnahme-Lock während Platten-Write (Recorder/audio/engine.py).
+Behoben: kombinierter START.bat-Fix (Recorder startete nicht), Recorder-Startfix (Kamera-Probing),
+Audio-Overflow-Logging, WAV-Write-Lock während Platten-Write (2026-07-14, siehe BUGS.md).
+Offen (Details in BUGS.md, siehe auch AUFGABEN.txt TW-KLANGPULTLIGHT-01):
 [ ] P3  Video: FFmpeg-stdin-Write blockiert im Capture-Thread, kein Drop-Logging (Recorder/video/video_recorder.py).
 
 ## User-Test-Feedback 2026-06-22 (Task 11) — offene Funktionen

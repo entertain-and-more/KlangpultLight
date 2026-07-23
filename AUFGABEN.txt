@@ -104,3 +104,7 @@
 ### TASKWRITER-CLOSEOUT (2026-07-22)
 
 Der Light-Slice wurde als eigenständiges, selektiertes Projekt geprüft. Elf aus den Projektquellen abgeleitete offene Punkte wurden als formale TASKPLAN-Aufgaben mit Ergebnis, Quelle, DoD, Prüfweg, Blockern sowie Aufwand/Scope/Priorität dokumentiert und werden nachfolgend über die TASKPLAN-API synchronisiert. Es wurde keine Aufgabe ausgeführt, kein Build, kein Browser-/Hardwarelauf, kein Upload und keine Veröffentlichung vorgenommen. Vorbestehende Änderungen und fremde Sperren blieben unangetastet; der OneDrive-Cloud-Lock-Risikohinweis bleibt sichtbar.
+
+### REGISTER-VERMERK (2026-07-23)
+
+Privates GitHub-Repo `entertain-and-more/KlangpultLight` angelegt (Sichtbarkeit: private) und lokaler `main`-Branch dorthin gepusht (HEAD f30d279). Vorab Privacy-/Secret-Sweep über den getrackten Baum durchgeführt: keine Secrets/Tokens (OPENAI_API_KEY korrekt nur aus Umgebungsvariable gelesen, kein Hardcode, sogar testabgesichert), keine privaten Pfade, keine getrackten Aufnahme-/Recorder-Binärdaten (`*.wav/*.mp4/*.mkv/*.mp3`, `workspace/`, `releases/`, `*.exe` bereits korrekt gitignored). Größte getrackte Datei ~63 KB (Screenshot). Strategie „kein öffentliches Repo" aus CHANGELOG-Rebrand 2026-06-27 bleibt gewahrt (Repo ist privat, nicht öffentlich).

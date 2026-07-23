@@ -13,6 +13,9 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Hinzugefügt / Added
+- Privates GitHub-Repo `entertain-and-more/KlangpultLight` angelegt und `main` gepusht (2026-07-23); Sichtbarkeit private, kein öffentlicher Publish (Strategie aus Rebrand 2026-06-27 unverändert: kein öffentliches Repo)
+
 ### Behoben / Fixed (Review-Loop 2026-07-23)
 - `build_exe.bat`: kaputte Umlaute (`Abh?ngigkeiten` → `Abhängigkeiten`, ASCII-Mojibake
   ohne Zusammenhang mit den übrigen Skripten) korrigiert.

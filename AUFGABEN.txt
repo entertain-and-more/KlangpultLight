@@ -1,0 +1,106 @@
+
+
+## TASKWRITER-FORMALISIERUNG (2026-07-22)
+
+### TW-KLANGPULTLIGHT-01: Entkopple den FFmpeg-Frame-Write vom Capture-Thread und belege kontrollierten Frame-Drop
+
+- Ergebnis: Der Video-Capture-Pfad schreibt Frames über einen begrenzten, sauber beendbaren Writer-Pfad; Backpressure und verworfene Frames sind messbar und nicht mehr still.
+- Quelle/Ableitung: `BUGS.md` (offener P3-Bug zum blockierenden FFmpeg-stdin-Write und fehlender Drop-Protokollierung), `Recorder/video/video_recorder.py`, vorhandene Video-Tests.
+- Definition of Done: Writer-Queue oder gleichwertige Entkopplung mit definierter Begrenzung, Drop-Zähler und Diagnostik, reproduzierbarer Shutdown ohne hängenden Capture-Thread sowie Regressionstests für Druck, Drop und Beendigung.
+- Prüfweg: Fokussierte Video-Unit-Tests mit Fake-Pipe/Backpressure, danach der vorhandene Recorder-Selbsttest; Hardwareaufnahme nur als gesonderter Abnahmeschritt.
+- Abhängigkeiten/Blocker: FFmpeg-Verfügbarkeit und ein reproduzierbarer Test-Datenstrom; keine Änderung an fremder Arbeitsbaum-Divergenz.
+- Einstufung: Aufwand: medium; Scope: local; Priorität: medium – belegtes P3-Risiko im laufenden Capture-Pfad, aber ohne nachgewiesenen Datenverlust im aktuellen Bericht.
+
+### TW-KLANGPULTLIGHT-02: Implementiere den Phase-7-Planer-Slice für Assets, Line und Workspace-v1
+
+- Ergebnis: Der Planer verwaltet Assets und eine nutzbare Line-/Workspace-v1-Struktur, die vom Recorder- und Planer-Fluss eindeutig konsumiert werden kann.
+- Quelle/Ableitung: `TODO.md` Phase 7, `KONZEPT.md` Abschnitte 4 und 6, bestehende `planer/app/*.js`-Module und gemeinsame Schemas.
+- Definition of Done: Asset-Liste mit stabilem Identifikator, Line-/Reihenfolge-Datenmodell, Laden/Speichern und mindestens ein definierter Export- oder Consumer-Pfad; UI- und Datenfehler sind testbar und dokumentiert.
+- Prüfweg: Schema-/Modultests, Planer-Frontend-Smoke und ein Readback eines vollständigen Workspace-v1-Fixtures.
+- Abhängigkeiten/Blocker: Vor der Umsetzung müssen die offenen Workspace-Felder und der zulässige Recorder-Consumer festgelegt sein; keine erfundene Postproduktion.
+- Einstufung: Aufwand: large; Scope: local; Priorität: medium – explizit offene Phase-7-Lieferung mit mehreren abhängigen Schnittstellen.
+
+### TW-KLANGPULTLIGHT-03: Implementiere den Phase-8-Planer-Slice für Teleprompter und KI-Monitor
+
+- Ergebnis: Der Planer stellt Teleprompter- und KI-Monitor-Funktionen auf Basis der vorgesehenen Live-Transcript-Chunks bereit, ohne den Recorder um einen verdeckten Batch-Export zu erweitern.
+- Quelle/Ableitung: `TODO.md` Phase 8, `KONZEPT.md`, `Recorder/shared/remote_protocol_v1.json`, STT-Bridge und vorhandene Planer-Struktur.
+- Definition of Done: Manuell-, zeit- und sprachgesteuerte Teleprompter-Modi sowie ein strukturierter Monitor-Command-Pfad sind definiert und implementiert; Hybrid-/Cloud-Verhalten ist opt-in, Fehlerzustände und fehlende STT-Verfügbarkeit sind sichtbar.
+- Prüfweg: Protokoll-/Integrationsfixtures mit `transcript_chunk`, Planer-Frontend-Smoke und dokumentierter Degradationsprüfung ohne Netzwerk.
+- Abhängigkeiten/Blocker: Workspace-/Transcript-Vertrag aus TW-KLANGPULTLIGHT-02 und die Entscheidung über zulässige KI-Kommandos; keine Cloud-Credentials einchecken.
+- Einstufung: Aufwand: large; Scope: local; Priorität: medium – zentrale, aber ausdrücklich nachgelagerte Phase-8-Funktion.
+
+### TW-KLANGPULTLIGHT-04: Belege den Live-STT-End-to-End-Pfad und seine Degradationsgrenzen
+
+- Ergebnis: Für den Light-Recorder ist nachvollziehbar, ob lokale Live-STT, optionale Cloud-STT und der Fallback bis zum Planer-Event tatsächlich funktionieren.
+- Quelle/Ableitung: `Recorder/main.py`, `Recorder/stt/stt_manager.py`, `local_engine.py`, `cloud_engine.py`, STT-Integrations- und Degradationstests; bisherige Tests verwenden überwiegend Mock-Engines.
+- Definition of Done: Ein lokaler Live-Lauf oder ein klar protokolliertes Umgebungs-Gate ist vorhanden, `transcript_chunk` erreicht den Bridge-Consumer, Cloud bleibt ausdrücklich opt-in, und Timeout-/Modell-/Netzwerkfehler führen zu einer dokumentierten, nutzbaren Degradation.
+- Prüfweg: Mock-Integration als Regression, lokaler Prozesslauf mit Readback der Bridge-Nachrichten und ein No-Network-Lauf; Zugangsdaten bleiben außerhalb des Repositories.
+- Abhängigkeiten/Blocker: Verfügbares lokales STT-Modell bzw. autorisierte Cloud-Konfiguration; echte Hardware ist nicht Voraussetzung für den Protokollnachweis.
+- Einstufung: Aufwand: special; Scope: local; Priorität: medium – Integrationsvertrag ist vorbereitet, die reale Laufzeitbelegung aber noch nicht abgenommen.
+
+### TW-KLANGPULTLIGHT-05: Führe einen browserbasierten Recorder-Planer-Abnahmelauf durch
+
+- Ergebnis: Der One-Click-Fluss von Start, Planer-Bibliothek und Projekte-Verwaltung bis zur Recorder-Bridge ist in einem echten Browser nachvollziehbar.
+- Quelle/Ableitung: `_reports/FERTIGBAU_2026-06-20.md`, `_reports/DESIGNCHECK_2026-06-20.md`, `_codex/REVIEW.md`, `START_PLANER.bat`, Planer- und Bridge-Code; bisher fehlt ein akzeptierter Browser-/E2E-Nachweis.
+- Definition of Done: Start und Statusanzeige, Bibliothek laden, Projekt anlegen/ändern/löschen, Zuordnung sowie mindestens ein Bridge-Aktionspfad werden mit reproduzierbaren Schritten und Artefakten belegt; Fehlschläge sind als Bugs oder Blocker erfasst.
+- Prüfweg: Echte Browser-Smoke-Session mit lokalem Fixture und Logs/Readback; statische A11y- oder Offscreen-Tests gelten nur als Ergänzung.
+- Abhängigkeiten/Blocker: Browser-Automation, lokale Ports und ein isoliertes Test-Fixture; keine Veröffentlichung oder Uploads.
+- Einstufung: Aufwand: special; Scope: local; Priorität: high – die Kernfunktion gilt laut Reports als gebaut, ist aber noch nicht real abgenommen.
+
+### TW-KLANGPULTLIGHT-06: Schließe den metadata-first-A11y-Follow-up im Planer ab
+
+- Ergebnis: Interaktive Planer-Elemente sind für Tastatur- und Screenreader-Nutzung semantisch bedienbar, bevor sichtbare Detailpolitur erfolgt.
+- Quelle/Ableitung: `_reports/DESIGNCHECK_2026-06-20.md`, `planer/app/projekte.js`, `planer/styles/main.css` und der bestehende statische A11y-Test.
+- Definition of Done: Klickbare Listenzeilen haben echte Tastatursemantik oder äquivalente Bedienung, Dialoge besitzen belastbaren Fokusfang und Rückgabe, native `confirm`/`alert`-Pfade sind durch zugängliche Status-/Dialogzustände ersetzt, und 404-/Fehlerzustände sind verständlich benannt.
+- Prüfweg: Erweiterte statische A11y-Prüfungen, Tastatur-Smoke im echten Browser und Readback der Accessible Names, Zustände und Fokusfolge.
+- Abhängigkeiten/Blocker: Browser-Abnahme aus TW-KLANGPULTLIGHT-05; Layout-Neugestaltung bleibt nachgeordnet.
+- Einstufung: Aufwand: medium; Scope: local; Priorität: medium – konkrete Restpunkte aus dem Designcheck, mit hohem Nutzen bei kleinem sichtbarem Eingriff.
+
+### TW-KLANGPULTLIGHT-07: Bereinige widersprüchliche TODO-, BUGS-, Pfad- und Statusangaben
+
+- Ergebnis: Projektstatus und Einstiegshinweise bilden den belegten Ist-Stand ohne doppelte oder veraltete offene Behauptungen ab.
+- Quelle/Ableitung: Abgleich von `TODO.md`, `BUGS.md`, `README.md`, `AGENTS.md`, `Recorder/CLAUDE.md` und den vier `_reports/`-Dokumenten; dabei wurden abgeschlossene User-Test-Punkte neben weiterhin offenen P1-Einträgen gefunden.
+- Definition of Done: Erledigte und offene Punkte sind mit Quelle und Datum getrennt, der Pfadverweis `recorder/CLAUDE.md` versus `Recorder/CLAUDE.md` ist korrigiert, und der offene P3-Video-Bug bleibt bis zum Nachweis sichtbar.
+- Prüfweg: Textsuche nach widersprüchlichen Statusmarkern und Pfaden, danach dokumentarischer Readback gegen Registry-Test und Reports.
+- Abhängigkeiten/Blocker: Nur belegte Änderungen zulassen; ungeklärte Produktentscheidungen bleiben als Blocker markiert.
+- Einstufung: Aufwand: medium; Scope: local; Priorität: medium – widersprüchliche Steuerdokumente gefährden die Auswahl und Abnahme späterer Arbeiten.
+
+### TW-KLANGPULTLIGHT-08: Entscheide und dokumentiere Lizenzdatei und Freeware-Paketidentität
+
+- Ergebnis: Die Light-Distribution hat eine autorisierte, konsistente Lizenz-/EULA-Aussage und ein eindeutig benanntes Freeware-Paket.
+- Quelle/Ableitung: Offener Lizenzpunkt in `TODO.md`, Aussagen in `README.md`, `KONZEPT.md`, `Recorder/CLAUDE.md` und `CHANGELOG.md`; eine Root-`LICENSE` fehlt trotz Proprietary-/Freeware-Angaben.
+- Definition of Done: Lizenzentscheidung und Paketbezeichnung sind schriftlich freigegeben, Root-Lizenz-/EULA-Datei und relevante Metadaten stimmen überein, und keine öffentliche Repository- oder Upload-Aktion wird daraus stillschweigend abgeleitet.
+- Prüfweg: Dokumenten- und Paket-Readback, Registry-/Store-Metadaten-Abgleich sowie gezielte Suche nach gegensätzlichen MIT-/Open-Source-Aussagen.
+- Abhängigkeiten/Blocker: Autorisierte Rechts-/Produktentscheidung; TASKWRITER nimmt die Entscheidung nicht selbst vor.
+- Einstufung: Aufwand: special; Scope: local; Priorität: high – widersprüchliche Lizenzsignale blockieren belastbare Distribution.
+
+### TW-KLANGPULTLIGHT-09: Belege Packaging-, Runner- und Release-Konsistenz für die Light-EXE
+
+- Ergebnis: Build-Skript, Startskripte, Runtime-Pfade, EXE-Erwartung und Release-Nachweis beschreiben denselben reproduzierbaren Light-Workflow.
+- Quelle/Ableitung: `build_exe.bat`, `START.bat`, `Recorder/START.bat`, `KlangpultLightRecorder.spec`, `tests/test_runtime_paths.py`, `README.md` und bestehende Fertigbau-/Release-Hinweise.
+- Definition of Done: Ein isolierter Build-/Startlauf oder ein klar dokumentiertes Umgebungs-Gate liegt vor, Runtime-Pfade stimmen für Quell- und EXE-Betrieb, die erwarteten Artefakte und Version sind readback-fähig, und der Release-Hash ist nachvollziehbar.
+- Prüfweg: Script-/Spec-Analyse, Runtime-Path-Tests und lokaler Build-/Start-Smoke ohne Veröffentlichung.
+- Abhängigkeiten/Blocker: PyInstaller/FFmpeg-Verfügbarkeit; vorbestehende Dirty-Dateien bleiben unangetastet.
+- Einstufung: Aufwand: medium; Scope: local; Priorität: medium – Packaging ist vorgesehen, aber die Ende-zu-Ende-Konsistenz ist noch nicht akzeptiert.
+
+### TW-KLANGPULTLIGHT-10: Entscheide den Planer-Einprozess- und One-Click-Betriebsmodus
+
+- Ergebnis: Es ist ausdrücklich dokumentiert, ob Light dauerhaft als ein Prozess mit eingebettetem Planer oder als kontrollierter Recorder-/Planer-Startverbund betrieben wird.
+- Quelle/Ableitung: `KONZEPT.md` Abschnitt 9.2, `_reports/DESIGNCHECK_2026-06-20.md`, `START.bat` und `START_PLANER.bat`; die aktuelle Implementierung und die Betriebsbeschreibung sind nicht vollständig deckungsgleich.
+- Definition of Done: Zielmodus, Prozesslebenszyklus, Port-/Bridge-Vertrag, Fehler- und Neustartverhalten sowie der Status der offenen Bundling-Idee sind entschieden und in README/Runbook festgehalten.
+- Prüfweg: Start-/Stop-Smoke, Prozess- und Port-Readback sowie Abgleich der Startskripte und UI-Statusmeldungen.
+- Abhängigkeiten/Blocker: Produktentscheidung; keine eigenmächtige Umstellung des Launchers im Rahmen der Formalisierung.
+- Einstufung: Aufwand: special; Scope: local; Priorität: low – wichtige Betriebspräzisierung, aber nachgelagert zu Kernfunktion und Abnahme.
+
+### TW-KLANGPULTLIGHT-11: Führe einen getrennten Hardware-Abnahmelauf für Audio- und Videogeräte durch
+
+- Ergebnis: Die reale Geräteerkennung, Aufnahme und Fehlerbehandlung sind für den vorgesehenen Light-Hardwarepfad nachvollziehbar getrennt von Mock- und Browser-Evidenz.
+- Quelle/Ableitung: `_codex/REVIEW.md`, `_reports/FERTIGBAU_2026-06-20.md`, Recorder-Geräte-/Video-Code und offene Phase-9-Härtung; bisher ist kein akzeptierter Hardwarelauf belegt.
+- Definition of Done: Ein lokaler Lauf mit autorisierten Geräten prüft Auswahl, Start, Stop, Datei-/Metrik-Readback und mindestens einen Geräteverlust-/Fehlerfall; verwendete Geräte und Umgebungsannahmen sind protokolliert.
+- Prüfweg: Lokaler Hardware-Smoke mit redigiertem Protokoll, ergänzt durch vorhandene Unit-/Integrationstests; keine Cloud- oder Upload-Aktion.
+- Abhängigkeiten/Blocker: Zugängliche, autorisierte Audio-/Videogeräte und FFmpeg; kein Hardware-Gate durch statische Tests vortäuschen.
+- Einstufung: Aufwand: special; Scope: local; Priorität: medium – reale Geräteabnahme ist für Recorder-Vertrauen erforderlich und bislang unbelegt.
+
+### TASKWRITER-CLOSEOUT (2026-07-22)
+
+Der Light-Slice wurde als eigenständiges, selektiertes Projekt geprüft. Elf aus den Projektquellen abgeleitete offene Punkte wurden als formale TASKPLAN-Aufgaben mit Ergebnis, Quelle, DoD, Prüfweg, Blockern sowie Aufwand/Scope/Priorität dokumentiert und werden nachfolgend über die TASKPLAN-API synchronisiert. Es wurde keine Aufgabe ausgeführt, kein Build, kein Browser-/Hardwarelauf, kein Upload und keine Veröffentlichung vorgenommen. Vorbestehende Änderungen und fremde Sperren blieben unangetastet; der OneDrive-Cloud-Lock-Risikohinweis bleibt sichtbar.

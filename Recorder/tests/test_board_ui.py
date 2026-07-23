@@ -125,7 +125,41 @@ def test_board_panel_wird_aufgebaut(tmp_path, qt_app):
 
 
 # ---------------------------------------------------------------------------
-# Test 2: Klick auf Pad-Kachel ruft BoardPlayer.trigger() auf
+# Test 2: Panel-Detach-Buttons exponieren kontextbezogene A11y-Metadaten
+# ---------------------------------------------------------------------------
+
+def test_panel_detach_buttons_haben_klaren_accessible_kontext(tmp_path, qt_app):
+    """Die kompakten ⧉-Buttons sollen den Panelkontext für Tooltip und Screenreader liefern."""
+    from PySide6.QtWidgets import QGroupBox, QPushButton
+
+    fenster, _ = _erstelle_main_window(tmp_path, qt_app)
+
+    erwartete_titel = {"Quellen", "Video", "Einspieler", "Aufnahmen"}
+    gefundene_titel: set[str] = set()
+
+    for box in fenster.findChildren(QGroupBox):
+        titel = (box.title() or "").strip()
+        if titel not in erwartete_titel:
+            continue
+        buttons = [
+            btn
+            for btn in box.findChildren(QPushButton)
+            if btn.text() == "⧉" and btn.property("panel_title") == titel
+        ]
+        assert len(buttons) == 1, f"Detach-Button für Panel {titel!r} nicht eindeutig gefunden"
+        btn = buttons[0]
+        assert btn.toolTip() == f'Panel „{titel}“ ablösen oder wieder andocken'
+        assert btn.accessibleName() == f'Panel „{titel}“ ablösen'
+        assert btn.accessibleDescription() == (
+            f'Löst das Panel „{titel}“ in ein eigenes Fenster aus oder dockt es wieder an.'
+        )
+        gefundene_titel.add(titel)
+
+    assert gefundene_titel == erwartete_titel
+
+
+# ---------------------------------------------------------------------------
+# Test 3: Klick auf Pad-Kachel ruft BoardPlayer.trigger() auf
 # ---------------------------------------------------------------------------
 
 def test_pad_klick_triggert_board_player(tmp_path, qt_app):
@@ -184,7 +218,7 @@ def test_pad_klick_triggert_board_player(tmp_path, qt_app):
 
 
 # ---------------------------------------------------------------------------
-# Test 3: Aktive Pads werden hervorgehoben (QTimer-Polling)
+# Test 4: Aktive Pads werden hervorgehoben (QTimer-Polling)
 # ---------------------------------------------------------------------------
 
 def test_aktive_pads_werden_hervorgehoben(tmp_path, qt_app):
@@ -252,7 +286,7 @@ def test_aktive_pads_werden_hervorgehoben(tmp_path, qt_app):
 
 
 # ---------------------------------------------------------------------------
-# Test 4: on_visual_pad führt zu keinem Crash
+# Test 5: on_visual_pad führt zu keinem Crash
 # ---------------------------------------------------------------------------
 
 def test_on_visual_pad_kein_crash(tmp_path, qt_app):
@@ -314,7 +348,7 @@ def test_on_visual_pad_kein_crash(tmp_path, qt_app):
 
 
 # ---------------------------------------------------------------------------
-# Test 5: Hotkeys 1–8 triggern die ersten Pads
+# Test 6: Hotkeys 1–8 triggern die ersten Pads
 # ---------------------------------------------------------------------------
 
 def test_hotkeys_triggern_pads(tmp_path, qt_app):

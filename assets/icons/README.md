@@ -18,13 +18,11 @@ Akzentfarbe rot gesetzt.
   themed SVG oder `QPixmap`-Recoloring.
 
 ## Neu generieren (Codex)
-Erstellt wurden die Icons direkt (Codex' Dateischreiben ist in der aktuellen
-gesandboxten Agent-Umgebung blockiert — derselbe Prozess-Spawn-Block wie beim
-Codex-Review). Zum Neu-/Umgenerieren mit Codex auf deinem Rechner:
+Erstellt wurden die Icons direkt im Projekt. Zum Neu-/Umgenerieren auf diesem
+Rechner den Task aus dem Projekt-Root starten:
 
-```
-node "C:\Users\User\.claude\plugins\cache\openai-codex\codex\1.0.4\scripts\codex-companion.mjs" \
-  task --write -C "C:\Users\User\OneDrive\.TOPICS\.SOFTWARE\ENTERTAINMENT\DEV_KlangpultLight" \
+```powershell
+codex task --write -C "$env:USERPROFILE\OneDrive\.TOPICS\.SOFTWARE\ENTERTAINMENT\DEV_KlangpultLight" `
   "Erzeuge in assets/icons/ einen kohaerenten 24px-Line-Icon-Satz fuer Klangpult light
    (stroke currentColor, 2px, runde Enden) fuer: mic, video, soundboard, record, stop, play,
    pause, delete, edit, add, project, episode, library, assign, collapse. Eine .svg pro Icon."

@@ -3,8 +3,21 @@ setlocal
 chcp 65001 >nul
 
 set "RECORDER_DIR=%~dp0"
+for %%I in ("%RECORDER_DIR%..") do set "PROJECT_DIR=%%~fI"
 set "VENV_PY=C:\_Local_DEV\venvs\podcast_packages\Scripts\python.exe"
 set "PYTHONIOENCODING=utf-8"
+set "ROOT_EXE=%PROJECT_DIR%\KlangpultLightRecorder.exe"
+set "DIST_EXE=%RECORDER_DIR%dist\KlangpultLightRecorder.exe"
+
+if exist "%ROOT_EXE%" (
+  "%ROOT_EXE%"
+  exit /b %ERRORLEVEL%
+)
+
+if exist "%DIST_EXE%" (
+  "%DIST_EXE%"
+  exit /b %ERRORLEVEL%
+)
 
 if not exist "%VENV_PY%" (
   echo [FEHLER] Recorder-Venv fehlt:

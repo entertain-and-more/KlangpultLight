@@ -17,6 +17,10 @@ Schlanke Aufspaltung des `DEV_USBPodcastStudio` in **zwei eigenständige Tools**
 
 Konzept: [KONZEPT.md](./KONZEPT.md) · Umsetzungsplan: [TODO.md](./TODO.md)
 
+## Screenshot
+
+![Klangpult light – Recorder](README/screenshots/main.png)
+
 ## Klangpult light – Planer — Quickstart
 
 ```powershell
@@ -42,6 +46,9 @@ die Bibliothek zeigt in diesem Fall einen Offline-Hinweis.
 # Einfachster Start
 .\START_RECORDER.bat
 
+# Wenn bereits gebaut:
+.\KlangpultLightRecorder.exe
+
 # venv (NIEMALS in OneDrive!)
 python -m venv C:\_Local_DEV\venvs\podcast_packages
 C:\_Local_DEV\venvs\podcast_packages\Scripts\activate
@@ -61,3 +68,14 @@ python main.py
 $env:PYTHONIOENCODING = "utf-8"
 python -m pytest tests -q
 ```
+
+## Recorder-EXE bauen
+
+```powershell
+$env:PYTHONIOENCODING = "utf-8"
+.\build_exe.bat
+```
+
+Der Build erzeugt eine lokale Onefile-EXE im Projekt-Root (`KlangpultLightRecorder.exe`),
+eine Kopie unter `Recorder\dist\` sowie ein versioniertes Release-Artefakt unter
+`releases\v0.1.0\`.

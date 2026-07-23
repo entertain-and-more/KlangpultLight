@@ -15,9 +15,29 @@ import sys
 import time
 
 
+def _source_root() -> str:
+    """Quellwurzel des Recorders.
+
+    Im Source-Betrieb ist das der Recorder-Ordner. Im Frozen-Betrieb bleibt
+    __file__ wichtig für Import-/Bundle-Pfade.
+    """
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+def _runtime_base_dir() -> str:
+    """Schreibbare Laufzeitbasis für Workspace-Daten.
+
+    Quellbetrieb: Recorder-Ordner.
+    Frozen-EXE: Ordner der EXE, nicht _MEIPASS/Temp.
+    """
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(os.path.abspath(sys.executable))
+    return _source_root()
+
+
 def _setup_sys_path() -> None:
     """Stellt sicher, dass Recorder/ im sys.path liegt."""
-    recorder_root = os.path.dirname(os.path.abspath(__file__))
+    recorder_root = _source_root()
     if recorder_root not in sys.path:
         sys.path.insert(0, recorder_root)
 
@@ -82,8 +102,7 @@ def main() -> int:
     from ui.main_window import MainWindow
 
     # --- Konfiguration ---
-    recorder_root = os.path.dirname(os.path.abspath(__file__))
-    workspace_dir = os.path.join(recorder_root, "workspace")
+    workspace_dir = os.path.join(_runtime_base_dir(), "workspace")
     config = AppConfig(workspace_dir=workspace_dir)
 
     # --- Quellen-Config laden (oder Defaults) ---

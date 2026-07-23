@@ -30,14 +30,20 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 - Projektweite `CHANGELOG.md` als Bootstrap-Baustein angelegt, damit künftige Recorder-/Planer-Änderungen versionierbar dokumentiert werden können.
 - Recorder: Aufnahme-Moduswahl `Ton + Video`, `Nur Ton`, `Nur Video`.
 - Recorder: auswählbare Audioquellen pro Mic-/Line-Quelle mit persistenter und direkt übernommener Gerätezuweisung.
+- Lokaler Recorder-EXE-Workflow: `KlangpultLightRecorder.spec`, `build_exe.bat`,
+  Root-EXE `KlangpultLightRecorder.exe`, versioniertes Release-Artefakt und SHA256-Summen.
+- Root-Icon (`DesktopIcon.png`/`.ico`) und README-Screenshot `README/screenshots/main.png`.
 
 ### Geändert / Changed
 - Root-Registry-Status synchronisiert: `KlangpultLight` ist in `releases.json` registriert und `PROJECT_STATUS.md` führt das Projekt jetzt konsistent mit Registry `ja`; GitHub bleibt bewusst kein Ziel für die Closed-Source-Freeware.
+- `Recorder/START.bat` startet bevorzugt die gebaute Recorder-EXE und fällt erst dann auf Python zurück.
+- Im Frozen-Betrieb nutzt der Recorder den EXE-Ordner als Workspace-Basis statt ein temporäres Bundle-Verzeichnis.
 
 ### Behoben / Fixed
 - Recorder: Videoaufnahme ist nicht mehr implizit immer aktiv; `Nur Ton` startet ohne Videoquelle.
 - Recorder: `Nur Video` erzeugt eine echte Video-only-Aufnahme ohne Audio-WAV-Dummy.
 - Recorder: Audioquellen-Checkboxen wirken sofort auf die laufende Engine statt nur in `sources.json`.
+- Recorder: Die kompakten `⧉`-Panelbuttons bleiben visuell knapp, exponieren jetzt aber panelbezogene Tooltips sowie klare Accessible Names und Descriptions für Screenreader und Tastaturnutzung.
 
 ## [0.1.0] - 2026-06-17
 

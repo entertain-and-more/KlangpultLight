@@ -205,8 +205,15 @@ class MainWindow(QMainWindow):
         # Ablös-/Andock-Button (⧉) oben im Panel.
         lay = box.layout()
         if lay is not None:
+            panel_titel = (box.title() or "Panel").strip() or "Panel"
+            aktion = f'Panel „{panel_titel}“ ablösen'
             detach_btn = QPushButton("⧉")
-            detach_btn.setToolTip("Panel ablösen / wieder andocken")
+            detach_btn.setToolTip(f"{aktion} oder wieder andocken")
+            detach_btn.setAccessibleName(aktion)
+            detach_btn.setAccessibleDescription(
+                f'Löst das Panel „{panel_titel}“ in ein eigenes Fenster aus oder dockt es wieder an.'
+            )
+            detach_btn.setProperty("panel_title", panel_titel)
             detach_btn.setMaximumWidth(30)
             detach_btn.clicked.connect(lambda _checked=False, b=box: self._panel_abloesen(b))
             lay.insertWidget(0, detach_btn)

@@ -12,6 +12,7 @@ setlocal
 chcp 65001 >nul
 
 set "VENV_PY=C:\_Local_DEV\venvs\klangpult_light\Scripts\python.exe"
+if not exist "%VENV_PY%" set "VENV_PY=C:\_Local_DEV\venvs\podcast_packages\Scripts\python.exe"
 set "PYTHONIOENCODING=utf-8"
 set "PLANER_PORT=8770"
 

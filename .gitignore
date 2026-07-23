@@ -25,6 +25,10 @@ env/
 # Build
 build/
 dist/
+releases/
+*.exe
+*.msi
+*.msix
 *.spec.bak
 
 # IDE / OS

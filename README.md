@@ -2,7 +2,9 @@
 
 > **Klangpult light** ist die kostenlose Freeware-Version (Funnel).
 > Gegenstück: **Klangpult** (proprietäre Vollversion, kostenpflichtig).
-> Lizenz: Proprietär/Freeware, Closed-Source. Kein öffentliches GitHub-Repo.
+> Lizenz: Proprietär/Freeware, Closed-Source.
+> Maschinenlesbar: [llms.txt](./llms.txt) (Last checked: 2026-07-24)
+
 
 Schlanke Aufspaltung des `DEV_USBPodcastStudio` in **zwei eigenständige Tools**:
 

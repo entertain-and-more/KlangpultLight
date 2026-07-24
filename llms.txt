@@ -1,0 +1,22 @@
+# Klangpult light
+
+> Schlanke, freie Desktop- & Web-App (Recorder + Planer) für Podcasts, Audio-/Videoaufnahmen & Medienplanung.
+
+- **Repository:** entertain-and-more/KlangpultLight
+- **Modus:** Freeware / Funnel für Klangpult (Vollversion)
+- **Standard-Branch:** main
+- **Last checked:** 2026-07-24 (Technische Hygiene & Maintenance Check)
+
+## Core Components
+
+- `Recorder/`: Python/PySide6 Desktop-App für Audio-/Videoaufnahmen, System-Audio-Capture & Live-Transkription.
+- `planer/`: Web-App (Python/HTTP) für Medien- und Projektplanung (Episoden, Assets, Teleprompter).
+- `shared/`: Gemeinsame Datenmodelle, Protocols & Utilities.
+- `tests/`: Pytest Testsuite für statische, Accessibility- & Status-Validierung.
+
+## Usage & Commands
+
+- Recorder Tests: `python -m pytest tests -q`
+- Build EXE: `.\build_exe.bat`
+- Planer Start: `python planer/start.py` (oder `.\START_PLANER.bat`)
+- Recorder Start: `python Recorder/main.py` (oder `.\START_RECORDER.bat`)

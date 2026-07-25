@@ -2,9 +2,9 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Pytest](https://img.shields.io/badge/Pytest-2%20passed-brightgreen.svg)](https://docs.pytest.org/)
-[![License](https://img.shields.io/badge/License-Freeware-informational.svg)](#)
-[![Local-First](https://img.shields.io/badge/Architecture-Local--First-orange.svg)](#)
-[![LLM-Ready](https://img.shields.io/badge/LLM--Ready-llms.txt-purple.svg)](./llms.txt)
+[![Lizenz](https://img.shields.io/badge/Lizenz-Freeware-informational.svg)](#)
+[![Local-First](https://img.shields.io/badge/Architektur-Local--First-orange.svg)](#)
+[![LLM-Ready](https://img.shields.io/badge/LLM--Bereit-llms.txt-purple.svg)](./llms.txt)
 
 [🇬🇧 English Version](README.md) | [🇩🇪 Deutsche Version](README_de.md)
 
@@ -13,13 +13,13 @@
 > Lizenz: Proprietär/Freeware, Closed-Source.
 
 > [!NOTE]
-> For AI agents and automated tools: See [llms.txt](./llms.txt) (Last checked: 2026-07-25) for machine-readable repository overview and test contracts.
+> Für KI-Agenten und automatisierte Tools: Siehe [llms.txt](./llms.txt) (Stand: 2026-07-25) für maschinenlesbare Repository-Übersicht und Testverträge.
 
 ---
 
-## Overview & Architecture
+## Übersicht & Architektur
 
-Schlanke Aufspaltung in zwei eigenständige Tools:
+Schlanke Aufspaltung in zwei eigenständige Werkzeuge:
 
 - **`Recorder/`** — Klangpult light – Recorder, Desktop-App (Python/PySide6): Audio & Video aufnehmen, System-Audio-Capture, Live-Transkription.
 - **`planer/`** — Klangpult light – Planer, Web-App: Episoden, Bibliothek, Projektplanung, Assets, KI-Monitor, Teleprompter.
@@ -29,11 +29,11 @@ graph TD
     A[Klangpult light Engine] --> B[Recorder Desktop App - PySide6]
     A --> C[Planer Web App - Python/HTTP]
     B --> D[System Audio & Video Capture]
-    B --> E[Live Transcription Engine]
-    C --> F[Episode & Asset Planner]
-    C --> G[Teleprompter & AI Monitor]
+    B --> E[Live-Transkriptions-Engine]
+    C --> F[Episoden- & Asset-Planer]
+    C --> G[Teleprompter & KI-Monitor]
     B <-->|IPC Bridge Ports 8767 / 8769| C
-    A --> H[Shared Models & Storage]
+    A --> H[Gemeinsame Modelle & Speicher]
 ```
 
 **Bewusst weggelassen in Light-Version:** Postproduction, Cutter, Batch-Transkription (SRT/TXT-Export), OCR, Upload.
@@ -44,7 +44,7 @@ Konzept: [KONZEPT.md](./KONZEPT.md) · Umsetzungsplan: [TODO.md](./TODO.md)
 
 ![Klangpult light – Recorder](README/screenshots/main.png)
 
-## Klangpult light – Planer — Quickstart
+## Klangpult light – Planer — Schnellstart
 
 ```powershell
 # Einfachster Start (Klangpult light – Recorder muss vorher laufen)
@@ -62,7 +62,7 @@ python planer/start.py
 Der Planer erfordert einen laufenden Klangpult light – Recorder (Bridge auf Ports 8767 + 8769).
 Ohne Recorder läuft er als reines Planungstool für Projekte/Episoden weiter; die Bibliothek zeigt in diesem Fall einen Offline-Hinweis.
 
-## Klangpult light – Recorder — Quickstart
+## Klangpult light – Recorder — Schnellstart
 
 ```powershell
 # Einfachster Start

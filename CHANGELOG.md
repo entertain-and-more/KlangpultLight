@@ -13,10 +13,18 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Hinzugefügt / Added (Discoverability-, SEO- & Visuals-Audit 2026-07-25)
+- Standardisiertes PEP 621 `pyproject.toml` mit Pytest-Konfiguration (`pythonpath = "."`) angelegt.
+- Shields.io Badges (Python 3.10+, Pytest 2 passed, Freeware, Local-First, LLM-Ready) & GFM KI/LLM-Integrationshinweis (`> [!NOTE]`) in `README.md` und `README_de.md` eingebunden.
+- Deutsche Landing-Page `README_de.md` mit Sprachwechsler-Navigation erstellt.
+- Mermaid Systemarchitektur-Diagramme für Recorder/Planer-Komponenten in `README.md` und `README_de.md` integriert.
+- `llms.txt` Header `Last-checked` Datum auf `2026-07-25` und Suchphrasen/Disambiguation aktualisiert.
+
 ### Hinzugefügt / Added (Technische Hygiene & Maintenance 2026-07-24)
 - Root-Datei `llms.txt` für KI-Agenten und strukturierte Maschinenlesbarkeit angelegt.
 - `README.md` um Referenz auf `llms.txt` und Last-Checked-Datum (2026-07-24) ergänzt.
 - Technische Hygiene und Doku-Check durchgeführt: Pytest-Suite (2/2 passed) verifiziert.
+
 
 ### Hinzugefügt / Added
 - Privates GitHub-Repo `entertain-and-more/KlangpultLight` angelegt und `main` gepusht (2026-07-23); Sichtbarkeit private, kein öffentlicher Publish (Strategie aus Rebrand 2026-06-27 unverändert: kein öffentliches Repo)

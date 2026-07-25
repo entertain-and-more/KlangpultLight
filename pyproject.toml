@@ -27,5 +27,5 @@ Documentation = "https://github.com/entertain-and-more/KlangpultLight#readme"
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = "-ra -q"
-testpaths = ["tests"]
+testpaths = ["Recorder/tests", "tests"]
 pythonpath = ["."]

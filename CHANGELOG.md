@@ -14,11 +14,12 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 ## [Unreleased]
 
 ### Hinzugefügt / Added (Discoverability-, SEO- & Visuals-Audit 2026-07-25)
-- Standardisiertes PEP 621 `pyproject.toml` mit Pytest-Konfiguration (`pythonpath = "."`) angelegt.
-- Shields.io Badges (Python 3.10+, Pytest 2 passed, Freeware, Local-First, LLM-Ready) & GFM KI/LLM-Integrationshinweis (`> [!NOTE]`) in `README.md` und `README_de.md` eingebunden.
+- Standardisiertes PEP 621 `pyproject.toml` mit Pytest-Konfiguration (`testpaths = ["Recorder/tests", "tests"]`, `pythonpath = "."`) angelegt.
+- Shields.io Badges (Python 3.10+, Pytest 404 passed, Freeware, Local-First, LLM-Ready) & GFM KI/LLM-Integrationshinweis (`> [!NOTE]`) in `README.md` und `README_de.md` eingebunden.
 - Deutsche Landing-Page `README_de.md` mit Sprachwechsler-Navigation erstellt.
 - Mermaid Systemarchitektur-Diagramme für Recorder/Planer-Komponenten in `README.md` und `README_de.md` integriert.
-- `llms.txt` Header `Last-checked` Datum auf `2026-07-25` und Suchphrasen/Disambiguation aktualisiert.
+- `llms.txt` Header `Last-checked` Datum auf `2026-07-25` und Testsuite-Bestätigung (404/404 Pytest passed) aktualisiert.
+
 
 ### Hinzugefügt / Added (Technische Hygiene & Maintenance 2026-07-24)
 - Root-Datei `llms.txt` für KI-Agenten und strukturierte Maschinenlesbarkeit angelegt.

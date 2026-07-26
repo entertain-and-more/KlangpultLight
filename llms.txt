@@ -5,7 +5,7 @@
 - **Repository:** entertain-and-more/KlangpultLight
 - **Modus:** Freeware / Funnel für Klangpult (Vollversion)
 - **Standard-Branch:** main
-- **Last checked:** 2026-07-25 (Discoverability-, SEO- & README-Design Check)
+- **Last checked:** 2026-07-27 (Technische Hygiene & Maintenance Check)
 
 ## Core Components
 

@@ -13,7 +13,7 @@
 > Lizenz: Proprietär/Freeware, Closed-Source.
 
 > [!NOTE]
-> For AI agents and automated tools: See [llms.txt](./llms.txt) (Last checked: 2026-07-25) for machine-readable repository overview and test contracts.
+> For AI agents and automated tools: See [llms.txt](./llms.txt) (Last checked: 2026-07-27) for machine-readable repository overview and test contracts.
 
 ---
 

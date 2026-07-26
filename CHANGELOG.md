@@ -13,6 +13,11 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Hinzugefügt / Added (Technische Hygiene & Maintenance 2026-07-27)
+- Doku- & Hygiene-Wartung: `llms.txt` Last-checked Datum auf `2026-07-27` und Pytest Testsuite-Pass-Vertrag (404 passed tests) re-verifiziert.
+- `README.md` & `README_de.md` Last-checked Timestamps und Verweise auf `llms.txt` auf `2026-07-27` aktualisiert.
+- Pytest Testsuite (404 tests passed) vollständig ausgeführt und verifiziert.
+
 ### Hinzugefügt / Added (Discoverability-, SEO- & Visuals-Audit 2026-07-25)
 - Standardisiertes PEP 621 `pyproject.toml` mit Pytest-Konfiguration (`testpaths = ["Recorder/tests", "tests"]`, `pythonpath = "."`) angelegt.
 - Shields.io Badges (Python 3.10+, Pytest 404 passed, Freeware, Local-First, LLM-Ready) & GFM KI/LLM-Integrationshinweis (`> [!NOTE]`) in `README.md` und `README_de.md` eingebunden.

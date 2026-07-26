@@ -13,7 +13,7 @@
 > Lizenz: Proprietär/Freeware, Closed-Source.
 
 > [!NOTE]
-> Für KI-Agenten und automatisierte Tools: Siehe [llms.txt](./llms.txt) (Stand: 2026-07-25) für maschinenlesbare Repository-Übersicht und Testverträge.
+> Für KI-Agenten und automatisierte Tools: Siehe [llms.txt](./llms.txt) (Stand: 2026-07-27) für maschinenlesbare Repository-Übersicht und Testverträge.
 
 ---
 

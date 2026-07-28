@@ -117,7 +117,10 @@ Privates GitHub-Repo `entertain-and-more/KlangpultLight` angelegt (Sichtbarkeit:
   PySide6-Recorder-UI wurden gegen die Phase-1-Anforderungen abgenommen.
 - Ergänzung: Verifizierte Geräte werden für Status und Defaultbelegung
   wiederverwendet; reine Ausgabegeräte aktivieren den Mock-Fallback.
-- Prüfung: 407/407 Pytest-Tests, gezielter Ruff-Check, Compileall und
-  `PODCAST_RECORDER_SELFTEST=1` mit `QT_QPA_PLATFORM=offscreen`.
+- Prüfung: 406/406 repo-interne Pytest-Tests, gezielter Ruff-Check, Compileall
+  und `PODCAST_RECORDER_SELFTEST=1` mit `QT_QPA_PLATFORM=offscreen`.
+- Externes Infrastruktur-Gate: Der zusätzliche Registry-Test konnte die
+  nicht hydrierbaren `.SOFTWARE/releases.json` und `PROJECT_STATUS.md` weder
+  über Python noch FileCommander lesen und bleibt deshalb ausdrücklich offen.
 - Offenes externes Gate: Reale Audio-/Video-Hardware bleibt getrennt in
   `TW-KLANGPULTLIGHT-11`; Mock-/Offscreen-Belege werden nicht als Hardwareabnahme ausgegeben.

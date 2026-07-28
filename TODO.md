@@ -38,8 +38,9 @@
 - [x] Headless-Selftest (`QT_QPA_PLATFORM=offscreen`) + pytest-Tests (DeviceManager, Recorder)
 - [x] **Meilenstein M1:** eine Audio-Session aufnehmen und in der Liste wiederfinden ✔
 
-  Nachweis 2026-07-28: TASKPLAN #1341–#1343, 407 Pytest-Tests sowie
-  `PODCAST_RECORDER_SELFTEST=1` mit `QT_QPA_PLATFORM=offscreen`.
+  Nachweis 2026-07-28: TASKPLAN #1341–#1343, 406 bestandene Pytest-Tests sowie
+  `PODCAST_RECORDER_SELFTEST=1` mit `QT_QPA_PLATFORM=offscreen`; der zusätzliche
+  Registry-Test bleibt wegen nicht hydrierbarer `.SOFTWARE`-Rootdateien extern gegatet.
 
 ---
 

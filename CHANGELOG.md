@@ -20,7 +20,8 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
   den explizit gekennzeichneten Mock-Fallback.
 - Der Offscreen-Vertrag prüft Quellen-Panel, Aufnahme-Button, Pegelanzeigen,
   Aufnahmeliste und aktiven GUI-Timer direkt.
-- Phase-1-Status und Testsuite-Nachweis auf 407 bestandene Pytest-Tests synchronisiert.
+- Phase-1-Status auf 406 bestandene Pytest-Tests synchronisiert; der zusätzliche,
+  ortsgebundene Registry-Test bleibt wegen nicht hydrierbarer OneDrive-Rootdateien gegatet.
 
 ### Hinzugefügt / Added (Technische Hygiene & Maintenance 2026-07-27)
 - Doku- & Hygiene-Wartung: `llms.txt` Last-checked Datum auf `2026-07-27` und Pytest Testsuite-Pass-Vertrag (404 passed tests) re-verifiziert.

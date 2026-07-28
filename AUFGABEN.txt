@@ -108,3 +108,12 @@ Der Light-Slice wurde als eigenständiges, selektiertes Projekt geprüft. Elf au
 ### REGISTER-VERMERK (2026-07-23)
 
 Privates GitHub-Repo `entertain-and-more/KlangpultLight` angelegt (Sichtbarkeit: private) und lokaler `main`-Branch dorthin gepusht (HEAD f30d279). Vorab Privacy-/Secret-Sweep über den getrackten Baum durchgeführt: keine Secrets/Tokens (OPENAI_API_KEY korrekt nur aus Umgebungsvariable gelesen, kein Hardcode, sogar testabgesichert), keine privaten Pfade, keine getrackten Aufnahme-/Recorder-Binärdaten (`*.wav/*.mp4/*.mkv/*.mp3`, `workspace/`, `releases/`, `*.exe` bereits korrekt gitignored). Größte getrackte Datei ~63 KB (Screenshot). Strategie „kein öffentliches Repo" aus CHANGELOG-Rebrand 2026-06-27 bleibt gewahrt (Repo ist privat, nicht öffentlich).
+
+### SOFTWARE STRANGE NEW WORLDS — Portierungsplanung (2026-07-29)
+
+Pfad B abgeschlossen: `PORTIERUNGSPLAN.md` neu angelegt und usecase-basiert auf Recorder, Planer, lokaler Bridge und Workspace-Formate ausgerichtet. Entscheidung: Windows-Recorder bleibt Hauptlinie; Web/PWA ist nur lokaler Planer-/Teleprompter-/Bridge-Companion; Android/iOS nur spätere Browser-/PWA-Smokes für den Planer, keine native Recorder-App; macOS/Linux nur Source-Smokes; Windows Store zurückgestellt.
+
+- [ ] **SNW-KPL-01:** Browser-/Bridge-Smoke für Planer gegen laufenden Recorder dokumentieren: Planer öffnet, Bibliothek/Projekte funktionieren, Bridge-Status ist readback-fähig.
+- [ ] **SNW-KPL-02:** Plattform-Smoke-Matrix für Windows, macOS und Linux definieren: Windows bleibt Referenz; macOS/Linux prüfen nur Source-Start, Planer-Start und klare Geräte-/FFmpeg-Gates.
+- [ ] **SNW-KPL-03:** Android-/iOS-Entscheidung auf Planer-Companion begrenzen: erst Safari-/Chrome-PWA-Smoke gegen lokalen Planer/Bridge, keine native Recorder-App.
+- [ ] **SNW-KPL-04:** Windows-Store-Ausschluss erneut bewerten, wenn Lizenz/EULA, Privacy/Support, FFmpeg-Bündelung, lokale Server-Ports und CRA-/PLD-Folgen schriftlich geklärt sind.

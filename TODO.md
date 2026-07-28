@@ -176,6 +176,18 @@ Audio-Overflow-Logging, WAV-Write-Lock während Platten-Write (2026-07-14, siehe
 Offen (Details in BUGS.md, siehe auch AUFGABEN.txt TW-KLANGPULTLIGHT-01):
 [ ] P3  Video: FFmpeg-stdin-Write blockiert im Capture-Thread, kein Drop-Logging (Recorder/video/video_recorder.py).
 
+## Portierungsplanung 2026-07-29
+
+Siehe `PORTIERUNGSPLAN.md` (interne Planungsdatei, gitignored). Ergebnis:
+Windows-Recorder bleibt Hauptlinie; Planer/Web ist lokaler Companion; Android/iOS sind nur spätere
+Planer-/Teleprompter-PWA-Smokes; macOS/Linux nur Source-Smokes; Windows Store ist bis Lizenz/EULA-,
+Privacy-/Support-, FFmpeg-, lokale-Port- und CRA-/PLD-Klärung zurückgestellt.
+
+- [ ] SNW-KPL-01 Browser-/Bridge-Smoke für Planer gegen laufenden Recorder dokumentieren.
+- [ ] SNW-KPL-02 Windows/macOS/Linux-Source-Smoke-Matrix mit Geräte-/FFmpeg-Gates definieren.
+- [ ] SNW-KPL-03 Android/iOS auf Planer-Companion-Smoke begrenzen, keine native Recorder-App planen.
+- [ ] SNW-KPL-04 Store-Ausschluss nach Lizenz-/Privacy-/Runtime-Klärung erneut bewerten.
+
 ## User-Test-Feedback 2026-06-22 (Task 11) — offene Funktionen
 
 Aus User-Tests (Lukas). Reihenfolge = Priorität; Funktionen vor Politur (Premium zuletzt).

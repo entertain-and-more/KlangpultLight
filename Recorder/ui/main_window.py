@@ -22,18 +22,15 @@ from PySide6.QtWidgets import (
     QLabel,
     QMainWindow,
     QPushButton,
-    QSizePolicy,
     QStatusBar,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
     QLineEdit,
-    QFormLayout,
     QListWidget,
     QListWidgetItem,
     QComboBox,
-    QScrollArea,
     QMenu,
     QInputDialog,
 )
@@ -1180,9 +1177,15 @@ class MainWindow(QMainWindow):
     def _aktualisiere_status(self) -> None:
         """Aktualisiert die Statuszeile mit aktuellem Systemzustand."""
         teile = []
+        verifizierte_geraete = self._device_manager.verified_input_devices()
 
         # Mock-Hinweis Audio
-        if os.environ.get("PODCAST_RECORDER_MOCK_AUDIO", "").strip() == "1" or self._config.mock_audio:
+        mock_audio_aktiv = (
+            os.environ.get("PODCAST_RECORDER_MOCK_AUDIO", "").strip() == "1"
+            or self._config.mock_audio
+            or any(geraet.is_mock for geraet in verifizierte_geraete)
+        )
+        if mock_audio_aktiv:
             teile.append("Mock-Audio aktiv")
 
         # Mock-Hinweis Video — ehrliche Anzeige gemäß Faktentreue-Regel
@@ -1195,8 +1198,7 @@ class MainWindow(QMainWindow):
                 teile.append(f"Video: {self._gewählte_video_quelle.name}")
 
         # Anzahl verifizierter Audio-Quellen
-        geraete = self._device_manager.list_input_devices(verify=False)
-        verifiziert = sum(1 for g in geraete if g.verified)
+        verifiziert = len(verifizierte_geraete)
         teile.append(f"{verifiziert} verifizierte Quelle{'n' if verifiziert != 1 else ''}")
 
         modus_text = {

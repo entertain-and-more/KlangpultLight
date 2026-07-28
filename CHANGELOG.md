@@ -13,6 +13,15 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Behoben / Fixed (TASKSOLVER 2026-07-28, #1341–#1343)
+- `DeviceManager` verwendet für UI-Status und Defaultbelegung denselben verifizierten
+  Gerätescan, statt Eingabegeräte mehrfach testweise zu öffnen.
+- Systeme mit ausschließlich Ausgabegeräten wechseln wie hardwarelose Systeme auf
+  den explizit gekennzeichneten Mock-Fallback.
+- Der Offscreen-Vertrag prüft Quellen-Panel, Aufnahme-Button, Pegelanzeigen,
+  Aufnahmeliste und aktiven GUI-Timer direkt.
+- Phase-1-Status und Testsuite-Nachweis auf 407 bestandene Pytest-Tests synchronisiert.
+
 ### Hinzugefügt / Added (Technische Hygiene & Maintenance 2026-07-27)
 - Doku- & Hygiene-Wartung: `llms.txt` Last-checked Datum auf `2026-07-27` und Pytest Testsuite-Pass-Vertrag (404 passed tests) re-verifiziert.
 - `README.md` & `README_de.md` Last-checked Timestamps und Verweise auf `llms.txt` auf `2026-07-27` aktualisiert.

@@ -1,7 +1,7 @@
 # Klangpult light
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Pytest](https://img.shields.io/badge/Pytest-404%20passed-brightgreen.svg)](https://docs.pytest.org/)
+[![Pytest](https://img.shields.io/badge/Pytest-407%20passed-brightgreen.svg)](https://docs.pytest.org/)
 [![Lizenz](https://img.shields.io/badge/Lizenz-Freeware-informational.svg)](#)
 [![Local-First](https://img.shields.io/badge/Architektur-Local--First-orange.svg)](#)
 [![LLM-Ready](https://img.shields.io/badge/LLM--Bereit-llms.txt-purple.svg)](./llms.txt)

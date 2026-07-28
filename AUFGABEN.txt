@@ -108,3 +108,16 @@ Der Light-Slice wurde als eigenständiges, selektiertes Projekt geprüft. Elf au
 ### REGISTER-VERMERK (2026-07-23)
 
 Privates GitHub-Repo `entertain-and-more/KlangpultLight` angelegt (Sichtbarkeit: private) und lokaler `main`-Branch dorthin gepusht (HEAD f30d279). Vorab Privacy-/Secret-Sweep über den getrackten Baum durchgeführt: keine Secrets/Tokens (OPENAI_API_KEY korrekt nur aus Umgebungsvariable gelesen, kein Hardcode, sogar testabgesichert), keine privaten Pfade, keine getrackten Aufnahme-/Recorder-Binärdaten (`*.wav/*.mp4/*.mkv/*.mp3`, `workspace/`, `releases/`, `*.exe` bereits korrekt gitignored). Größte getrackte Datei ~63 KB (Screenshot). Strategie „kein öffentliches Repo" aus CHANGELOG-Rebrand 2026-06-27 bleibt gewahrt (Repo ist privat, nicht öffentlich).
+
+### TASKSOLVER-CLOSEOUT (2026-07-28, 17:40 Uhr)
+
+- Projekt/Bündel: `KlangpultLight`, TASKPLAN #1341, #1342 und #1343.
+- Ergebnis: Verifizierter Audio-Gerätescan mit hardwarelosem Mock-Fallback,
+  vorhandener Mixer-/Queue-/WAV-/Metadatenpfad sowie die schlanke
+  PySide6-Recorder-UI wurden gegen die Phase-1-Anforderungen abgenommen.
+- Ergänzung: Verifizierte Geräte werden für Status und Defaultbelegung
+  wiederverwendet; reine Ausgabegeräte aktivieren den Mock-Fallback.
+- Prüfung: 407/407 Pytest-Tests, gezielter Ruff-Check, Compileall und
+  `PODCAST_RECORDER_SELFTEST=1` mit `QT_QPA_PLATFORM=offscreen`.
+- Offenes externes Gate: Reale Audio-/Video-Hardware bleibt getrennt in
+  `TW-KLANGPULTLIGHT-11`; Mock-/Offscreen-Belege werden nicht als Hardwareabnahme ausgegeben.

@@ -366,6 +366,9 @@ class RecordingSession:
         video_pfad = self._video_pfad or ""
         try:
             self._last_video_duration = float(self._video_recorder.close())
+            diagnostics = self._video_recorder.diagnostics
+            if diagnostics["frames_dropped"] and self._event_log is not None:
+                self._event_log.log("video_frame_drop", **diagnostics)
         except Exception as exc:
             # 2b-Minor: Fehler nicht verschlucken — im EventLog protokollieren,
             # damit ffmpeg-Fehler nicht lautlos verloren gehen.

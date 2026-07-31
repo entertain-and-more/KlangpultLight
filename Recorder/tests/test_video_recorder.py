@@ -1,6 +1,7 @@
 """Tests für video.video_recorder — VideoRecorder mit echtem ffmpeg."""
 import os
 import shutil
+import threading
 import numpy as np
 import pytest
 
@@ -151,3 +152,77 @@ def test_video_recorder_write_frame_falsche_shape(tmp_path):
         recorder.close()
     except Exception:
         pass
+
+
+class _BlockierenderStdin:
+    def __init__(self):
+        self.write_started = threading.Event()
+        self.release = threading.Event()
+        self.closed = False
+
+    def write(self, data):
+        self.write_started.set()
+        self.release.wait(timeout=2)
+
+    def close(self):
+        self.closed = True
+
+
+class _FakeProcess:
+    def __init__(self, stdin):
+        self.stdin = stdin
+        self.returncode = 0
+        self.terminated = False
+
+    def wait(self, timeout=None):
+        return self.returncode
+
+    def terminate(self):
+        self.terminated = True
+        self.returncode = -15
+        self.stdin.release.set()
+
+
+def _recorder_mit_blockierender_pipe(monkeypatch, tmp_path, queue_size=1, join_timeout=0.05):
+    from video import video_recorder
+
+    stdin = _BlockierenderStdin()
+    prozess = _FakeProcess(stdin)
+    monkeypatch.setattr(video_recorder.shutil, "which", lambda _name: "ffmpeg")
+    monkeypatch.setattr(video_recorder.subprocess, "Popen", lambda *args, **kwargs: prozess)
+    recorder = video_recorder.VideoRecorder(
+        width=2,
+        height=2,
+        fps=10,
+        writer_queue_size=queue_size,
+        writer_join_timeout=join_timeout,
+    )
+    recorder.open(str(tmp_path / "queue.mp4"))
+    return recorder, stdin, prozess
+
+
+def test_video_recorder_verwirft_frames_bei_writer_rueckstau(monkeypatch, tmp_path):
+    """Ein blockiertes FFmpeg-stdin darf den Capture-Callback nicht aufhalten."""
+    recorder, stdin, _prozess = _recorder_mit_blockierender_pipe(monkeypatch, tmp_path)
+    frame = np.zeros((2, 2, 3), dtype=np.uint8)
+
+    recorder.write_frame(frame)
+    assert stdin.write_started.wait(timeout=1), "Writer muss den ersten Frame bearbeiten"
+    recorder.write_frame(frame)
+    recorder.write_frame(frame)
+
+    assert recorder.diagnostics["frames_dropped"] == 1
+    stdin.release.set()
+    assert recorder.close() == pytest.approx(0.2)
+
+
+def test_video_recorder_beendet_blockierten_writer_kontrolliert(monkeypatch, tmp_path):
+    """Der Aufnahme-Stopp terminiert FFmpeg statt an einem blockierten Write zu hängen."""
+    recorder, stdin, prozess = _recorder_mit_blockierender_pipe(monkeypatch, tmp_path)
+    recorder.write_frame(np.zeros((2, 2, 3), dtype=np.uint8))
+    assert stdin.write_started.wait(timeout=1)
+
+    with pytest.raises(RuntimeError, match="Exit-Code -15"):
+        recorder.close()
+
+    assert prozess.terminated

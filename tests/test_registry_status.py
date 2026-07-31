@@ -8,7 +8,11 @@ PROJECT_PATH = "ENTERTAINMENT/DEV_KlangpultLight"
 
 
 def test_root_registry_matches_project_status_and_todo():
-    releases = json.loads((SOFTWARE_ROOT / "releases.json").read_text(encoding="utf-8"))
+    import pytest
+    rel_file = SOFTWARE_ROOT / "releases.json"
+    if not rel_file.is_file():
+        pytest.skip("Wurzel-Registrierungsdatei releases.json außerhalb der Standalone-Repo-Struktur nicht vorhanden")
+    releases = json.loads(rel_file.read_text(encoding="utf-8"))
     projects = releases["projects"]
     entry = next(project for project in projects if project["path"] == PROJECT_PATH)
 

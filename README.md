@@ -1,5 +1,8 @@
 # Klangpult light
 
+**Status: Public Alpha** — features and APIs may still change without notice.
+
+[![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Pytest](https://img.shields.io/badge/Pytest-404%20passed-brightgreen.svg)](https://docs.pytest.org/)
 [![License](https://img.shields.io/badge/License-Freeware-informational.svg)](#)

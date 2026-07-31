@@ -1,3 +1,5 @@
+![Klangpult light Banner](docs/assets/banner.svg)
+
 # Klangpult light
 
 **Status: Public Alpha** — features and APIs may still change without notice.

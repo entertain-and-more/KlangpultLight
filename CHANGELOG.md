@@ -13,6 +13,21 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Behoben / Fixed (TASKSOLVER 2026-07-28, #1341–#1343)
+- `DeviceManager` verwendet für UI-Status und Defaultbelegung denselben verifizierten
+  Gerätescan, statt Eingabegeräte mehrfach testweise zu öffnen.
+- Systeme mit ausschließlich Ausgabegeräten wechseln wie hardwarelose Systeme auf
+  den explizit gekennzeichneten Mock-Fallback.
+- Der Offscreen-Vertrag prüft Quellen-Panel, Aufnahme-Button, Pegelanzeigen,
+  Aufnahmeliste und aktiven GUI-Timer direkt.
+- Phase-1-Status auf 406 bestandene Pytest-Tests synchronisiert; der zusätzliche,
+  ortsgebundene Registry-Test bleibt wegen nicht hydrierbarer OneDrive-Rootdateien gegatet.
+
+### Hinzugefügt / Added (Technische Hygiene & Maintenance 2026-07-27)
+- Doku- & Hygiene-Wartung: `llms.txt` Last-checked Datum auf `2026-07-27` und Pytest Testsuite-Pass-Vertrag (404 passed tests) re-verifiziert.
+- `README.md` & `README_de.md` Last-checked Timestamps und Verweise auf `llms.txt` auf `2026-07-27` aktualisiert.
+- Pytest Testsuite (404 tests passed) vollständig ausgeführt und verifiziert.
+
 ### Hinzugefügt / Added (Discoverability-, SEO- & Visuals-Audit 2026-07-25)
 - Standardisiertes PEP 621 `pyproject.toml` mit Pytest-Konfiguration (`testpaths = ["Recorder/tests", "tests"]`, `pythonpath = "."`) angelegt.
 - Shields.io Badges (Python 3.10+, Pytest 404 passed, Freeware, Local-First, LLM-Ready) & GFM KI/LLM-Integrationshinweis (`> [!NOTE]`) in `README.md` und `README_de.md` eingebunden.

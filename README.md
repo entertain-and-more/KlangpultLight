@@ -4,7 +4,7 @@
 
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Pytest](https://img.shields.io/badge/Pytest-404%20passed-brightgreen.svg)](https://docs.pytest.org/)
+[![Pytest](https://img.shields.io/badge/Pytest-406%20passed%20%2B%201%20gated-yellow.svg)](https://docs.pytest.org/)
 [![License](https://img.shields.io/badge/License-Freeware-informational.svg)](#)
 [![Local-First](https://img.shields.io/badge/Architecture-Local--First-orange.svg)](#)
 [![LLM-Ready](https://img.shields.io/badge/LLM--Ready-llms.txt-purple.svg)](./llms.txt)
@@ -16,7 +16,7 @@
 > Lizenz: Proprietär/Freeware, Closed-Source.
 
 > [!NOTE]
-> For AI agents and automated tools: See [llms.txt](./llms.txt) (Last checked: 2026-07-25) for machine-readable repository overview and test contracts.
+> For AI agents and automated tools: See [llms.txt](./llms.txt) (Last checked: 2026-07-27) for machine-readable repository overview and test contracts.
 
 ---
 

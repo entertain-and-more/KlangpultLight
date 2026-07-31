@@ -6,7 +6,6 @@ Prüft:
   - Realer Pfad: Stream-Öffnen schlägt fehl → verified=False, kein Crash
   - Fehlertolerant: Exception beim Öffnen → verified=False
 """
-import os
 import pytest
 
 
@@ -44,8 +43,6 @@ class TestDeviceManagerVerifyReal:
 
     def test_stream_oeffnen_erfolgreich_setzt_verified_true(self, monkeypatch):
         """Wenn InputStream erfolgreich öffnet → verified=True."""
-        import audio.device_manager as dm_module
-
         # Mock-Modus deaktivieren
         monkeypatch.delenv("PODCAST_RECORDER_MOCK_AUDIO", raising=False)
 
@@ -87,8 +84,6 @@ class TestDeviceManagerVerifyReal:
 
     def test_stream_oeffnen_schlaegt_fehl_setzt_verified_false(self, monkeypatch):
         """Wenn InputStream fehlschlägt → verified=False, kein Crash."""
-        import audio.device_manager as dm_module
-
         monkeypatch.delenv("PODCAST_RECORDER_MOCK_AUDIO", raising=False)
 
         class BrokenInputStream:
@@ -166,3 +161,83 @@ class TestDeviceManagerVerifyReal:
 
         assert len(stream_geoeffnet) == 0, "Bei verify=False darf kein Stream geöffnet werden"
         assert geraete[0].verified is False
+
+    def test_nur_ausgabegeraete_aktivieren_mock_fallback(self, monkeypatch):
+        """Ohne Eingabegerät muss der Scanner auf nutzbare Mock-Quellen fallen."""
+        monkeypatch.delenv("PODCAST_RECORDER_MOCK_AUDIO", raising=False)
+
+        class FakeSD:
+            @staticmethod
+            def query_devices():
+                return [
+                    {
+                        "name": "Nur Lautsprecher",
+                        "max_input_channels": 0,
+                        "default_samplerate": 48000.0,
+                    }
+                ]
+
+        import sys
+
+        monkeypatch.setitem(sys.modules, "sounddevice", FakeSD)
+
+        from importlib import reload
+        import audio.device_manager
+
+        reload(audio.device_manager)
+        from audio.device_manager import DeviceManager
+
+        geraete = DeviceManager().list_input_devices(verify=True)
+
+        assert len(geraete) >= 2
+        assert all(geraet.verified and geraet.is_mock for geraet in geraete)
+
+    def test_verifizierter_scan_wird_fuer_defaultbelegung_wiederverwendet(
+        self, monkeypatch
+    ):
+        """Status und Defaultbelegung dürfen ein geprüftes Gerät nicht erneut öffnen."""
+        monkeypatch.delenv("PODCAST_RECORDER_MOCK_AUDIO", raising=False)
+        aufrufe = {"query": 0, "open": 0}
+
+        class FakeInputStream:
+            def __init__(self, *args, **kwargs):
+                aufrufe["open"] += 1
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return None
+
+        class FakeSD:
+            InputStream = FakeInputStream
+
+            @staticmethod
+            def query_devices():
+                aufrufe["query"] += 1
+                return [
+                    {
+                        "name": "Einmal geprüftes Mikrofon",
+                        "max_input_channels": 2,
+                        "default_samplerate": 48000.0,
+                    }
+                ]
+
+        import sys
+
+        monkeypatch.setitem(sys.modules, "sounddevice", FakeSD)
+
+        from importlib import reload
+        import audio.device_manager
+
+        reload(audio.device_manager)
+        from audio.device_manager import DeviceManager
+
+        manager = DeviceManager()
+        erster_scan = manager.list_input_devices(verify=True)
+        verifizierte = manager.verified_input_devices()
+        belegung = manager.suggest_default_assignment()
+
+        assert erster_scan == verifizierte
+        assert belegung["mic_1"] == erster_scan[0]
+        assert aufrufe == {"query": 1, "open": 1}

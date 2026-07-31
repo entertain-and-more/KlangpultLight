@@ -28,15 +28,19 @@
 
 > Ziel: **Mics erkennen → Audio aufnehmen → Aufnahme in der Liste sehen.** Das muss als Erstes laufen.
 
-- [ ] `recorder/audio/device_manager.py`: Geräte auflisten **+ Verifikation** (testweise öffnen, nur
+- [x] `Recorder/audio/device_manager.py`: Geräte auflisten **+ Verifikation** (testweise öffnen, nur
       wirklich nutzbare Quellen anbieten); Mock-Fallback ohne Hardware
-- [ ] Auto-Standardbelegung vorschlagen (Mic 1 / Mic 2 / System / Kamera) aus verifizierten Geräten
-- [ ] `recorder/audio/`: MixerChannel (Fader/Mute/Solo/Pegel), MasterBus, Wav-Recorder
-- [ ] Thread-Modell sauber: Audio-Callback → `deque`, GUI liest per QTimer (kein GUI-Call im Callback)
-- [ ] `recorder/recordings/`: Aufnahme starten/stoppen → Ordner + `metadata.json` + `events.jsonl`
-- [ ] `recorder/ui/`: **neues schlankes Design** — Quellen-Panel + Aufnahme-Button + Pegel + Aufnahmeliste
-- [ ] Headless-Selftest (`QT_QPA_PLATFORM=offscreen`) + erste pytest-Tests (DeviceManager, Recorder)
-- [ ] **Meilenstein M1:** eine Audio-Session aufnehmen und in der Liste wiederfinden ✔
+- [x] Auto-Standardbelegung vorschlagen (Mic 1 / Mic 2 / System / Kamera) aus verifizierten Geräten
+- [x] `Recorder/audio/`: MixerChannel (Fader/Mute/Solo/Pegel), MasterBus, Wav-Recorder
+- [x] Thread-Modell sauber: Audio-Callback → `deque`, GUI liest per QTimer (kein GUI-Call im Callback)
+- [x] `Recorder/recordings/`: Aufnahme starten/stoppen → Ordner + `metadata.json` + `events.jsonl`
+- [x] `Recorder/ui/`: **neues schlankes Design** — Quellen-Panel + Aufnahme-Button + Pegel + Aufnahmeliste
+- [x] Headless-Selftest (`QT_QPA_PLATFORM=offscreen`) + pytest-Tests (DeviceManager, Recorder)
+- [x] **Meilenstein M1:** eine Audio-Session aufnehmen und in der Liste wiederfinden ✔
+
+  Nachweis 2026-07-28: TASKPLAN #1341–#1343, 406 bestandene Pytest-Tests sowie
+  `PODCAST_RECORDER_SELFTEST=1` mit `QT_QPA_PLATFORM=offscreen`; der zusätzliche
+  Registry-Test bleibt wegen nicht hydrierbarer `.SOFTWARE`-Rootdateien extern gegatet.
 
 ---
 

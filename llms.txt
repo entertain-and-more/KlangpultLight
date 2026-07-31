@@ -9,14 +9,14 @@
 
 ## Core Components
 
-- `Recorder/`: Python/PySide6 Desktop-App für Audio-/Videoaufnahmen, System-Audio-Capture & Live-Transkription (402 Pytest Tests).
+- `Recorder/`: Python/PySide6 Desktop-App für Audio-/Videoaufnahmen, System-Audio-Capture & Live-Transkription (405 bestandene Pytest-Tests).
 - `planer/`: Web-App (Python/HTTP) für Medien- und Projektplanung (Episoden, Assets, Teleprompter).
 - `shared/`: Gemeinsame Datenmodelle, Protocols & Utilities.
-- `tests/`: Pytest Testsuite für statische, Accessibility- & Status-Validierung (2 passed tests, 404 passed total).
+- `tests/`: Zwei statische Pytest-Verträge; Accessibility bestanden, Registry wegen nicht hydrierbarer OneDrive-Rootdateien extern gegatet.
 
 ## Usage & Commands
 
-- Full Pytest Suite: `pytest` (404 tests passed)
+- Full Pytest Suite: `pytest` (406 bestanden; 1 Registry-Test extern gegatet)
 - Build EXE: `.\build_exe.bat`
 - Planer Start: `python planer/start.py` (oder `.\START_PLANER.bat`)
 - Recorder Start: `python Recorder/main.py` (oder `.\START_RECORDER.bat`)

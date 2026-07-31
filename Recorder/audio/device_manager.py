@@ -5,7 +5,7 @@ Kein GUI-Import. Mock-Pfad aktiv wenn:
   - sounddevice nicht importierbar / keine Geräte vorhanden / Abfrage schlägt fehl.
 """
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass
@@ -44,19 +44,18 @@ def _mock_geraete() -> list[AudioDevice]:
 class DeviceManager:
     """Verwaltet Audio-Eingabegeräte (Abfrage, Verifikation, Zuweisung)."""
 
-    def _nutze_mock(self) -> bool:
-        """Prüft zur Laufzeit, ob der Mock-Pfad aktiv ist."""
-        if os.environ.get("PODCAST_RECORDER_MOCK_AUDIO", "").strip() == "1":
-            return True
-        try:
-            import sounddevice as sd
-            geraete = sd.query_devices()
-            # Wenn die Liste leer ist, fallen wir auf Mock zurück
-            if not geraete:
-                return True
-            return False
-        except Exception:
-            return True
+    def __init__(self) -> None:
+        self._letzter_verifizierter_scan: tuple[AudioDevice, ...] = ()
+        self._verifizierter_scan_abgeschlossen = False
+
+    def _speichere_verifizierten_scan(
+        self, geraete: list[AudioDevice], verify: bool
+    ) -> list[AudioDevice]:
+        """Merkt ein verifiziertes Ergebnis für UI und Defaultbelegung."""
+        if verify:
+            self._letzter_verifizierter_scan = tuple(geraete)
+            self._verifizierter_scan_abgeschlossen = True
+        return geraete
 
     def list_input_devices(self, verify: bool = True) -> list[AudioDevice]:
         """Gibt alle verfügbaren Eingabegeräte zurück.
@@ -71,13 +70,17 @@ class DeviceManager:
         Returns:
             Liste von AudioDevice-Objekten.
         """
-        if self._nutze_mock():
-            return _mock_geraete()
+        if os.environ.get("PODCAST_RECORDER_MOCK_AUDIO", "").strip() == "1":
+            return self._speichere_verifizierten_scan(_mock_geraete(), verify=True)
 
-        import sounddevice as sd
+        try:
+            import sounddevice as sd
+
+            alle = sd.query_devices()
+        except Exception:
+            return self._speichere_verifizierten_scan(_mock_geraete(), verify=True)
 
         ergebnisse: list[AudioDevice] = []
-        alle = sd.query_devices()
 
         for idx, info in enumerate(alle):
             if not isinstance(info, dict):
@@ -114,7 +117,27 @@ class DeviceManager:
                 )
             )
 
-        return ergebnisse
+        # PortAudio kann reine Ausgabegeräte melden. Ohne wenigstens eine
+        # Eingabequelle ist der Recorder hardwarelos und braucht den Mock-Pfad.
+        if not ergebnisse:
+            return self._speichere_verifizierten_scan(_mock_geraete(), verify=True)
+
+        return self._speichere_verifizierten_scan(ergebnisse, verify=verify)
+
+    def verified_input_devices(self, refresh: bool = False) -> list[AudioDevice]:
+        """Liefert den letzten geprüften Satz nutzbarer Eingabegeräte.
+
+        Der initiale Hardware-Scan wird wiederverwendet, damit UI-Status und
+        Defaultbelegung Geräte nicht mehrfach kurz hintereinander öffnen.
+        ``refresh=True`` erzwingt einen neuen Scan, etwa nach einem Gerätewechsel.
+        """
+        if refresh or not self._verifizierter_scan_abgeschlossen:
+            self.list_input_devices(verify=True)
+        return [
+            geraet
+            for geraet in self._letzter_verifizierter_scan
+            if geraet.verified
+        ]
 
     def suggest_default_assignment(self) -> dict[str, AudioDevice | None]:
         """Belegt mic_1, mic_2 und system heuristisch mit verifizierten Geräten.
@@ -126,8 +149,7 @@ class DeviceManager:
         Returns:
             dict mit Schlüsseln "mic_1", "mic_2", "system".
         """
-        geraete = self.list_input_devices(verify=True)
-        verifiziert = [g for g in geraete if g.verified]
+        verifiziert = self.verified_input_devices()
 
         return {
             "mic_1": verifiziert[0] if len(verifiziert) > 0 else None,

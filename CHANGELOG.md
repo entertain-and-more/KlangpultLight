@@ -13,6 +13,13 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Hinzugefügt / Added (Security & License Audit 2026-07-27)
+- `LICENSE`: Proprietäre Freeware-Lizenz (Source-Available License SAL v1.0) im Root angelegt.
+- `THIRD_PARTY_LICENSES.txt`: Vollständige Aufstellung aller Drittanbieter-Bibliotheken (PySide6, NumPy, SciPy, OpenCV, sounddevice, soundfile, mss, faster-whisper, openai, websockets, pytest, Python PSF) mit Lizenzen & SPDX-IDs erstellt.
+- Root-Hygiene: Temporäres Build-Artefakt `KlangpultLightRecorder.exe` aus dem Root-Verzeichnis bereinigt.
+- Security- & Lizenz-Testsuite: `tests/test_security_license_contract.py` angelegt (6 Tests zur Absicherung von Lizenzdateien, `.gitignore`-Regeln, Root-Binary-Freiheit, Pfadsicherheit und API-Key-Sicherheit).
+- Pytest Testsuite: 410/410 Tests grün (100% bestanden).
+
 ### Hinzugefügt / Added (Technische Hygiene & Maintenance 2026-07-27)
 - Doku- & Hygiene-Wartung: `llms.txt` Last-checked Datum auf `2026-07-27` und Pytest Testsuite-Pass-Vertrag (404 passed tests) re-verifiziert.
 - `README.md` & `README_de.md` Last-checked Timestamps und Verweise auf `llms.txt` auf `2026-07-27` aktualisiert.

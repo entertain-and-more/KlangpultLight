@@ -39,6 +39,8 @@ Thumbs.db
 
 # Node (Planer, später)
 node_modules/
+output/playwright/
+.playwright-cli/
 
 # Interne Steuer-/Planungsdateien
 Plan.txt

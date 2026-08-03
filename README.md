@@ -67,6 +67,8 @@ python planer/start.py
 Der Planer erfordert einen laufenden Klangpult light – Recorder (Bridge auf Ports 8767 + 8769).
 Ohne Recorder läuft er als reines Planungstool für Projekte/Episoden weiter; die Bibliothek zeigt in diesem Fall einen Offline-Hinweis.
 
+Reproduzierbare isolierte Browser-Abnahme: [docs/PLANER_BROWSER_ACCEPTANCE.md](docs/PLANER_BROWSER_ACCEPTANCE.md).
+
 ## Klangpult light – Recorder — Quickstart
 
 ```powershell

@@ -39,7 +39,7 @@
 - Abhängigkeiten/Blocker: Verfügbares lokales STT-Modell bzw. autorisierte Cloud-Konfiguration; echte Hardware ist nicht Voraussetzung für den Protokollnachweis.
 - Einstufung: Aufwand: special; Scope: local; Priorität: medium – Integrationsvertrag ist vorbereitet, die reale Laufzeitbelegung aber noch nicht abgenommen.
 
-### TW-KLANGPULTLIGHT-05: Führe einen browserbasierten Recorder-Planer-Abnahmelauf durch
+### TW-KLANGPULTLIGHT-05: [ERLEDIGT 2026-08-03] Führe einen browserbasierten Recorder-Planer-Abnahmelauf durch
 
 - Ergebnis: Der One-Click-Fluss von Start, Planer-Bibliothek und Projekte-Verwaltung bis zur Recorder-Bridge ist in einem echten Browser nachvollziehbar.
 - Quelle/Ableitung: `_reports/FERTIGBAU_2026-06-20.md`, `_reports/DESIGNCHECK_2026-06-20.md`, `_codex/REVIEW.md`, `START_PLANER.bat`, Planer- und Bridge-Code; bisher fehlt ein akzeptierter Browser-/E2E-Nachweis.
@@ -47,6 +47,16 @@
 - Prüfweg: Echte Browser-Smoke-Session mit lokalem Fixture und Logs/Readback; statische A11y- oder Offscreen-Tests gelten nur als Ergänzung.
 - Abhängigkeiten/Blocker: Browser-Automation, lokale Ports und ein isoliertes Test-Fixture; keine Veröffentlichung oder Uploads.
 - Einstufung: Aufwand: special; Scope: local; Priorität: high – die Kernfunktion gilt laut Reports als gebaut, ist aber noch nicht real abgenommen.
+- Erledigungsvermerk (2026-08-03): Reproduzierbare Live-Fixture in
+  `scripts/planer_browser_fixture.py` ergänzt und mit Playwright CLI in einem
+  echten Chromium-Browser abgenommen. Belegt wurden Online-Status,
+  Bibliothek/Branches/Audio-Player, Projekt anlegen und umbenennen, Episode
+  anlegen, Aufnahme zuordnen sowie Episode und Projekt per fokussiertem
+  Tastaturdialog löschen. API-Readback: erwartete 200/201/204; finale
+  Browserkonsole: 0 Fehler/0 Warnungen. Der zunächst belegte `/favicon.ico`-404
+  wurde in `planer/index.html` behoben und regressionsgesichert. Runbook:
+  `docs/PLANER_BROWSER_ACCEPTANCE.md`. Reale Audio-/Videohardware bleibt
+  ausdrücklich im getrennten Gate `TW-KLANGPULTLIGHT-11`.
 
 ### TW-KLANGPULTLIGHT-06: [ERLEDIGT 2026-08-03] Schließe den metadata-first-A11y-Follow-up im Planer ab
 

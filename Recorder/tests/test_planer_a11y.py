@@ -52,7 +52,7 @@ def test_planer_bibliothek_a11y_attributes():
 
 
 def test_planer_index_html_semantics():
-    """Prüft, dass index.html Barrierefreiheits-Basics hat (lang-Attribut, main-Landmarke, Title)."""
+    """Prüft Semantik und den favicon-fehlerfreien lokalen Browserstart."""
     index_path = os.path.join(PLANER_DIR, "index.html")
     assert os.path.exists(index_path), "index.html muss existieren"
 
@@ -62,3 +62,6 @@ def test_planer_index_html_semantics():
     assert "<html lang=\"de\">" in content.lower() or "lang=\"de\"" in content, "index.html muss lang='de' Attribut haben"
     assert "<title>" in content and "</title>" in content, "index.html muss title-Tag haben"
     assert "main" in content or "role=\"main\"" in content, "index.html muss eine Haupt-Landmarke (main) besitzen"
+    assert 'rel="icon"' in content and 'href="data:,"' in content, (
+        "index.html muss den impliziten /favicon.ico-404 im lokalen Browser verhindern"
+    )

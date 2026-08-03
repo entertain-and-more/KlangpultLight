@@ -13,6 +13,22 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Hinzugefügt / Added (SOFTWARE HIGH END 2026-08-03)
+- Reproduzierbare, isolierte Live-Fixture für die echte Planer-Browserabnahme:
+  `scripts/planer_browser_fixture.py` startet die produktiven Library-,
+  Projects- und Planer-Dienste auf freien localhost-Ports und verwendet nur
+  explizite temporäre Laufzeitdaten.
+- Browser-Runbook `docs/PLANER_BROWSER_ACCEPTANCE.md` mit Projekt-, Episoden-,
+  Bibliotheks-, Zuordnungs-, Lösch-, Konsolen- und Netzwerk-Readback.
+- `TW-KLANGPULTLIGHT-05` mit einem realen Chromium-/Playwright-CLI-Lauf
+  abgeschlossen; erwartete API-Status 200/201/204, finale Konsole ohne Fehler
+  oder Warnungen.
+
+### Behoben / Fixed (SOFTWARE HIGH END 2026-08-03)
+- Die Planer-Startseite deklariert explizit ein leeres Data-Favicon und erzeugt
+  dadurch beim lokalen Browserstart keinen impliziten `/favicon.ico`-404 mehr.
+- Regression in `Recorder/tests/test_planer_a11y.py` ergänzt.
+
 ### Behoben / Fixed (TASKSOLVER 2026-07-28, #1341–#1343)
 - `DeviceManager` verwendet für UI-Status und Defaultbelegung denselben verifizierten
   Gerätescan, statt Eingabegeräte mehrfach testweise zu öffnen.

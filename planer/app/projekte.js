@@ -297,8 +297,8 @@ function _openProjektModal(project) {
   const isNeu = !project;
   const titel = isNeu ? "Neues Projekt" : "Projekt bearbeiten";
 
-  const titelInput = el("input", { type: "text", placeholder: "Titel des Projekts", value: project?.title || "" });
-  const beschrInput = el("textarea", { placeholder: "Beschreibung (optional)" });
+  const titelInput = el("input", { id: "projekt-titel", type: "text", placeholder: "Titel des Projekts", value: project?.title || "" });
+  const beschrInput = el("textarea", { id: "projekt-beschreibung", placeholder: "Beschreibung (optional)" });
   if (project?.description) beschrInput.value = project.description;
 
   const errorBanner = el("div", { className: "error-banner", style: "display:none" });
@@ -306,11 +306,11 @@ function _openProjektModal(project) {
   const modal = _createModal(titel, [
     errorBanner,
     el("div", { className: "form-group" }, [
-      el("label", { textContent: "Titel *" }),
+      el("label", { for: "projekt-titel", textContent: "Titel *" }),
       titelInput,
     ]),
     el("div", { className: "form-group" }, [
-      el("label", { textContent: "Beschreibung" }),
+      el("label", { for: "projekt-beschreibung", textContent: "Beschreibung" }),
       beschrInput,
     ]),
   ], async () => {
@@ -347,10 +347,10 @@ function _openNeuEpisodeModal(project) {
 
 function _openEpisodeModal(project, episode = null) {
   const isNeu = !episode;
-  const titelInput = el("input", { type: "text", placeholder: "Episodentitel", value: episode?.title || "" });
-  const notesInput = el("textarea", { placeholder: "Notizen (optional)" });
+  const titelInput = el("input", { id: "episoden-titel", type: "text", placeholder: "Episodentitel", value: episode?.title || "" });
+  const notesInput = el("textarea", { id: "episoden-notizen", placeholder: "Notizen (optional)" });
   if (episode?.notes) notesInput.value = episode.notes;
-  const statusSelect = el("select", {}, [
+  const statusSelect = el("select", { id: "episoden-status" }, [
     el("option", { value: "geplant", textContent: "Geplant" }),
     el("option", { value: "laufend", textContent: "Laufend" }),
     el("option", { value: "fertig", textContent: "Fertig" }),
@@ -362,15 +362,15 @@ function _openEpisodeModal(project, episode = null) {
   const modal = _createModal(isNeu ? "Neue Episode" : "Episode bearbeiten", [
     episodeErrorBanner,
     el("div", { className: "form-group" }, [
-      el("label", { textContent: "Titel *" }),
+      el("label", { for: "episoden-titel", textContent: "Titel *" }),
       titelInput,
     ]),
     el("div", { className: "form-group" }, [
-      el("label", { textContent: "Status" }),
+      el("label", { for: "episoden-status", textContent: "Status" }),
       statusSelect,
     ]),
     el("div", { className: "form-group" }, [
-      el("label", { textContent: "Notizen" }),
+      el("label", { for: "episoden-notizen", textContent: "Notizen" }),
       notesInput,
     ]),
   ], async () => {

@@ -35,6 +35,16 @@ def test_planer_projekte_a11y_attributes():
     assert "Enter" in content and "Space" in content, "Listeneinträge müssen auf Enter/Space Tastaturevents reagieren"
     assert "alert(" not in content, "projekte.js darf keine nativen alert()-Dialoge aufrufen"
 
+    for field_id in (
+        "projekt-titel",
+        "projekt-beschreibung",
+        "episoden-titel",
+        "episoden-status",
+        "episoden-notizen",
+    ):
+        assert f'id: "{field_id}"' in content, f"{field_id} braucht eine eindeutige Feld-ID"
+        assert f'for: "{field_id}"' in content, f"{field_id} braucht ein zugeordnetes sichtbares Label"
+
 
 def test_planer_bibliothek_a11y_attributes():
     """Prüft, dass bibliothek.js Tastatursemantik und ARIA-Attribute für Aufnahmen und Audio-Player besitzt."""

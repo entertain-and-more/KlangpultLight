@@ -173,12 +173,13 @@
   optional zuschaltbar, damit schwache Rechner die Aufnahme nicht gefährden.
 - **USB-Drift:** wie im Studio nur überwachen + warnen, kein Hard-Sync versprechen.
 
-## OFFENE BUGS (siehe BUGS.md) — Stand 2026-07-23
+## BUGS-Status — Stand 2026-08-03
 
 Behoben: kombinierter START.bat-Fix (Recorder startete nicht), Recorder-Startfix (Kamera-Probing),
-Audio-Overflow-Logging, WAV-Write-Lock während Platten-Write (2026-07-14, siehe BUGS.md).
-Offen (Details in BUGS.md, siehe auch AUFGABEN.txt TW-KLANGPULTLIGHT-01):
-[ ] P3  Video: FFmpeg-stdin-Write blockiert im Capture-Thread, kein Drop-Logging (Recorder/video/video_recorder.py).
+Audio-Overflow-Logging, WAV-Write-Lock während Platten-Write (2026-07-14, siehe BUGS.md),
+P3 Video FFmpeg-stdin-Write entkoppelt & Bounded Queue (2026-08-03, siehe BUGS.md / TW-KLANGPULTLIGHT-01),
+Planer Accessibility & ARIA Follow-up (2026-08-03, siehe TW-KLANGPULTLIGHT-06).
+Offen: Aktuell keine kritischen P1-P3 Software-Bugs.
 
 ## User-Test-Feedback 2026-06-22 (Task 11) — offene Funktionen
 

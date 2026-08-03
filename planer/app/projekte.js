@@ -116,7 +116,13 @@ async function render() {
 
 function _renderProjectItem(project) {
   const isSelected = _currentProject && _currentProject.project_id === project.project_id;
-  const item = el("div", { className: "list-item" + (isSelected ? " selected" : "") }, [
+  const item = el("div", {
+    className: "list-item" + (isSelected ? " selected" : ""),
+    tabIndex: 0,
+    role: "button",
+    "aria-selected": isSelected ? "true" : "false",
+    "aria-label": `Projekt ${project.title}`,
+  }, [
     el("div", { className: "list-item-main" }, [
       el("div", { className: "list-item-title", textContent: project.title }),
       el("div", {
@@ -128,24 +134,38 @@ function _renderProjectItem(project) {
     el("div", { className: "list-item-actions" }, [
       el("button", {
         className: "btn btn-ghost",
-        title: "Bearbeiten",
+        title: "Projekt bearbeiten",
+        "aria-label": `Projekt ${project.title} bearbeiten`,
         textContent: "✏",
         onClick: (e) => { e.stopPropagation(); _openBearbeitenModal(project); },
       }),
       el("button", {
         className: "btn btn-danger",
-        title: "Löschen",
+        title: "Projekt löschen",
+        "aria-label": `Projekt ${project.title} löschen`,
         textContent: "🗑",
         onClick: (e) => { e.stopPropagation(); _deleteProject(project); },
       }),
     ]),
   ]);
 
-  item.addEventListener("click", async () => {
-    document.querySelectorAll(".view.active .list-item").forEach(i => i.classList.remove("selected"));
+  const selectHandler = async () => {
+    document.querySelectorAll(".view.active .list-item").forEach(i => {
+      i.classList.remove("selected");
+      i.setAttribute("aria-selected", "false");
+    });
     item.classList.add("selected");
+    item.setAttribute("aria-selected", "true");
     _currentProject = project;
     await _renderDetail(project);
+  };
+
+  item.addEventListener("click", selectHandler);
+  item.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " " || e.code === "Space") {
+      e.preventDefault();
+      selectHandler();
+    }
   });
 
   return item;
@@ -229,12 +249,14 @@ function _renderEpisodeItem(episode, project) {
         className: "btn btn-ghost",
         textContent: "✏",
         title: "Episode bearbeiten",
+        "aria-label": `Episode ${episode.title} bearbeiten`,
         onClick: (e) => { e.stopPropagation(); _openEpisodeModal(project, episode); },
       }),
       el("button", {
         className: "btn btn-danger",
         textContent: "🗑",
         title: "Episode löschen",
+        "aria-label": `Episode ${episode.title} löschen`,
         onClick: (e) => { e.stopPropagation(); _deleteEpisode(project, episode); },
       }),
     ]),
@@ -246,7 +268,14 @@ async function _deleteEpisode(project, episode) {
   if (!ok) return;
   const result = await deleteEpisode(project.project_id, episode.episode_id);
   if (!result.ok) {
-    alert(`Fehler beim Löschen: ${result.error}`);
+    if (_detail) {
+      const banner = el("div", {
+        className: "error-banner",
+        textContent: `Fehler beim Löschen: ${result.error}`,
+      });
+      _detail.prepend(banner);
+      setTimeout(() => banner.remove(), 5000);
+    }
     return;
   }
   await _renderDetail(project);
@@ -376,7 +405,7 @@ async function _deleteProject(project) {
 
   const result = await deleteProject(project.project_id);
   if (!result.ok) {
-    // Kein alert() — Fehler wird im View-Bereich angezeigt
+    // Kein nativer Dialog — Fehler wird im View-Bereich angezeigt
     const banner = el("div", {
       className: "error-banner",
       textContent: `Fehler beim Löschen: ${result.error}`,
@@ -399,12 +428,19 @@ async function _deleteProject(project) {
 
 function _createModal(title, bodyElements, onConfirm) {
   const backdrop = el("div", { className: "modal-backdrop" });
-  const modal = el("div", { className: "modal", role: "dialog", ariaModal: "true", ariaLabel: title }, [
+  const modal = el("div", {
+    className: "modal",
+    role: "dialog",
+    "aria-modal": "true",
+    "aria-label": title,
+  }, [
     el("div", { className: "modal-header" }, [
       el("h2", { textContent: title }),
       el("button", {
         className: "btn btn-ghost",
         textContent: "✕",
+        title: "Schließen",
+        "aria-label": "Schließen",
         onClick: () => _closeModal(backdrop),
       }),
     ]),
@@ -429,13 +465,27 @@ function _createModal(title, bodyElements, onConfirm) {
     if (e.target === backdrop) _closeModal(backdrop);
   });
 
-  // Enter bestätigt
+  // Tastatursteuerung & Fokus-Falle
   modal.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") {
       e.preventDefault();
       onConfirm();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      _closeModal(backdrop);
+    } else if (e.key === "Tab") {
+      const focusables = Array.from(modal.querySelectorAll("button, input, textarea, select, [tabindex='0']"));
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     }
-    if (e.key === "Escape") _closeModal(backdrop);
   });
 
   document.body.appendChild(backdrop);

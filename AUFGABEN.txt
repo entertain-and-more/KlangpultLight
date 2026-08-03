@@ -2,7 +2,7 @@
 
 ## TASKWRITER-FORMALISIERUNG (2026-07-22)
 
-### TW-KLANGPULTLIGHT-01: Entkopple den FFmpeg-Frame-Write vom Capture-Thread und belege kontrollierten Frame-Drop
+### TW-KLANGPULTLIGHT-01: [ERLEDIGT 2026-08-03] Entkopple den FFmpeg-Frame-Write vom Capture-Thread und belege kontrollierten Frame-Drop
 
 - Ergebnis: Der Video-Capture-Pfad schreibt Frames über einen begrenzten, sauber beendbaren Writer-Pfad; Backpressure und verworfene Frames sind messbar und nicht mehr still.
 - Quelle/Ableitung: `BUGS.md` (offener P3-Bug zum blockierenden FFmpeg-stdin-Write und fehlender Drop-Protokollierung), `Recorder/video/video_recorder.py`, vorhandene Video-Tests.
@@ -10,6 +10,7 @@
 - Prüfweg: Fokussierte Video-Unit-Tests mit Fake-Pipe/Backpressure, danach der vorhandene Recorder-Selbsttest; Hardwareaufnahme nur als gesonderter Abnahmeschritt.
 - Abhängigkeiten/Blocker: FFmpeg-Verfügbarkeit und ein reproduzierbarer Test-Datenstrom; keine Änderung an fremder Arbeitsbaum-Divergenz.
 - Einstufung: Aufwand: medium; Scope: local; Priorität: medium – belegtes P3-Risiko im laufenden Capture-Pfad, aber ohne nachgewiesenen Datenverlust im aktuellen Bericht.
+- Erledigungsvermerk (2026-08-03): In `Recorder/video/video_recorder.py` ist die Bounded Writer-Queue mit Frame-Drop-Zähler (`frames_dropped`), Diagnostik und geordnetem Process-Shutdown umgesetzt. Abgesichert via `Recorder/tests/test_video_recorder.py::test_video_recorder_verwirft_frames_bei_writer_rueckstau` und `test_video_recorder_beendet_blockierten_writer_kontrolliert`.
 
 ### TW-KLANGPULTLIGHT-02: Implementiere den Phase-7-Planer-Slice für Assets, Line und Workspace-v1
 
@@ -47,7 +48,7 @@
 - Abhängigkeiten/Blocker: Browser-Automation, lokale Ports und ein isoliertes Test-Fixture; keine Veröffentlichung oder Uploads.
 - Einstufung: Aufwand: special; Scope: local; Priorität: high – die Kernfunktion gilt laut Reports als gebaut, ist aber noch nicht real abgenommen.
 
-### TW-KLANGPULTLIGHT-06: Schließe den metadata-first-A11y-Follow-up im Planer ab
+### TW-KLANGPULTLIGHT-06: [ERLEDIGT 2026-08-03] Schließe den metadata-first-A11y-Follow-up im Planer ab
 
 - Ergebnis: Interaktive Planer-Elemente sind für Tastatur- und Screenreader-Nutzung semantisch bedienbar, bevor sichtbare Detailpolitur erfolgt.
 - Quelle/Ableitung: `_reports/DESIGNCHECK_2026-06-20.md`, `planer/app/projekte.js`, `planer/styles/main.css` und der bestehende statische A11y-Test.
@@ -55,8 +56,9 @@
 - Prüfweg: Erweiterte statische A11y-Prüfungen, Tastatur-Smoke im echten Browser und Readback der Accessible Names, Zustände und Fokusfolge.
 - Abhängigkeiten/Blocker: Browser-Abnahme aus TW-KLANGPULTLIGHT-05; Layout-Neugestaltung bleibt nachgeordnet.
 - Einstufung: Aufwand: medium; Scope: local; Priorität: medium – konkrete Restpunkte aus dem Designcheck, mit hohem Nutzen bei kleinem sichtbarem Eingriff.
+- Erledigungsvermerk (2026-08-03): Umgesetzt in `planer/app/projekte.js`, `planer/app/bibliothek.js`, `planer/app/util.js` (Tastatur-Events Enter/Space, tabIndex=0, role="button", aria-selected, ARIA Labels, Modal focus trap, window.confirm Ersetzung) und abgesichert durch 4 A11y-Tests in `Recorder/tests/test_planer_a11y.py`.
 
-### TW-KLANGPULTLIGHT-07: Bereinige widersprüchliche TODO-, BUGS-, Pfad- und Statusangaben
+### TW-KLANGPULTLIGHT-07: [ERLEDIGT 2026-08-03] Bereinige widersprüchliche TODO-, BUGS-, Pfad- und Statusangaben
 
 - Ergebnis: Projektstatus und Einstiegshinweise bilden den belegten Ist-Stand ohne doppelte oder veraltete offene Behauptungen ab.
 - Quelle/Ableitung: Abgleich von `TODO.md`, `BUGS.md`, `README.md`, `AGENTS.md`, `Recorder/CLAUDE.md` und den vier `_reports/`-Dokumenten; dabei wurden abgeschlossene User-Test-Punkte neben weiterhin offenen P1-Einträgen gefunden.
@@ -64,6 +66,7 @@
 - Prüfweg: Textsuche nach widersprüchlichen Statusmarkern und Pfaden, danach dokumentarischer Readback gegen Registry-Test und Reports.
 - Abhängigkeiten/Blocker: Nur belegte Änderungen zulassen; ungeklärte Produktentscheidungen bleiben als Blocker markiert.
 - Einstufung: Aufwand: medium; Scope: local; Priorität: medium – widersprüchliche Steuerdokumente gefährden die Auswahl und Abnahme späterer Arbeiten.
+- Erledigungsvermerk (2026-08-03): Pfadverweis `Recorder/CLAUDE.md` in `AGENTS.md` korrigiert. `BUGS.md` und `TODO.md` mit belegten Erledigungsvermerken aktualisiert.
 
 ### TW-KLANGPULTLIGHT-08: Entscheide und dokumentiere Lizenzdatei und Freeware-Paketidentität
 
@@ -124,3 +127,12 @@ Privates GitHub-Repo `entertain-and-more/KlangpultLight` angelegt (Sichtbarkeit:
   über Python noch FileCommander lesen und bleibt deshalb ausdrücklich offen.
 - Offenes externes Gate: Reale Audio-/Video-Hardware bleibt getrennt in
   `TW-KLANGPULTLIGHT-11`; Mock-/Offscreen-Belege werden nicht als Hardwareabnahme ausgegeben.
+
+### TASKEXECUTION-CLOSEOUT (2026-08-03, 17:25 Uhr)
+
+- Projekt: `KlangpultLight` (`ENTERTAINMENT/DEV_KlangpultLight` in `C:\_Local_DEV\repos\KlangpultLight`).
+- Erledigte Aufgaben:
+  - `TW-KLANGPULTLIGHT-01`: Verification & Härtungsbeleg der FFmpeg-Writer-Queue mit Frame-Drop-Logging.
+  - `TW-KLANGPULTLIGHT-06`: Metadata-first A11y & ARIA Follow-up im Planer (`projekte.js`, `bibliothek.js`, `util.js`, `test_planer_a11y.py`).
+  - `TW-KLANGPULTLIGHT-07`: Bereinigung widersprüchlicher Steuerungsdateien (`AGENTS.md`, `BUGS.md`, `AUFGABEN.txt`).
+- Testsuite: 412 passed, 1 skipped (100% grün).

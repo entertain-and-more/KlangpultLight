@@ -32,22 +32,30 @@ Angelegt: 2026-06-22.
   über eine Pending-Write-Koordination sauber ausgeräumt. Regression:
   `Recorder/tests/test_mix_loop.py::test_wav_write_laueft_nicht_unter_aufnahme_lock`.
 
+- **[FIXED] Video FFmpeg-stdin-Write entkoppelt & Bounded Queue (2026-08-03):**
+  `Recorder/video/video_recorder.py` entkoppelt den Capture-Thread vom FFmpeg-stdin-Write
+  über `_writer_queue` (maxsize=writer_queue_size) und einen dedizierten `_writer_loop`-Thread.
+  Rückstau führt zu kontrollierten Frame-Drops mit Zähler (`frames_dropped`) und Diagnostik.
+  Shutdown über `_request_writer_stop()` schließt stdin kontrolliert.
+  Regressionstests: `Recorder/tests/test_video_recorder.py::test_video_recorder_verwirft_frames_bei_writer_rueckstau`
+  und `test_video_recorder_beendet_blockierten_writer_kontrolliert`.
+- **[FIXED] Planer Accessibility & ARIA Follow-up (2026-08-03):**
+  `planer/app/projekte.js`, `planer/app/bibliothek.js` und `planer/app/util.js` um
+  Tastatursemantik (`tabIndex=0`, `role="button"`, `aria-selected`, Enter/Space Keydown),
+  ARIA-Namen (`aria-label`), Fokus-Falle für Modal-Dialoge und Ersetzung des nativen
+  `window.confirm` durch ein zugängliches Confirmation-Modal erweitert.
+  Regressionstest: `Recorder/tests/test_planer_a11y.py`.
+
 ---
 
 ## Offen
 
-### P3 — Video: FFmpeg-stdin-Write blockiert im Capture-Thread (kein Drop-Logging)
-- **Datei:** `Recorder/video/video_recorder.py` (`write_frame` → `stdin.write`)
-- **Problem:** Blockierender Pipe-Write im Capture-Thread; wenn der Encoder nicht
-  hinterherkommt, gehen reale Kamera-Frames auf Treiber-Ebene verloren — ohne
-  sichtbares Drop-Logging.
-- **Fix-Idee:** Frame-Drop-Erkennung über Soll-/Ist-Framezahl beim `close()`;
-  optional bounded Writer-Queue mit bewusstem Drop-Zähler.
+### Aktuell keine offenen kritischen P1-P3 Software-Bugs.
 
-## Offen — aus User-Tests 2026-06-22 (Funktionslücken)
+## Behobene User-Test-Funktionslücken (2026-06-22 / 2026-08-03)
 
-- **[P1] Planer:** Episoden lassen sich nicht (mehr) editieren/löschen (Weboberfläche).
-- **[P1] Planer:** Keine Aktion „Aufnahme einem Projekt zuordnen" in der Weboberfläche.
-- **[P1] Recorder:** „Einspieler hinzufügen" ist nur ein Stub — fügt nichts hinzu.
-- **[P1] Recorder:** Aufnahmen in der GUI nicht löschbar / nicht umbenennbar / nicht abspielbar.
-- Details + Feature-Wünsche (einklappbare Bereiche, Symbole, ablösbare Fenster) siehe TODO.md „User-Test-Feedback 2026-06-22".
+- **[FIXED P1] Planer:** Episoden editieren UND löschen — Backend (PUT/DELETE) + Frontend.
+- **[FIXED P1] Planer:** Projektzuordnung von Aufnahmen — Backend + Frontend-UI.
+- **[FIXED P1] Recorder:** Einspieler hinzufügbar — Datei-Dialog → Pad → board.json.
+- **[FIXED P1] Recorder:** Aufnahmen in der GUI löschbar, umbenennbar und abspielbar.
+

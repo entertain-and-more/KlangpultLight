@@ -100,19 +100,37 @@ function _renderRecordingItem(rec) {
     branches.length > 0 ? `${branches.length} Branch(es)` : null,
   ].filter(Boolean).join("  ·  ");
 
-  const item = el("div", { className: "list-item" + (_currentId === rec.recording_id ? " selected" : "") }, [
+  const isSelected = _currentId === rec.recording_id;
+  const item = el("div", {
+    className: "list-item" + (isSelected ? " selected" : ""),
+    tabIndex: 0,
+    role: "button",
+    "aria-selected": isSelected ? "true" : "false",
+    "aria-label": `Aufnahme ${rec.title || "Ohne Titel"}`,
+  }, [
     el("div", { className: "list-item-main" }, [
       el("div", { className: "list-item-title", textContent: rec.title || "Ohne Titel" }),
       el("div", { className: "list-item-meta", textContent: meta }),
     ]),
   ]);
 
-  item.addEventListener("click", () => {
-    // Selektion aktualisieren
-    document.querySelectorAll(".view.active .list-item").forEach(i => i.classList.remove("selected"));
+  const selectHandler = () => {
+    document.querySelectorAll(".view.active .list-item").forEach(i => {
+      i.classList.remove("selected");
+      i.setAttribute("aria-selected", "false");
+    });
     item.classList.add("selected");
+    item.setAttribute("aria-selected", "true");
     _currentId = rec.recording_id;
     _renderDetail(rec);
+  };
+
+  item.addEventListener("click", selectHandler);
+  item.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " " || e.code === "Space") {
+      e.preventDefault();
+      selectHandler();
+    }
   });
 
   return item;
@@ -132,7 +150,10 @@ async function _renderDetail(rec) {
   _detail.appendChild(el("h2", { textContent: rec.title || "Ohne Titel" }));
 
   // Audio-Player (P2): Aufnahme direkt im Browser abspielen.
-  const audio = el("audio", { controls: "controls" });
+  const audio = el("audio", {
+    controls: "controls",
+    "aria-label": `Audio-Wiedergabe für ${rec.title || "Aufnahme"}`,
+  });
   audio.src = `/api/library/${rec.recording_id}/audio`;
   audio.style.width = "100%";
   audio.style.marginBottom = "8px";

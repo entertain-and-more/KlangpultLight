@@ -87,7 +87,7 @@
 - Abhängigkeiten/Blocker: Autorisierte Rechts-/Produktentscheidung; TASKWRITER nimmt die Entscheidung nicht selbst vor.
 - Einstufung: Aufwand: special; Scope: local; Priorität: high – widersprüchliche Lizenzsignale blockieren belastbare Distribution.
 
-### TW-KLANGPULTLIGHT-09: Belege Packaging-, Runner- und Release-Konsistenz für die Light-EXE
+### TW-KLANGPULTLIGHT-09: [ERLEDIGT 2026-08-11] Belege Packaging-, Runner- und Release-Konsistenz für die Light-EXE
 
 - Ergebnis: Build-Skript, Startskripte, Runtime-Pfade, EXE-Erwartung und Release-Nachweis beschreiben denselben reproduzierbaren Light-Workflow.
 - Quelle/Ableitung: `build_exe.bat`, `START.bat`, `Recorder/START.bat`, `KlangpultLightRecorder.spec`, `tests/test_runtime_paths.py`, `README.md` und bestehende Fertigbau-/Release-Hinweise.
@@ -95,6 +95,7 @@
 - Prüfweg: Script-/Spec-Analyse, Runtime-Path-Tests und lokaler Build-/Start-Smoke ohne Veröffentlichung.
 - Abhängigkeiten/Blocker: PyInstaller/FFmpeg-Verfügbarkeit; vorbestehende Dirty-Dateien bleiben unangetastet.
 - Einstufung: Aufwand: medium; Scope: local; Priorität: medium – Packaging ist vorgesehen, aber die Ende-zu-Ende-Konsistenz ist noch nicht akzeptiert.
+- Erledigungsvermerk (2026-08-11): `build_exe.bat` lief mit PyInstaller 6.21.0 und FFmpeg 8.1.1 erfolgreich. Root-EXE, `Recorder\dist\`-Kopie und `releases\v0.1.0\KlangpultLightRecorder-0.1.0-win64.exe` sind bytegleich; `SHA256SUMS.txt` verifiziert Hash `372FCBBCD381EB57235333D92C592AEDCE5E3171CE4618911FD38702766E802D`. Der gebaute EXE-Selftest endete mit Exit 0, `test_runtime_paths.py` mit 2/2 bestanden; Quell-/Frozen-Pfade und `pyproject.toml`-Version `0.1.0` stimmen mit Runner-/README-Erwartungen überein.
 
 ### TW-KLANGPULTLIGHT-10: Entscheide den Planer-Einprozess- und One-Click-Betriebsmodus
 
@@ -146,3 +147,10 @@ Privates GitHub-Repo `entertain-and-more/KlangpultLight` angelegt (Sichtbarkeit:
   - `TW-KLANGPULTLIGHT-06`: Metadata-first A11y & ARIA Follow-up im Planer (`projekte.js`, `bibliothek.js`, `util.js`, `test_planer_a11y.py`).
   - `TW-KLANGPULTLIGHT-07`: Bereinigung widersprüchlicher Steuerungsdateien (`AGENTS.md`, `BUGS.md`, `AUFGABEN.txt`).
 - Testsuite: 412 passed, 1 skipped (100% grün).
+
+### TASKEXECUTION-CLOSEOUT (2026-08-11, 12:28 Uhr)
+
+- Projekt/Bündel: `KlangpultLight`, TASKPLAN #1112.
+- Prüfung: lokaler `build_exe.bat`-Lauf erfolgreich; drei EXE-Ziele erzeugt und per SHA256 gegengeprüft; gebaute Root-EXE mit `PODCAST_RECORDER_SELFTEST=1` und `QT_QPA_PLATFORM=offscreen` beendet sich mit Exit 0.
+- Runtime-Readback: `Recorder/tests/test_runtime_paths.py` 2/2 bestanden; `pyproject.toml`, `build_exe.bat`, beide Startskripte, Spec und README führen konsistent Version `0.1.0` und die Root-/Dist-/Release-Pfade.
+- Release-Nachweis: `releases/v0.1.0/SHA256SUMS.txt` enthält den verifizierten Hash; kein Upload und keine Veröffentlichung.

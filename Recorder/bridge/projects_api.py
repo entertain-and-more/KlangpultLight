@@ -39,6 +39,11 @@ _RE_PROJEKT = re.compile(r"^/api/projects/([^/]+)$")
 _RE_EPISODEN = re.compile(r"^/api/projects/([^/]+)/episodes$")
 _RE_EPISODE = re.compile(r"^/api/projects/([^/]+)/episodes/([^/]+)$")
 _RE_PROJEKT_RECORDING = re.compile(r"^/api/projects/([^/]+)/recordings/([^/]+)$")
+_RE_ASSETS = re.compile(r"^/api/projects/([^/]+)/assets$")
+_RE_ASSET = re.compile(r"^/api/projects/([^/]+)/assets/([^/]+)$")
+_RE_LINE = re.compile(r"^/api/projects/([^/]+)/line$")
+_RE_WORKSPACE = re.compile(r"^/api/projects/([^/]+)/workspace$")
+_RE_WORKSPACE_IMPORT = re.compile(r"^/api/projects/([^/]+)/workspace/import$")
 
 
 # ---------------------------------------------------------------------------
@@ -147,10 +152,16 @@ class _ProjektStore:
             if len(neu) == len(projekte):
                 return False  # nicht gefunden
             self._projekte_schreiben(neu)
-            # Episoden-Datei ebenfalls löschen
+            # Zugehörige Dateien ebenfalls löschen
             ep_pfad = self._episoden_pfad(project_id)
             if ep_pfad.exists():
                 ep_pfad.unlink()
+            assets_pfad = self._assets_pfad(project_id)
+            if assets_pfad.exists():
+                assets_pfad.unlink()
+            line_pfad = self._line_pfad(project_id)
+            if line_pfad.exists():
+                line_pfad.unlink()
         return True
 
     # -- Episoden --
@@ -257,6 +268,237 @@ class _ProjektStore:
                     return p
             return None
 
+    # -- Assets (Board-Pads) --
+
+    def _assets_pfad(self, project_id: str) -> Path:
+        return self._dir / f"assets_{project_id}.json"
+
+    def _assets_lesen(self, project_id: str) -> list[dict]:
+        daten = _json_lesen(self._assets_pfad(project_id))
+        if isinstance(daten, list):
+            return daten
+        return []
+
+    def liste_assets(self, project_id: str) -> Optional[list[dict]]:
+        """Gibt None zurück, wenn das Projekt nicht existiert."""
+        with self._lock:
+            if self._projekt_holen_nolock(project_id) is None:
+                return None
+            return list(self._assets_lesen(project_id))
+
+    def asset_anlegen(
+        self,
+        project_id: str,
+        label: str,
+        kind: str = "audio",
+        asset_path: str = "",
+        color: str = "#3b82f6",
+        mode: str = "play_stop",
+        hotkey: str = "",
+        volume: float = 1.0,
+        asset_id: Optional[str] = None,
+    ) -> Optional[dict]:
+        """Legt ein Asset an oder aktualisiert ein vorhandenes mit gleicher ID. None wenn Projekt fehlt."""
+        if kind not in {"audio", "video", "image"}:
+            kind = "audio"
+        if mode not in {"play_stop", "loop", "overlap"}:
+            mode = "play_stop"
+        jetzt = datetime.now(timezone.utc).isoformat()
+        aid = asset_id if asset_id and str(asset_id).strip() else str(uuid.uuid4())
+        asset = {
+            "id": aid,
+            "project_id": project_id,
+            "label": label,
+            "kind": kind,
+            "asset_path": asset_path,
+            "color": color or "#3b82f6",
+            "mode": mode,
+            "hotkey": hotkey or "",
+            "volume": float(volume),
+            "created_at": jetzt,
+            "updated_at": jetzt,
+        }
+        with self._lock:
+            if self._projekt_holen_nolock(project_id) is None:
+                return None
+            assets = self._assets_lesen(project_id)
+            replaced = False
+            for i, a in enumerate(assets):
+                if a.get("id") == aid:
+                    asset["created_at"] = a.get("created_at", jetzt)
+                    assets[i] = asset
+                    replaced = True
+                    break
+            if not replaced:
+                assets.append(asset)
+            _json_schreiben(self._assets_pfad(project_id), assets)
+        return asset
+
+    def asset_aktualisieren(
+        self,
+        project_id: str,
+        asset_id: str,
+        label: str,
+        kind: str = "audio",
+        asset_path: str = "",
+        color: str = "#3b82f6",
+        mode: str = "play_stop",
+        hotkey: str = "",
+        volume: float = 1.0,
+    ) -> Optional[dict]:
+        """Aktualisiert ein Asset. None wenn Projekt oder Asset fehlt."""
+        if kind not in {"audio", "video", "image"}:
+            kind = "audio"
+        if mode not in {"play_stop", "loop", "overlap"}:
+            mode = "play_stop"
+        with self._lock:
+            if self._projekt_holen_nolock(project_id) is None:
+                return None
+            assets = self._assets_lesen(project_id)
+            for a in assets:
+                if a.get("id") == asset_id:
+                    a["label"] = label
+                    a["kind"] = kind
+                    a["asset_path"] = asset_path
+                    a["color"] = color or "#3b82f6"
+                    a["mode"] = mode
+                    a["hotkey"] = hotkey or ""
+                    a["volume"] = float(volume)
+                    a["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    _json_schreiben(self._assets_pfad(project_id), assets)
+                    return dict(a)
+        return None
+
+    def asset_loeschen(self, project_id: str, asset_id: str) -> bool:
+        """Löscht ein Asset und entfernt es aus der Line. False wenn nicht gefunden."""
+        with self._lock:
+            if self._projekt_holen_nolock(project_id) is None:
+                return False
+            assets = self._assets_lesen(project_id)
+            neu = [a for a in assets if a.get("id") != asset_id]
+            if len(neu) == len(assets):
+                return False
+            _json_schreiben(self._assets_pfad(project_id), neu)
+
+            line = self._line_lesen(project_id)
+            if asset_id in line:
+                neu_line = [x for x in line if x != asset_id]
+                _json_schreiben(self._line_pfad(project_id), neu_line)
+        return True
+
+    # -- Line (Einspieler-Reihenfolge) --
+
+    def _line_pfad(self, project_id: str) -> Path:
+        return self._dir / f"line_{project_id}.json"
+
+    def _line_lesen(self, project_id: str) -> list[str]:
+        daten = _json_lesen(self._line_pfad(project_id))
+        if isinstance(daten, list):
+            return [str(x) for x in daten if str(x).strip()]
+        return []
+
+    def hole_line(self, project_id: str) -> Optional[list[str]]:
+        """Gibt die Line-Reihenfolge zurück. None wenn Projekt fehlt."""
+        with self._lock:
+            if self._projekt_holen_nolock(project_id) is None:
+                return None
+            return list(self._line_lesen(project_id))
+
+    def speichere_line(self, project_id: str, line: list[str]) -> Optional[list[str]]:
+        """Speichert die Line-Reihenfolge. None wenn Projekt fehlt."""
+        with self._lock:
+            if self._projekt_holen_nolock(project_id) is None:
+                return None
+            saubere_line = [str(x) for x in line if str(x).strip()]
+            _json_schreiben(self._line_pfad(project_id), saubere_line)
+            return saubere_line
+
+    # -- Workspace-v1 Export / Import --
+
+    def workspace_exportieren(self, project_id: str) -> Optional[dict]:
+        """Exportiert Assets und Line als valides klangpultlight-workspace-v1 Payload."""
+        with self._lock:
+            if self._projekt_holen_nolock(project_id) is None:
+                return None
+            assets = self._assets_lesen(project_id)
+            line = self._line_lesen(project_id)
+            pads = []
+            for a in assets:
+                pad = {
+                    "id": a.get("id", ""),
+                    "label": a.get("label", ""),
+                    "color": a.get("color", "#3b82f6"),
+                    "kind": a.get("kind", "audio"),
+                    "asset_path": a.get("asset_path", ""),
+                    "mode": a.get("mode", "play_stop"),
+                    "hotkey": a.get("hotkey", ""),
+                }
+                pads.append(pad)
+            return {
+                "format": "klangpultlight-workspace-v1",
+                "version": 1,
+                "board": {"pads": pads},
+                "line": line,
+                "teleprompter": {
+                    "text": "",
+                    "font_size": 24,
+                    "scroll_speed": 1.0,
+                },
+            }
+
+    def workspace_importieren(self, project_id: str, payload: dict) -> Optional[dict]:
+        """Importiert ein klangpultlight-workspace-v1 Payload in das Projekt."""
+        if not isinstance(payload, dict):
+            raise ValueError("Payload muss ein JSON-Objekt sein")
+        if payload.get("format") != "klangpultlight-workspace-v1":
+            raise ValueError(f"Format muss 'klangpultlight-workspace-v1' sein, erhalten: {payload.get('format')!r}")
+        version = payload.get("version")
+        if not isinstance(version, int) or version < 1:
+            raise ValueError(f"Version muss ein Integer >= 1 sein, erhalten: {version!r}")
+
+        with self._lock:
+            if self._projekt_holen_nolock(project_id) is None:
+                return None
+
+            board_daten = payload.get("board") or {}
+            roh_pads = board_daten.get("pads") or []
+            jetzt = datetime.now(timezone.utc).isoformat()
+
+            neue_assets = []
+            for p in roh_pads:
+                if not isinstance(p, dict) or not p.get("id"):
+                    continue
+                kind = p.get("kind", "audio")
+                if kind not in {"audio", "video", "image"}:
+                    kind = "audio"
+                mode = p.get("mode", "play_stop")
+                if mode not in {"play_stop", "loop", "overlap"}:
+                    mode = "play_stop"
+                neue_assets.append({
+                    "id": str(p["id"]),
+                    "project_id": project_id,
+                    "label": str(p.get("label", "")),
+                    "kind": kind,
+                    "asset_path": str(p.get("asset_path", "")),
+                    "color": str(p.get("color", "#3b82f6")),
+                    "mode": mode,
+                    "hotkey": str(p.get("hotkey", "")),
+                    "volume": float(p.get("volume", 1.0)),
+                    "created_at": jetzt,
+                    "updated_at": jetzt,
+                })
+            _json_schreiben(self._assets_pfad(project_id), neue_assets)
+
+            roh_line = payload.get("line") or []
+            neue_line = [str(x) for x in roh_line if str(x).strip()]
+            _json_schreiben(self._line_pfad(project_id), neue_line)
+
+            return {
+                "status": "ok",
+                "assets_count": len(neue_assets),
+                "line_count": len(neue_line),
+            }
+
 
 # ---------------------------------------------------------------------------
 # HTTP-Handler
@@ -279,6 +521,12 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
             self._handle_projekt_get(m.group(1))
         elif m := _RE_EPISODEN.match(path):
             self._handle_episoden_liste(m.group(1))
+        elif m := _RE_ASSETS.match(path):
+            self._handle_assets_liste(m.group(1))
+        elif m := _RE_LINE.match(path):
+            self._handle_line_get(m.group(1))
+        elif m := _RE_WORKSPACE.match(path):
+            self._handle_workspace_get(m.group(1))
         else:
             self._json(404, {"error": "Nicht gefunden"})
 
@@ -290,6 +538,10 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
             self._handle_episode_post(m.group(1))
         elif m := _RE_PROJEKT_RECORDING.match(path):
             self._handle_recording_assign(m.group(1), m.group(2))
+        elif m := _RE_ASSETS.match(path):
+            self._handle_asset_post(m.group(1))
+        elif m := _RE_WORKSPACE_IMPORT.match(path):
+            self._handle_workspace_import_post(m.group(1))
         else:
             self._json(404, {"error": "Nicht gefunden"})
 
@@ -297,6 +549,10 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
         path = self._path()
         if m := _RE_EPISODE.match(path):
             self._handle_episode_put(m.group(1), m.group(2))
+        elif m := _RE_ASSET.match(path):
+            self._handle_asset_put(m.group(1), m.group(2))
+        elif m := _RE_LINE.match(path):
+            self._handle_line_put(m.group(1))
         elif m := _RE_PROJEKT.match(path):
             self._handle_projekt_put(m.group(1))
         else:
@@ -306,6 +562,8 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
         path = self._path()
         if m := _RE_EPISODE.match(path):
             self._handle_episode_delete(m.group(1), m.group(2))
+        elif m := _RE_ASSET.match(path):
+            self._handle_asset_delete(m.group(1), m.group(2))
         elif m := _RE_PROJEKT_RECORDING.match(path):
             self._handle_recording_unassign(m.group(1), m.group(2))
         elif m := _RE_PROJEKT.match(path):
@@ -334,6 +592,30 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
             self._json(404, {"error": "Projekt nicht gefunden"})
         else:
             self._json(200, {"episodes": episoden})
+
+    def _handle_assets_liste(self, project_id: str) -> None:
+        store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
+        assets = store.liste_assets(project_id)
+        if assets is None:
+            self._json(404, {"error": "Projekt nicht gefunden"})
+        else:
+            self._json(200, {"assets": assets})
+
+    def _handle_line_get(self, project_id: str) -> None:
+        store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
+        line = store.hole_line(project_id)
+        if line is None:
+            self._json(404, {"error": "Projekt nicht gefunden"})
+        else:
+            self._json(200, {"line": line})
+
+    def _handle_workspace_get(self, project_id: str) -> None:
+        store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
+        payload = store.workspace_exportieren(project_id)
+        if payload is None:
+            self._json(404, {"error": "Projekt nicht gefunden"})
+        else:
+            self._json(200, payload)
 
     # -- POST-Handler --
 
@@ -372,6 +654,46 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
         else:
             self._json(201, episode)
 
+    def _handle_asset_post(self, project_id: str) -> None:
+        body = self._lese_body()
+        if body is None:
+            return
+        label = str(body.get("label", "")).strip()
+        if not label:
+            self._json(400, {"error": "Pflichtfeld 'label' fehlt oder leer"})
+            return
+        store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
+        asset = store.asset_anlegen(
+            project_id=project_id,
+            label=label,
+            kind=body.get("kind", "audio"),
+            asset_path=body.get("asset_path", ""),
+            color=body.get("color", "#3b82f6"),
+            mode=body.get("mode", "play_stop"),
+            hotkey=body.get("hotkey", ""),
+            volume=float(body.get("volume", 1.0)),
+            asset_id=body.get("id"),
+        )
+        if asset is None:
+            self._json(404, {"error": "Projekt nicht gefunden"})
+        else:
+            self._json(201, asset)
+
+    def _handle_workspace_import_post(self, project_id: str) -> None:
+        body = self._lese_body()
+        if body is None:
+            return
+        store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
+        try:
+            res = store.workspace_importieren(project_id, body)
+        except ValueError as exc:
+            self._json(400, {"error": str(exc)})
+            return
+        if res is None:
+            self._json(404, {"error": "Projekt nicht gefunden"})
+        else:
+            self._json(200, res)
+
     # -- PUT-Handler --
 
     def _handle_projekt_put(self, project_id: str) -> None:
@@ -393,13 +715,52 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
         else:
             self._json(200, projekt)
 
+    def _handle_asset_put(self, project_id: str, asset_id: str) -> None:
+        body = self._lese_body()
+        if body is None:
+            return
+        label = str(body.get("label", "")).strip()
+        if not label:
+            self._json(400, {"error": "Pflichtfeld 'label' fehlt oder leer"})
+            return
+        store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
+        asset = store.asset_aktualisieren(
+            project_id=project_id,
+            asset_id=asset_id,
+            label=label,
+            kind=body.get("kind", "audio"),
+            asset_path=body.get("asset_path", ""),
+            color=body.get("color", "#3b82f6"),
+            mode=body.get("mode", "play_stop"),
+            hotkey=body.get("hotkey", ""),
+            volume=float(body.get("volume", 1.0)),
+        )
+        if asset is None:
+            self._json(404, {"error": "Projekt oder Asset nicht gefunden"})
+        else:
+            self._json(200, asset)
+
+    def _handle_line_put(self, project_id: str) -> None:
+        body = self._lese_body()
+        if body is None:
+            return
+        raw_line = body.get("line")
+        if raw_line is None or not isinstance(raw_line, list):
+            self._json(400, {"error": "Pflichtfeld 'line' muss eine Liste sein"})
+            return
+        store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
+        line = store.speichere_line(project_id, raw_line)
+        if line is None:
+            self._json(404, {"error": "Projekt nicht gefunden"})
+        else:
+            self._json(200, {"line": line})
+
     # -- DELETE-Handler --
 
     def _handle_projekt_delete(self, project_id: str) -> None:
         store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
         ok = store.projekt_loeschen(project_id)
         if ok:
-            # 204 No Content — kein Body
             self.send_response(204)
             self.end_headers()
         else:
@@ -433,6 +794,14 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
             self.end_headers()
         else:
             self._json(404, {"error": "Projekt oder Episode nicht gefunden"})
+
+    def _handle_asset_delete(self, project_id: str, asset_id: str) -> None:
+        store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
+        if store.asset_loeschen(project_id, asset_id):
+            self.send_response(204)
+            self.end_headers()
+        else:
+            self._json(404, {"error": "Projekt oder Asset nicht gefunden"})
 
     def _handle_recording_assign(self, project_id: str, recording_id: str) -> None:
         store: _ProjektStore = self.server.store  # type: ignore[attr-defined]

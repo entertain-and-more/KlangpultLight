@@ -146,3 +146,79 @@ export async function assignRecording(projectId, recordingId) {
 export async function unassignRecording(projectId, recordingId) {
   return _request("DELETE", `/api/projects/${projectId}/recordings/${recordingId}`);
 }
+
+// ---------------------------------------------------------------------------
+// Assets & Line (Board-Pads & Einspieler-Ablauf)
+// ---------------------------------------------------------------------------
+
+/**
+ * Listet alle Assets eines Projekts.
+ * @param {string} projectId
+ * @returns {Promise<{ok: boolean, data?: {assets: Array}, error?: string}>}
+ */
+export async function listAssets(projectId) {
+  return _request("GET", `/api/projects/${projectId}/assets`);
+}
+
+/**
+ * Legt ein neues Asset für ein Projekt an.
+ * @param {string} projectId
+ * @param {object} assetData {label, kind, asset_path, color, mode, hotkey, volume, id}
+ */
+export async function createAsset(projectId, assetData) {
+  return _request("POST", `/api/projects/${projectId}/assets`, assetData);
+}
+
+/**
+ * Aktualisiert ein Asset.
+ * @param {string} projectId
+ * @param {string} assetId
+ * @param {object} assetData {label, kind, asset_path, color, mode, hotkey, volume}
+ */
+export async function updateAsset(projectId, assetId, assetData) {
+  return _request("PUT", `/api/projects/${projectId}/assets/${assetId}`, assetData);
+}
+
+/**
+ * Löscht ein Asset aus dem Projekt (und entfernt es aus der Line).
+ * @param {string} projectId
+ * @param {string} assetId
+ */
+export async function deleteAsset(projectId, assetId) {
+  return _request("DELETE", `/api/projects/${projectId}/assets/${assetId}`);
+}
+
+/**
+ * Ruft die Line-Reihenfolge (Array von Asset-IDs) ab.
+ * @param {string} projectId
+ * @returns {Promise<{ok: boolean, data?: {line: Array<string>}, error?: string}>}
+ */
+export async function getLine(projectId) {
+  return _request("GET", `/api/projects/${projectId}/line`);
+}
+
+/**
+ * Aktualisiert die Line-Reihenfolge.
+ * @param {string} projectId
+ * @param {Array<string>} line
+ */
+export async function updateLine(projectId, line) {
+  return _request("PUT", `/api/projects/${projectId}/line`, { line });
+}
+
+/**
+ * Exportiert das Projekt als klangpultlight-workspace-v1 Objekt.
+ * @param {string} projectId
+ */
+export async function getWorkspace(projectId) {
+  return _request("GET", `/api/projects/${projectId}/workspace`);
+}
+
+/**
+ * Importiert ein klangpultlight-workspace-v1 Objekt in das Projekt.
+ * @param {string} projectId
+ * @param {object} payload
+ */
+export async function importWorkspace(projectId, payload) {
+  return _request("POST", `/api/projects/${projectId}/workspace/import`, payload);
+}

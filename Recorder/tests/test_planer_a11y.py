@@ -75,3 +75,33 @@ def test_planer_index_html_semantics():
     assert 'rel="icon"' in content and 'href="data:,"' in content, (
         "index.html muss den impliziten /favicon.ico-404 im lokalen Browser verhindern"
     )
+
+
+def test_planer_assets_a11y_attributes():
+    """Prüft, dass assets.js Tastatursemantik, Formular-Labels und ARIA-Attribute besitzt."""
+    assets_path = os.path.join(PLANER_DIR, "app", "assets.js")
+    assert os.path.exists(assets_path), "assets.js muss existieren"
+
+    with open(assets_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert "window.alert(" not in content and "alert(" not in content, "assets.js darf kein window.alert() nutzen"
+    assert "window.confirm(" not in content, "assets.js darf kein window.confirm() nutzen"
+    assert "role: \"dialog\"" in content or "role=\"dialog\"" in content, "Modals in assets.js müssen role='dialog' besitzen"
+    assert "aria-modal" in content, "Modals in assets.js müssen aria-modal besitzen"
+    assert "aria-label" in content, "Buttons und Controls in assets.js müssen barrierefreie aria-label besitzen"
+
+    for field_id in (
+        "asset-input-label",
+        "asset-input-kind",
+        "asset-input-path",
+        "asset-input-mode",
+        "asset-input-hotkey",
+        "asset-input-color",
+    ):
+        assert f'id: "{field_id}"' in content or f'id="{field_id}"' in content or field_id in content, (
+            f"{field_id} muss in assets.js definiert sein"
+        )
+        assert f'for: "{field_id}"' in content or f'for="{field_id}"' in content or f'"{field_id}"' in content, (
+            f"{field_id} muss ein zugeordnetes Label haben"
+        )

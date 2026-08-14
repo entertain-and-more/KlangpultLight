@@ -8,6 +8,7 @@
 import { checkLibraryHealth, checkProjectsHealth } from "./api.js";
 import { mount as mountBibliothek, unmount as unmountBibliothek, reload as reloadBibliothek } from "./bibliothek.js";
 import { mount as mountProjekte, unmount as unmountProjekte, reload as reloadProjekte } from "./projekte.js";
+import { mount as mountAssets, unmount as unmountAssets, reload as reloadAssets } from "./assets.js";
 
 // ---------------------------------------------------------------------------
 // Tabs
@@ -23,6 +24,11 @@ const TABS = {
     label: "Projekte",
     mount: (c, d) => mountProjekte(c, d),
     unmount: unmountProjekte,
+  },
+  assets: {
+    label: "Assets & Line",
+    mount: (c, d) => mountAssets(c, d),
+    unmount: unmountAssets,
   },
 };
 
@@ -123,6 +129,7 @@ if (reloadBtn) {
   reloadBtn.addEventListener("click", () => {
     if (_currentTab === "bibliothek") reloadBibliothek();
     else if (_currentTab === "projekte") reloadProjekte();
+    else if (_currentTab === "assets") reloadAssets();
     else switchTab(_currentTab);
   });
 }

@@ -187,3 +187,102 @@ def export_to_workspace(board: Board) -> dict:
         "version": WORKSPACE_VERSION,
         "board": {"pads": pads_export},
     }
+
+
+def validate_workspace_payload(payload: dict) -> tuple[bool, str]:
+    """Validiert ein Workspace-v1-Payload gegen die Basisanforderungen.
+
+    Returns:
+        (True, "") bei Erfolg oder (False, Fehlermeldung) bei Validierungsfehler.
+    """
+    if not isinstance(payload, dict):
+        return False, "Payload muss ein JSON-Objekt sein"
+    if payload.get("format") != WORKSPACE_FORMAT:
+        return False, f"Format muss '{WORKSPACE_FORMAT}' sein, erhalten: {payload.get('format')!r}"
+    version = payload.get("version")
+    if not isinstance(version, int) or version < 1:
+        return False, f"Version muss ein Integer >= 1 sein, erhalten: {version!r}"
+
+    board_obj = payload.get("board")
+    if board_obj is not None:
+        if not isinstance(board_obj, dict):
+            return False, "'board' muss ein Objekt sein"
+        pads = board_obj.get("pads")
+        if pads is not None:
+            if not isinstance(pads, list):
+                return False, "'board.pads' muss eine Liste sein"
+            for i, p in enumerate(pads):
+                if not isinstance(p, dict):
+                    return False, f"Pad an Index {i} muss ein Objekt sein"
+                if "id" not in p or not str(p["id"]).strip():
+                    return False, f"Pad an Index {i} fehlt Pflichtfeld 'id'"
+                kind = p.get("kind")
+                if kind is not None and kind not in {"audio", "video", "image"}:
+                    return False, f"Pad '{p['id']}' hat ungültigen Typ '{kind}'"
+                mode = p.get("mode")
+                if mode is not None and mode not in {"play_stop", "loop", "overlap"}:
+                    return False, f"Pad '{p['id']}' hat ungültigen Modus '{mode}'"
+
+    line = payload.get("line")
+    if line is not None:
+        if not isinstance(line, list):
+            return False, "'line' muss eine Liste von String-IDs sein"
+        for i, item in enumerate(line):
+            if not isinstance(item, str):
+                return False, f"Line-Slot an Index {i} muss ein String sein"
+
+    teleprompter = payload.get("teleprompter")
+    if teleprompter is not None:
+        if not isinstance(teleprompter, dict):
+            return False, "'teleprompter' muss ein Objekt sein"
+
+    return True, ""
+
+
+def import_workspace_full(payload: dict) -> tuple[Board, list[str], dict]:
+    """Importiert ein vollständiges workspace_v1-Payload.
+
+    Returns:
+        (Board, line_list, teleprompter_dict)
+    """
+    valid, err = validate_workspace_payload(payload)
+    if not valid:
+        raise ValueError(f"Ungültiges Workspace-Payload: {err}")
+
+    board = import_from_workspace(payload)
+    line = [str(x) for x in payload.get("line") or [] if str(x).strip()]
+    teleprompter = dict(payload.get("teleprompter") or {})
+    return board, line, teleprompter
+
+
+def export_workspace_full(
+    board: Board,
+    line: Optional[list[str]] = None,
+    teleprompter: Optional[dict] = None,
+) -> dict:
+    """Exportiert ein Board, eine Line-Reihenfolge und optionale Teleprompter-Daten als workspace-v1-Payload."""
+    _schema_felder = {"id", "label", "color", "kind", "asset_path", "mode", "hotkey"}
+
+    pads_export = []
+    for pad in board.pads:
+        pad_dict = pad.to_dict()
+        pads_export.append({k: v for k, v in pad_dict.items() if k in _schema_felder})
+
+    payload = {
+        "format": WORKSPACE_FORMAT,
+        "version": WORKSPACE_VERSION,
+        "board": {"pads": pads_export},
+        "line": [str(x) for x in (line or []) if str(x).strip()],
+    }
+
+    if teleprompter:
+        tp_clean = {}
+        if "text" in teleprompter:
+            tp_clean["text"] = str(teleprompter["text"])
+        if "font_size" in teleprompter:
+            tp_clean["font_size"] = int(teleprompter["font_size"])
+        if "scroll_speed" in teleprompter:
+            tp_clean["scroll_speed"] = float(teleprompter["scroll_speed"])
+        payload["teleprompter"] = tp_clean
+
+    return payload

@@ -13,6 +13,11 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Hinzugefügt / Added (SOFTWARE HIGH END 2026-08-14)
+- Phase-7-Planer-Slice (`TW-KLANGPULTLIGHT-02`): End-to-End-Integration von Assets, Line-Ablaufsteuerung und Workspace-v1 JSON Export/Import.
+- Integrationstests in `Recorder/tests/test_projects_api.py`: 4 neue Testfunktionen mit 15+ Assertions für Assets-CRUD, automatisches Line-Cleanup beim Löschen von Assets, Line-Validierung und Persistenz nach Serverneustart.
+- Pytest-Vollsuite auf 417 bestandene Tests (417 passed, 1 skipped) erweitert.
+
 ### Hinzugefügt / Added (SOFTWARE HIGH END 2026-08-03)
 - Reproduzierbare, isolierte Live-Fixture für die echte Planer-Browserabnahme:
   `scripts/planer_browser_fixture.py` startet die produktiven Library-,

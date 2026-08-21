@@ -5,18 +5,18 @@
 - **Repository:** entertain-and-more/KlangpultLight
 - **Modus:** Freeware / Funnel für Klangpult (Vollversion)
 - **Standard-Branch:** main
-- **Last checked:** 2026-07-28 (TaskMaster MAINTAINER Check)
+- **Last checked:** 2026-08-21 (Phase 7 Assets & Line Integration verified)
 
 ## Core Components
 
-- `Recorder/`: Python/PySide6 Desktop-App für Audio-/Videoaufnahmen, System-Audio-Capture & Live-Transkription (405 bestandene Pytest-Tests).
-- `planer/`: Web-App (Python/HTTP) für Medien- und Projektplanung (Episoden, Assets, Teleprompter).
+- `Recorder/`: Python/PySide6 Desktop-App für Audio-/Videoaufnahmen, System-Audio-Capture & Live-Transkription (416 bestandene Pytest-Tests).
+- `planer/`: Web-App (Python/HTTP) für Medien- und Projektplanung (Episoden, Assets, Line, Workspace-v1, Teleprompter).
 - `shared/`: Gemeinsame Datenmodelle, Protocols & Utilities.
 - `tests/`: Zwei statische Pytest-Verträge; Accessibility bestanden, Registry wegen nicht hydrierbarer OneDrive-Rootdateien extern gegatet.
 
 ## Usage & Commands
 
-- Full Pytest Suite: `pytest` (406 bestanden; 1 Registry-Test extern gegatet)
+- Full Pytest Suite: `pytest` (417 bestanden; 1 Registry-Test extern gegatet)
 - Build EXE: `.\build_exe.bat`
 - Planer Start: `python planer/start.py` (oder `.\START_PLANER.bat`)
 - Recorder Start: `python Recorder/main.py` (oder `.\START_RECORDER.bat`)

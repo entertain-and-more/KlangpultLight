@@ -116,10 +116,13 @@
 
 ## Phase 7 — Planer: Assets + Line (nur Planung)
 
-- [ ] **Assets:** Liste pflegen (Jingles/Bilder/Clips als Plan-Einträge) — KEINE Erkennung/Klassifikation
-- [ ] **Line:** Einspieler-Slots/Reihenfolge planen
-- [ ] Export als `workspace-v1`-Payload → vom Recorder-Board konsumierbar (Planung → Ausführung)
-- [ ] **Meilenstein M7:** geplante Line/Assets erscheinen als Board-Belegung im Recorder ✔
+- [x] **Assets:** Liste pflegen (Jingles/Bilder/Clips als Plan-Einträge) — KEINE Erkennung/Klassifikation
+- [x] **Line:** Einspieler-Slots/Reihenfolge planen
+- [x] Export als `workspace-v1`-Payload → vom Recorder-Board konsumierbar (Planung → Ausführung)
+- [x] **Meilenstein M7:** geplante Line/Assets erscheinen als Board-Belegung im Recorder ✔
+
+  Nachweis 2026-08-14: Assets- & Line-Verwaltung in `planer/app/assets.js`, Tab-Navigation & Reload in `planer/app/main.js`, Backend-CRUD/Line-Persistenz & Workspace-v1-Export/Import in `Recorder/bridge/projects_api.py`. Abgesichert durch 27 Tests in `Recorder/tests/test_projects_api.py`, `Recorder/tests/test_planer_a11y.py` sowie Board-Workspace-Import/Export in `Recorder/board/board_model.py`. Pytest-Vollsuite: 417 passed, 1 skipped.
+
 
 ---
 

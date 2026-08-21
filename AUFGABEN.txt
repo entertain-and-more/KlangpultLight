@@ -1,5 +1,3 @@
-
-
 ## TASKWRITER-FORMALISIERUNG (2026-07-22)
 
 ### TW-KLANGPULTLIGHT-01: [ERLEDIGT 2026-08-03] Entkopple den FFmpeg-Frame-Write vom Capture-Thread und belege kontrollierten Frame-Drop
@@ -12,7 +10,7 @@
 - Einstufung: Aufwand: medium; Scope: local; Priorität: medium – belegtes P3-Risiko im laufenden Capture-Pfad, aber ohne nachgewiesenen Datenverlust im aktuellen Bericht.
 - Erledigungsvermerk (2026-08-03): In `Recorder/video/video_recorder.py` ist die Bounded Writer-Queue mit Frame-Drop-Zähler (`frames_dropped`), Diagnostik und geordnetem Process-Shutdown umgesetzt. Abgesichert via `Recorder/tests/test_video_recorder.py::test_video_recorder_verwirft_frames_bei_writer_rueckstau` und `test_video_recorder_beendet_blockierten_writer_kontrolliert`.
 
-### TW-KLANGPULTLIGHT-02: Implementiere den Phase-7-Planer-Slice für Assets, Line und Workspace-v1
+### TW-KLANGPULTLIGHT-02: [ERLEDIGT 2026-08-14] Implementiere den Phase-7-Planer-Slice für Assets, Line und Workspace-v1
 
 - Ergebnis: Der Planer verwaltet Assets und eine nutzbare Line-/Workspace-v1-Struktur, die vom Recorder- und Planer-Fluss eindeutig konsumiert werden kann.
 - Quelle/Ableitung: `TODO.md` Phase 7, `KONZEPT.md` Abschnitte 4 und 6, bestehende `planer/app/*.js`-Module und gemeinsame Schemas.
@@ -20,6 +18,7 @@
 - Prüfweg: Schema-/Modultests, Planer-Frontend-Smoke und ein Readback eines vollständigen Workspace-v1-Fixtures.
 - Abhängigkeiten/Blocker: Vor der Umsetzung müssen die offenen Workspace-Felder und der zulässige Recorder-Consumer festgelegt sein; keine erfundene Postproduktion.
 - Einstufung: Aufwand: large; Scope: local; Priorität: medium – explizit offene Phase-7-Lieferung mit mehreren abhängigen Schnittstellen.
+- Erledigungsvermerk (2026-08-14): Der Phase-7-Planer-Slice für Assets, Line und Workspace-v1 ist vollständig implementiert und getestet. Frontend: `planer/app/assets.js` bietet CRUD für Board-Pads (Audio, Video, Bild mit Typ, Modus, Hotkey, Lautstärke, Farb-Presets), intuitive Ablauf-Line mit Sortierung/Auto-Cleanup beim Löschen sowie Workspace-v1 JSON Export/Import-Modal. Backend: `Recorder/bridge/projects_api.py` stellt `/api/projects/{id}/assets`, `/api/projects/{id}/line` und `/api/projects/{id}/workspace` (GET/POST) bereit. Schema- & Modellkonsistenz zu `shared/workspace_v1.json` und `Recorder/board/board_model.py` (`validate_workspace_payload`, `import_workspace_full`, `export_workspace_full`) verifiziert. Testabdeckung: 27 Unit- & Integrationstests in `Recorder/tests/test_projects_api.py`, statische A11y-Tests in `test_planer_a11y.py`. Pytest-Vollsuite: 417 passed, 1 skipped.
 
 ### TW-KLANGPULTLIGHT-03: Implementiere den Phase-8-Planer-Slice für Teleprompter und KI-Monitor
 
@@ -154,3 +153,15 @@ Privates GitHub-Repo `entertain-and-more/KlangpultLight` angelegt (Sichtbarkeit:
 - Prüfung: lokaler `build_exe.bat`-Lauf erfolgreich; drei EXE-Ziele erzeugt und per SHA256 gegengeprüft; gebaute Root-EXE mit `PODCAST_RECORDER_SELFTEST=1` und `QT_QPA_PLATFORM=offscreen` beendet sich mit Exit 0.
 - Runtime-Readback: `Recorder/tests/test_runtime_paths.py` 2/2 bestanden; `pyproject.toml`, `build_exe.bat`, beide Startskripte, Spec und README führen konsistent Version `0.1.0` und die Root-/Dist-/Release-Pfade.
 - Release-Nachweis: `releases/v0.1.0/SHA256SUMS.txt` enthält den verifizierten Hash; kein Upload und keine Veröffentlichung.
+
+### TASKEXECUTION-CLOSEOUT (2026-08-14, 22:45 Uhr)
+
+- Projekt: `KlangpultLight` (`ENTERTAINMENT/DEV_KlangpultLight` in `C:\_Local_DEV\repos\KlangpultLight`).
+- Erledigte Aufgabe: `TW-KLANGPULTLIGHT-02` (Phase-7-Planer-Slice für Assets, Line und Workspace-v1).
+- Durchgeführte Maßnahmen:
+  1. Frontend: Vollständige UI- und Ablauflogik in `planer/app/assets.js` für Pad-Assets (Audio, Video, Bild mit Modus, Hotkey, Lautstärke, Farb-Presets), intuitive Line-Ablaufsteuerung mit Sortierung, Reordering und automatischem Bereinigen gelöschter Assets sowie interaktives Workspace-v1 JSON Export/Import-Modal.
+  2. Integration: Tab-Navigation in `planer/app/main.js` und REST-Clients in `planer/app/api.js` (`listAssets`, `createAsset`, `updateAsset`, `deleteAsset`, `getLine`, `updateLine`, `getWorkspace`, `importWorkspace`).
+  3. Backend & Persistenz: `Recorder/bridge/projects_api.py` stellt CRUD für Assets, Line-Speicherung und Workspace-v1 Export/Import bereit.
+  4. Schema- und Modellkonsistenz: Datenmodell-Validierung und -Austausch nach `shared/workspace_v1.json` via `Recorder/board/board_model.py` (`validate_workspace_payload`, `import_workspace_full`, `export_workspace_full`).
+  5. Testsuite & Verifikation: 4 neue Testfunktionen mit 15+ Assertions in `Recorder/tests/test_projects_api.py` (Assets CRUD, Auto-Line-Cleanup, Line-Validation, Workspace-v1 Export/Import und Persistenz nach Serverneustart).
+  6. Vollsuite-Ergebnis: 417 passed, 1 skipped in 84.29s (100% grün).

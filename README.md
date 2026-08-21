@@ -6,7 +6,7 @@
 
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Pytest](https://img.shields.io/badge/Pytest-406%20passed%20%2B%201%20gated-yellow.svg)](https://docs.pytest.org/)
+[![Pytest](https://img.shields.io/badge/Pytest-417%20passed%20%2B%201%20gated-success.svg)](https://docs.pytest.org/)
 [![License](https://img.shields.io/badge/License-Freeware-informational.svg)](#)
 [![Local-First](https://img.shields.io/badge/Architecture-Local--First-orange.svg)](#)
 [![LLM-Ready](https://img.shields.io/badge/LLM--Ready-llms.txt-purple.svg)](./llms.txt)
@@ -18,7 +18,7 @@
 > Lizenz: Proprietär/Freeware, Closed-Source.
 
 > [!NOTE]
-> For AI agents and automated tools: See [llms.txt](./llms.txt) (Last checked: 2026-07-27) for machine-readable repository overview and test contracts.
+> For AI agents and automated tools: See [llms.txt](./llms.txt) (Last checked: 2026-08-21) for machine-readable repository overview and test contracts.
 
 ---
 
@@ -67,8 +67,6 @@ python planer/start.py
 Der Planer erfordert einen laufenden Klangpult light – Recorder (Bridge auf Ports 8767 + 8769).
 Ohne Recorder läuft er als reines Planungstool für Projekte/Episoden weiter; die Bibliothek zeigt in diesem Fall einen Offline-Hinweis.
 
-Reproduzierbare isolierte Browser-Abnahme: [docs/PLANER_BROWSER_ACCEPTANCE.md](docs/PLANER_BROWSER_ACCEPTANCE.md).
-
 ## Klangpult light – Recorder — Quickstart
 
 ```powershell
@@ -98,7 +96,7 @@ $env:PYTHONIOENCODING = "utf-8"
 pytest tests/
 ```
 
-## Recorder-EXE bauen
+## Build Recorder EXE
 
 ```powershell
 $env:PYTHONIOENCODING = "utf-8"

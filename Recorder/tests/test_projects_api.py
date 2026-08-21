@@ -541,3 +541,231 @@ def test_aufnahme_zuordnen_unbekanntes_projekt_404(tmp_path):
         assert s == 404
     finally:
         server.stop()
+
+
+# ---------------------------------------------------------------------------
+# Assets, Line & Workspace-v1 (Phase 7 Slice)
+# ---------------------------------------------------------------------------
+
+def test_assets_crud_und_auto_line_cleanup(tmp_path):
+    """Prüft Anlegen, Abrufen, Aktualisieren, Löschen von Assets und automatisches Line-Cleanup."""
+    server = _starte_server(tmp_path)
+    port = server.port
+    try:
+        _, proj = _post(port, "/api/projects", {"title": "Podcast mit Soundboard"})
+        pid = proj["project_id"]
+
+        # Leere Assets am Anfang
+        s, a_liste = _get(port, f"/api/projects/{pid}/assets")
+        assert s == 200
+        assert a_liste["assets"] == []
+
+        # Asset anlegen ohne Label -> 400
+        s_err, _ = _post(port, f"/api/projects/{pid}/assets", {"label": "", "kind": "audio"})
+        assert s_err == 400
+
+        # Zwei Assets anlegen
+        s1, a1 = _post(port, f"/api/projects/{pid}/assets", {
+            "label": "Intro Musik",
+            "kind": "audio",
+            "asset_path": "sounds/intro.wav",
+            "color": "#3b82f6",
+            "mode": "play_stop",
+            "hotkey": "1",
+        })
+        assert s1 == 201
+        aid1 = a1["id"]
+        assert a1["label"] == "Intro Musik"
+        assert a1["kind"] == "audio"
+
+        s2, a2 = _post(port, f"/api/projects/{pid}/assets", {
+            "label": "Einspieler Video",
+            "kind": "video",
+            "asset_path": "clips/bumper.mp4",
+            "color": "#ef4444",
+            "mode": "loop",
+            "hotkey": "V",
+        })
+        assert s2 == 201
+        aid2 = a2["id"]
+
+        # Beide Assets in der Liste
+        _, a_liste2 = _get(port, f"/api/projects/{pid}/assets")
+        assert len(a_liste2["assets"]) == 2
+
+        # In die Line einfügen
+        s_l, l_res = _put(port, f"/api/projects/{pid}/line", {"line": [aid1, aid2, aid1]})
+        assert s_l == 200
+        assert l_res["line"] == [aid1, aid2, aid1]
+
+        # Asset 1 aktualisieren
+        s_put, a1_updated = _put(port, f"/api/projects/{pid}/assets/{aid1}", {
+            "label": "Intro Musik (Remix)",
+            "kind": "audio",
+            "asset_path": "sounds/intro_remix.wav",
+            "color": "#10b981",
+            "mode": "overlap",
+            "hotkey": "Space",
+            "volume": 0.8,
+        })
+        assert s_put == 200
+        assert a1_updated["label"] == "Intro Musik (Remix)"
+        assert a1_updated["color"] == "#10b981"
+        assert a1_updated["mode"] == "overlap"
+
+        # Asset 1 aktualisieren ohne Label -> 400
+        s_put_err, _ = _put(port, f"/api/projects/{pid}/assets/{aid1}", {"label": ""})
+        assert s_put_err == 400
+
+        # Asset 1 löschen -> muss aus Assets und aus der Line entfernt werden
+        assert _delete(port, f"/api/projects/{pid}/assets/{aid1}") == 204
+
+        _, a_liste3 = _get(port, f"/api/projects/{pid}/assets")
+        assert len(a_liste3["assets"]) == 1
+        assert a_liste3["assets"][0]["id"] == aid2
+
+        _, l_after_delete = _get(port, f"/api/projects/{pid}/line")
+        assert l_after_delete["line"] == [aid2]
+
+        # Unbekanntes Asset löschen -> 404
+        assert _delete(port, f"/api/projects/{pid}/assets/gibtsnicht") == 404
+    finally:
+        server.stop()
+
+
+def test_line_abrufen_speichern_und_validierung(tmp_path):
+    """Prüft Line-Endpunkte und Validierung."""
+    server = _starte_server(tmp_path)
+    port = server.port
+    try:
+        _, proj = _post(port, "/api/projects", {"title": "Line Test"})
+        pid = proj["project_id"]
+
+        s, l_init = _get(port, f"/api/projects/{pid}/line")
+        assert s == 200
+        assert l_init["line"] == []
+
+        # Ungültiger Body (keine Liste) -> 400
+        s_err, _ = _put(port, f"/api/projects/{pid}/line", {"line": "ungueltig"})
+        assert s_err == 400
+
+        # Gültige Line speichern
+        s_ok, l_save = _put(port, f"/api/projects/{pid}/line", {"line": ["slot_a", "slot_b", "slot_c"]})
+        assert s_ok == 200
+        assert l_save["line"] == ["slot_a", "slot_b", "slot_c"]
+
+        # Abrufen
+        _, l_read = _get(port, f"/api/projects/{pid}/line")
+        assert l_read["line"] == ["slot_a", "slot_b", "slot_c"]
+
+        # 404 bei unbekanntem Projekt
+        s_404, _ = _get(port, "/api/projects/gibtsnicht/line")
+        assert s_404 == 404
+        s_put_404, _ = _put(port, "/api/projects/gibtsnicht/line", {"line": []})
+        assert s_put_404 == 404
+    finally:
+        server.stop()
+
+
+def test_workspace_v1_export_und_import(tmp_path):
+    """Prüft klangpultlight-workspace-v1 Export, Import und Formatvalidierung."""
+    server = _starte_server(tmp_path)
+    port = server.port
+    try:
+        _, proj1 = _post(port, "/api/projects", {"title": "Export-Projekt"})
+        pid1 = proj1["project_id"]
+
+        s_a, a1 = _post(port, f"/api/projects/{pid1}/assets", {
+            "label": "Gong",
+            "kind": "audio",
+            "asset_path": "gong.wav",
+            "color": "#f59e0b",
+            "mode": "play_stop",
+            "hotkey": "G",
+        })
+        aid = a1["id"]
+        _put(port, f"/api/projects/{pid1}/line", {"line": [aid, aid]})
+
+        # Exportieren
+        s_exp, ws = _get(port, f"/api/projects/{pid1}/workspace")
+        assert s_exp == 200
+        assert ws["format"] == "klangpultlight-workspace-v1"
+        assert ws["version"] == 1
+        assert "board" in ws and "pads" in ws["board"]
+        assert len(ws["board"]["pads"]) == 1
+        assert ws["board"]["pads"][0]["id"] == aid
+        assert ws["board"]["pads"][0]["label"] == "Gong"
+        assert ws["line"] == [aid, aid]
+
+        # In Projekt 2 importieren
+        _, proj2 = _post(port, "/api/projects", {"title": "Import-Projekt"})
+        pid2 = proj2["project_id"]
+
+        s_imp, imp_res = _post(port, f"/api/projects/{pid2}/workspace/import", ws)
+        assert s_imp == 200
+        assert imp_res["status"] == "ok"
+        assert imp_res["assets_count"] == 1
+        assert imp_res["line_count"] == 2
+
+        # Projekt 2 prüfen
+        _, a_proj2 = _get(port, f"/api/projects/{pid2}/assets")
+        assert len(a_proj2["assets"]) == 1
+        assert a_proj2["assets"][0]["label"] == "Gong"
+
+        _, l_proj2 = _get(port, f"/api/projects/{pid2}/line")
+        assert l_proj2["line"] == [aid, aid]
+
+        # Import mit falschem Format -> 400
+        bad_format = dict(ws, format="falsches-format")
+        s_bad_fmt, _ = _post(port, f"/api/projects/{pid2}/workspace/import", bad_format)
+        assert s_bad_fmt == 400
+
+        # Import mit falscher Version -> 400
+        bad_ver = dict(ws, version=0)
+        s_bad_ver, _ = _post(port, f"/api/projects/{pid2}/workspace/import", bad_ver)
+        assert s_bad_ver == 400
+
+        # Unbekanntes Projekt -> 404
+        s_exp_404, _ = _get(port, "/api/projects/gibtsnicht/workspace")
+        assert s_exp_404 == 404
+        s_imp_404, _ = _post(port, "/api/projects/gibtsnicht/workspace/import", ws)
+        assert s_imp_404 == 404
+    finally:
+        server.stop()
+
+
+def test_assets_und_line_persistenz(tmp_path):
+    """Prüft, dass Assets und Line einen Server-Neustart überleben."""
+    from bridge.projects_api import ProjectsApiServer
+
+    data_dir = str(tmp_path / "persistenz_assets")
+
+    srv1 = ProjectsApiServer(data_dir=data_dir)
+    srv1.start(host="127.0.0.1", port=0)
+    p1 = srv1.port
+    try:
+        _, proj = _post(p1, "/api/projects", {"title": "Persistente Assets"})
+        pid = proj["project_id"]
+
+        _, a = _post(p1, f"/api/projects/{pid}/assets", {
+            "label": "Applaus",
+            "kind": "audio",
+            "asset_path": "applaus.wav",
+        })
+        aid = a["id"]
+        _put(p1, f"/api/projects/{pid}/line", {"line": [aid]})
+    finally:
+        srv1.stop()
+
+    srv2 = ProjectsApiServer(data_dir=data_dir)
+    srv2.start(host="127.0.0.1", port=0)
+    p2 = srv2.port
+    try:
+        _, a_res = _get(p2, f"/api/projects/{pid}/assets")
+        assert len(a_res["assets"]) == 1
+        assert a_res["assets"][0]["label"] == "Applaus"
+
+        _, l_res = _get(p2, f"/api/projects/{pid}/line")
+        assert l_res["line"] == [aid]
+    finally:
+        srv2.stop()

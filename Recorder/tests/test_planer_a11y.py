@@ -105,3 +105,52 @@ def test_planer_assets_a11y_attributes():
         assert f'for: "{field_id}"' in content or f'for="{field_id}"' in content or f'"{field_id}"' in content, (
             f"{field_id} muss ein zugeordnetes Label haben"
         )
+
+
+def test_planer_teleprompter_a11y_attributes():
+    """Prüft, dass teleprompter.js Tastatursemantik, Formular-Labels und ARIA-Attribute besitzt."""
+    tp_path = os.path.join(PLANER_DIR, "app", "teleprompter.js")
+    assert os.path.exists(tp_path), "teleprompter.js muss existieren"
+
+    with open(tp_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert "window.alert(" not in content and "alert(" not in content, "teleprompter.js darf kein alert() nutzen"
+    assert "window.confirm(" not in content, "teleprompter.js darf kein confirm() nutzen"
+    assert "role: \"region\"" in content or "role=\"region\"" in content, "Bühne muss role='region' besitzen"
+    assert "aria-label" in content, "Controls in teleprompter.js müssen barrierefreie aria-label besitzen"
+    assert "Space" in content and "ArrowDown" in content, "teleprompter.js muss Tastatursteuerung (Space, Pfeiltasten) unterstützen"
+
+    for field_id in (
+        "prompter-project-select",
+        "prompter-mode-select",
+        "prompter-speed-slider",
+        "prompter-font-size-slider",
+        "prompter-text-editor",
+    ):
+        assert f'id: "{field_id}"' in content or f'"{field_id}"' in content, f"{field_id} muss definiert sein"
+        assert f'for: "{field_id}"' in content or f'"{field_id}"' in content, f"{field_id} braucht ein Label"
+
+
+def test_planer_monitor_a11y_attributes():
+    """Prüft, dass monitor.js Live-Feed Semantik (aria-live, role=log) und Formular-Labels besitzt."""
+    mon_path = os.path.join(PLANER_DIR, "app", "monitor.js")
+    assert os.path.exists(mon_path), "monitor.js muss existieren"
+
+    with open(mon_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert "window.alert(" not in content and "alert(" not in content, "monitor.js darf kein alert() nutzen"
+    assert "role: \"log\"" in content or "role=\"log\"" in content, "Feed muss role='log' besitzen"
+    assert "aria-live" in content, "Feed muss aria-live besitzen"
+    assert "aria-label" in content, "Controls in monitor.js müssen barrierefreie aria-label besitzen"
+
+    for field_id in (
+        "monitor-project-select",
+        "monitor-cloud-toggle",
+        "monitor-web-toggle",
+        "monitor-briefing-input",
+        "monitor-keywords-input",
+    ):
+        assert f'id: "{field_id}"' in content or f'"{field_id}"' in content, f"{field_id} muss definiert sein"
+        assert f'for: "{field_id}"' in content or f'"{field_id}"' in content, f"{field_id} braucht ein Label"

@@ -402,7 +402,6 @@ def test_atomic_write_keine_tmp_datei(tmp_path):
     statt direktem Überschreiben — die .tmp-Datei muss atomar umbenannt werden.
     """
     from bridge.projects_api import ProjectsApiServer
-    from pathlib import Path
 
     data_dir = tmp_path / "atomic_data"
     server = ProjectsApiServer(data_dir=str(data_dir))
@@ -769,3 +768,178 @@ def test_assets_und_line_persistenz(tmp_path):
         assert l_res["line"] == [aid]
     finally:
         srv2.stop()
+
+
+# ---------------------------------------------------------------------------
+# Teleprompter & KI-Monitor (Phase 8 Slice)
+# ---------------------------------------------------------------------------
+
+def test_teleprompter_crud_and_persistence(tmp_path):
+    """Prüft GET/PUT für Teleprompter und Persistenz über Serverneustarts."""
+    from bridge.projects_api import ProjectsApiServer
+
+    data_dir = str(tmp_path / "persistenz_teleprompter")
+
+    srv1 = ProjectsApiServer(data_dir=data_dir)
+    srv1.start(host="127.0.0.1", port=0)
+    p1 = srv1.port
+    try:
+        _, proj = _post(p1, "/api/projects", {"title": "Prompter Show"})
+        pid = proj["project_id"]
+
+        # Default abfragen
+        s_get, get_res = _get(p1, f"/api/projects/{pid}/teleprompter")
+        assert s_get == 200
+        tp = get_res["teleprompter"]
+        assert tp["project_id"] == pid
+        assert tp["text"] == ""
+        assert tp["font_size"] == 24
+        assert tp["scroll_speed"] == 1.0
+        assert tp["mode"] == "manual"
+        assert tp["current_line"] == 0
+        assert tp["mirror"] is False
+
+        # Aktualisieren
+        s_put, put_res = _put(p1, f"/api/projects/{pid}/teleprompter", {
+            "text": "Zeile 1\nZeile 2\nZeile 3",
+            "font_size": 36,
+            "scroll_speed": 1.5,
+            "mode": "speech",
+            "current_line": 1,
+            "mirror": True,
+        })
+        assert s_put == 200
+        tp_updated = put_res["teleprompter"]
+        assert "Zeile 1" in tp_updated["text"]
+        assert tp_updated["font_size"] == 36
+        assert tp_updated["scroll_speed"] == 1.5
+        assert tp_updated["mode"] == "speech"
+        assert tp_updated["current_line"] == 1
+        assert tp_updated["mirror"] is True
+
+        # Unbekanntes Projekt -> 404
+        s_404, _ = _get(p1, "/api/projects/gibtsnicht/teleprompter")
+        assert s_404 == 404
+        s_put_404, _ = _put(p1, "/api/projects/gibtsnicht/teleprompter", {"text": "foo"})
+        assert s_put_404 == 404
+    finally:
+        srv1.stop()
+
+    # Nach Neustart prüfen
+    srv2 = ProjectsApiServer(data_dir=data_dir)
+    srv2.start(host="127.0.0.1", port=0)
+    p2 = srv2.port
+    try:
+        s_res, res = _get(p2, f"/api/projects/{pid}/teleprompter")
+        assert s_res == 200
+        tp2 = res["teleprompter"]
+        assert "Zeile 1" in tp2["text"]
+        assert tp2["font_size"] == 36
+        assert tp2["mode"] == "speech"
+        assert tp2["mirror"] is True
+    finally:
+        srv2.stop()
+
+
+def test_monitor_crud_and_analysis(tmp_path):
+    """Prüft GET/PUT für KI-Monitor und lokale Analyse."""
+    server = _starte_server(tmp_path)
+    port = server.port
+    try:
+        _, proj = _post(port, "/api/projects", {
+            "title": "Audio Deep Dive",
+            "description": "Technischer Podcast über Audio Interfaces",
+        })
+        pid = proj["project_id"]
+
+        # Default Monitor
+        s_get, get_res = _get(port, f"/api/projects/{pid}/monitor")
+        assert s_get == 200
+        mon = get_res["monitor"]
+        assert mon["project_id"] == pid
+        assert mon["briefing"] == ""
+        assert mon["keywords"] == []
+        assert mon["cloud_opt_in"] is False
+
+        # Aktualisieren
+        s_put, put_res = _put(port, f"/api/projects/{pid}/monitor", {
+            "briefing": "Schwerpunkt auf ASIO-Treiber und Abtastraten.",
+            "keywords": ["ASIO", "Latenz", "Buffer", "Abtastrate"],
+            "cloud_opt_in": True,
+            "web_search": True,
+        })
+        assert s_put == 200
+        mon_updated = put_res["monitor"]
+        assert mon_updated["briefing"] == "Schwerpunkt auf ASIO-Treiber und Abtastraten."
+        assert "ASIO" in mon_updated["keywords"]
+        assert mon_updated["cloud_opt_in"] is True
+
+        # Analyse durchführen
+        sample_transcript = "Wir haben heute eine extrem niedrige Latenz mit dem ASIO Treiber erreicht."
+        s_ana, ana_res = _post(port, f"/api/projects/{pid}/monitor/analyze", {
+            "text": sample_transcript,
+        })
+        assert s_ana == 200
+        assert ana_res["status"] == "ok"
+        assert ana_res["engine"] == "local_rules"
+        assert "Latenz" in ana_res["keywords_detected"] or "ASIO" in ana_res["keywords_detected"]
+        assert len(ana_res["cards"]) >= 2
+        card_types = [c["type"] for c in ana_res["cards"]]
+        assert "fact_check" in card_types
+        assert "summary_bullet" in card_types
+
+        # Leerer Text Analyse
+        s_empty, empty_res = _post(port, f"/api/projects/{pid}/monitor/analyze", {"text": ""})
+        assert s_empty == 200
+        assert empty_res["status"] == "empty"
+        assert empty_res["cards"] == []
+
+        # 404 bei unbekanntem Projekt
+        s_404, _ = _post(port, "/api/projects/gibtsnicht/monitor/analyze", {"text": "Test"})
+        assert s_404 == 404
+    finally:
+        server.stop()
+
+
+def test_workspace_teleprompter_roundtrip(tmp_path):
+    """Prüft, dass Teleprompter-Einstellungen im Workspace-Export und Import erhalten bleiben."""
+    server = _starte_server(tmp_path)
+    port = server.port
+    try:
+        # Projekt 1 mit Teleprompter erstellen
+        _, proj1 = _post(port, "/api/projects", {"title": "Projekt 1"})
+        pid1 = proj1["project_id"]
+
+        _put(port, f"/api/projects/{pid1}/teleprompter", {
+            "text": "Intro\nHauptteil\nOutro",
+            "font_size": 32,
+            "scroll_speed": 1.2,
+            "mode": "time",
+        })
+
+        # Exportieren
+        s_exp, ws = _get(port, f"/api/projects/{pid1}/workspace")
+        assert s_exp == 200
+        assert "teleprompter" in ws
+        assert ws["teleprompter"]["text"] == "Intro\nHauptteil\nOutro"
+        assert ws["teleprompter"]["font_size"] == 32
+        assert ws["teleprompter"]["scroll_speed"] == 1.2
+        assert ws["teleprompter"]["mode"] == "time"
+
+        # Projekt 2 anlegen und importieren
+        _, proj2 = _post(port, "/api/projects", {"title": "Projekt 2"})
+        pid2 = proj2["project_id"]
+
+        s_imp, imp_res = _post(port, f"/api/projects/{pid2}/workspace/import", ws)
+        assert s_imp == 200
+        assert imp_res["status"] == "ok"
+
+        # Teleprompter in Projekt 2 prüfen
+        s_tp2, tp2_res = _get(port, f"/api/projects/{pid2}/teleprompter")
+        assert s_tp2 == 200
+        assert tp2_res["teleprompter"]["text"] == "Intro\nHauptteil\nOutro"
+        assert tp2_res["teleprompter"]["font_size"] == 32
+        assert tp2_res["teleprompter"]["mode"] == "time"
+    finally:
+        server.stop()
+

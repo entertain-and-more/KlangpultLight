@@ -9,6 +9,9 @@ import { checkLibraryHealth, checkProjectsHealth } from "./api.js";
 import { mount as mountBibliothek, unmount as unmountBibliothek, reload as reloadBibliothek } from "./bibliothek.js";
 import { mount as mountProjekte, unmount as unmountProjekte, reload as reloadProjekte } from "./projekte.js";
 import { mount as mountAssets, unmount as unmountAssets, reload as reloadAssets } from "./assets.js";
+import { mount as mountTeleprompter, unmount as unmountTeleprompter, reload as reloadTeleprompter } from "./teleprompter.js";
+import { mount as mountMonitor, unmount as unmountMonitor, reload as reloadMonitor } from "./monitor.js";
+import { remote } from "./remote.js";
 
 // ---------------------------------------------------------------------------
 // Tabs
@@ -29,6 +32,16 @@ const TABS = {
     label: "Assets & Line",
     mount: (c, d) => mountAssets(c, d),
     unmount: unmountAssets,
+  },
+  teleprompter: {
+    label: "Teleprompter",
+    mount: (c, d) => mountTeleprompter(c, d),
+    unmount: unmountTeleprompter,
+  },
+  monitor: {
+    label: "KI-Monitor",
+    mount: (c, d) => mountMonitor(c, d),
+    unmount: unmountMonitor,
   },
 };
 
@@ -121,7 +134,7 @@ checkStatus();
 setInterval(checkStatus, 10_000);
 
 // ---------------------------------------------------------------------------
-// Reload-Button (Bibliothek)
+// Reload-Button (Bibliothek / Projekte / Assets / Teleprompter / Monitor)
 // ---------------------------------------------------------------------------
 
 const reloadBtn = document.getElementById("btn-reload");
@@ -130,6 +143,8 @@ if (reloadBtn) {
     if (_currentTab === "bibliothek") reloadBibliothek();
     else if (_currentTab === "projekte") reloadProjekte();
     else if (_currentTab === "assets") reloadAssets();
+    else if (_currentTab === "teleprompter") reloadTeleprompter();
+    else if (_currentTab === "monitor") reloadMonitor();
     else switchTab(_currentTab);
   });
 }
@@ -138,4 +153,5 @@ if (reloadBtn) {
 // Start
 // ---------------------------------------------------------------------------
 
+remote.connect();
 switchTab("bibliothek");

@@ -13,6 +13,14 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Hinzugefügt / Added (SOFTWARE ENTWICKLUNG 2026-08-21)
+- Phase-8-Planer-Slice (`TW-KLANGPULTLIGHT-03`): End-to-End-Integration von Teleprompter, KI-Monitor und WebSocket-Live-Sync.
+- Teleprompter-Modul (`planer/app/teleprompter.js`): 4 Betriebsmodi (manuell, zeitgesteuert, sprachgesteuert via STT-Token-Sync, hybrid), horizontaler Spiegelmodus für Beamer/Prompter-Glas, Schriftgrößen- (16–64px) und Geschwindigkeitsregler (0.2–3.0x), Cue-Cursor, Tastaturnavigation (Leertaste, Pfeiltasten, Escape) und automatisches Speichern.
+- KI-Monitor-Modul (`planer/app/monitor.js`): Live-Transkriptstream aus Recorder-STT-Events, strukturierte Offline-Heuristik (Faktenchecks, vertiefende Nachfragen, Zusammenfassungs-Punkte), 1-Klick-Kapitelmarken-Dispatch per WebSocket in den Recorder sowie opt-in Schalter für Web- und Cloud-Recherche.
+- WebSocket-Remote-Client (`planer/app/remote.js`): Verbindungs- und Protokollverwaltung (`remote_protocol_v1.json`) auf Port 8768 mit Reconnect-Logik, Event-Broadcasting (`transcript_chunk`, `state_update`) und bidirektionalem Dispatch.
+- Backend REST-Endpunkte in `Recorder/bridge/projects_api.py`: `/api/projects/{id}/teleprompter` (GET/PUT), `/api/projects/{id}/monitor` (GET/PUT) und `/api/projects/{id}/monitor/analyze` (POST) mit Persistenz (`teleprompter_{id}.json`, `monitor_{id}.json`) und voller Integration in den `workspace-v1` Export/Import.
+- Testabdeckung: Neue Unit- & Persistenztests in `Recorder/tests/test_projects_api.py`, Protocol- & Matching-Vertragstests in `test_phase8_teleprompter_monitor.py` und Accessibility-Tests in `test_planer_a11y.py`. Pytest-Gesamtsuite auf 425 bestandene Tests (425 passed, 100% grün) erweitert.
+
 ### Hinzugefügt / Added (SOFTWARE HIGH END 2026-08-14)
 - Phase-7-Planer-Slice (`TW-KLANGPULTLIGHT-02`): End-to-End-Integration von Assets, Line-Ablaufsteuerung und Workspace-v1 JSON Export/Import.
 - Integrationstests in `Recorder/tests/test_projects_api.py`: 4 neue Testfunktionen mit 15+ Assertions für Assets-CRUD, automatisches Line-Cleanup beim Löschen von Assets, Line-Validierung und Persistenz nach Serverneustart.

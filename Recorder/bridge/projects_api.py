@@ -44,6 +44,9 @@ _RE_ASSET = re.compile(r"^/api/projects/([^/]+)/assets/([^/]+)$")
 _RE_LINE = re.compile(r"^/api/projects/([^/]+)/line$")
 _RE_WORKSPACE = re.compile(r"^/api/projects/([^/]+)/workspace$")
 _RE_WORKSPACE_IMPORT = re.compile(r"^/api/projects/([^/]+)/workspace/import$")
+_RE_TELEPROMPTER = re.compile(r"^/api/projects/([^/]+)/teleprompter$")
+_RE_MONITOR = re.compile(r"^/api/projects/([^/]+)/monitor$")
+_RE_MONITOR_ANALYZE = re.compile(r"^/api/projects/([^/]+)/monitor/analyze$")
 
 
 # ---------------------------------------------------------------------------
@@ -162,6 +165,12 @@ class _ProjektStore:
             line_pfad = self._line_pfad(project_id)
             if line_pfad.exists():
                 line_pfad.unlink()
+            tp_pfad = self._teleprompter_pfad(project_id)
+            if tp_pfad.exists():
+                tp_pfad.unlink()
+            mon_pfad = self._monitor_pfad(project_id)
+            if mon_pfad.exists():
+                mon_pfad.unlink()
         return True
 
     # -- Episoden --
@@ -413,15 +422,222 @@ class _ProjektStore:
             _json_schreiben(self._line_pfad(project_id), saubere_line)
             return saubere_line
 
+    # -- Teleprompter --
+
+    def _teleprompter_pfad(self, project_id: str) -> Path:
+        return self._dir / f"teleprompter_{project_id}.json"
+
+    def _teleprompter_lesen(self, project_id: str) -> dict:
+        daten = _json_lesen(self._teleprompter_pfad(project_id))
+        default = {
+            "project_id": project_id,
+            "text": "",
+            "font_size": 24,
+            "scroll_speed": 1.0,
+            "mode": "manual",
+            "current_line": 0,
+            "mirror": False,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+        if isinstance(daten, dict):
+            default.update(daten)
+        return default
+
+    def hole_teleprompter(self, project_id: str) -> Optional[dict]:
+        """Gibt Teleprompter-Daten zurück. None wenn Projekt nicht existiert."""
+        with self._lock:
+            if self._projekt_holen_nolock(project_id) is None:
+                return None
+            return dict(self._teleprompter_lesen(project_id))
+
+    def speichere_teleprompter(self, project_id: str, daten: dict) -> Optional[dict]:
+        """Aktualisiert Teleprompter-Daten. None wenn Projekt nicht existiert."""
+        if not isinstance(daten, dict):
+            raise ValueError("Daten müssen ein JSON-Objekt sein")
+        with self._lock:
+            if self._projekt_holen_nolock(project_id) is None:
+                return None
+            aktuell = self._teleprompter_lesen(project_id)
+            jetzt = datetime.now(timezone.utc).isoformat()
+            if "text" in daten:
+                aktuell["text"] = str(daten["text"])
+            if "font_size" in daten:
+                try:
+                    aktuell["font_size"] = max(8, int(daten["font_size"]))
+                except (ValueError, TypeError):
+                    pass
+            if "scroll_speed" in daten:
+                try:
+                    aktuell["scroll_speed"] = max(0.1, float(daten["scroll_speed"]))
+                except (ValueError, TypeError):
+                    pass
+            if "mode" in daten:
+                mode = str(daten["mode"])
+                if mode in {"manual", "time", "speech", "hybrid"}:
+                    aktuell["mode"] = mode
+            if "current_line" in daten:
+                try:
+                    aktuell["current_line"] = max(0, int(daten["current_line"]))
+                except (ValueError, TypeError):
+                    pass
+            if "mirror" in daten:
+                aktuell["mirror"] = bool(daten["mirror"])
+            aktuell["updated_at"] = jetzt
+            _json_schreiben(self._teleprompter_pfad(project_id), aktuell)
+            return dict(aktuell)
+
+    # -- KI-Monitor --
+
+    def _monitor_pfad(self, project_id: str) -> Path:
+        return self._dir / f"monitor_{project_id}.json"
+
+    def _monitor_lesen(self, project_id: str) -> dict:
+        daten = _json_lesen(self._monitor_pfad(project_id))
+        default = {
+            "project_id": project_id,
+            "briefing": "",
+            "keywords": [],
+            "cards": [],
+            "cloud_opt_in": False,
+            "web_search": False,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+        if isinstance(daten, dict):
+            default.update(daten)
+        return default
+
+    def hole_monitor(self, project_id: str) -> Optional[dict]:
+        """Gibt KI-Monitor-Daten zurück. None wenn Projekt nicht existiert."""
+        with self._lock:
+            if self._projekt_holen_nolock(project_id) is None:
+                return None
+            return dict(self._monitor_lesen(project_id))
+
+    def speichere_monitor(self, project_id: str, daten: dict) -> Optional[dict]:
+        """Aktualisiert KI-Monitor-Daten. None wenn Projekt nicht existiert."""
+        if not isinstance(daten, dict):
+            raise ValueError("Daten müssen ein JSON-Objekt sein")
+        with self._lock:
+            if self._projekt_holen_nolock(project_id) is None:
+                return None
+            aktuell = self._monitor_lesen(project_id)
+            jetzt = datetime.now(timezone.utc).isoformat()
+            if "briefing" in daten:
+                aktuell["briefing"] = str(daten["briefing"])
+            if "keywords" in daten and isinstance(daten["keywords"], list):
+                aktuell["keywords"] = [str(k) for k in daten["keywords"] if str(k).strip()]
+            if "cards" in daten and isinstance(daten["cards"], list):
+                aktuell["cards"] = daten["cards"]
+            if "cloud_opt_in" in daten:
+                aktuell["cloud_opt_in"] = bool(daten["cloud_opt_in"])
+            if "web_search" in daten:
+                aktuell["web_search"] = bool(daten["web_search"])
+            aktuell["updated_at"] = jetzt
+            _json_schreiben(self._monitor_pfad(project_id), aktuell)
+            return dict(aktuell)
+
+    def monitor_analysieren(
+        self,
+        project_id: str,
+        transcript_text: str,
+        context: Optional[dict] = None,
+    ) -> Optional[dict]:
+        """Analysiert Live-Transkriptionstext lokal gegen Briefing und Kontext.
+
+        Erzeugt strukturierte Assistenz-Karten (Fakten, Nachfragen, Kapitelmarker, Zusammenfassung).
+        Vollständig offline / lokal ohne externe Abhängigkeiten.
+        """
+        with self._lock:
+            projekt = self._projekt_holen_nolock(project_id)
+            if projekt is None:
+                return None
+            monitor = self._monitor_lesen(project_id)
+
+        briefing = monitor.get("briefing", "") or projekt.get("description", "")
+        keywords = list(monitor.get("keywords") or [])
+        text = str(transcript_text).strip()
+        if not text:
+            return {
+                "status": "empty",
+                "cards": [],
+                "keywords_detected": [],
+                "engine": "local_rules",
+            }
+
+        # Lokale Heuristik / Regelanalyse
+        detected_keywords = []
+        words = re.findall(r"\b[a-zA-ZäöüÄÖÜß]{4,}\b", text)
+        for w in words:
+            w_lower = w.lower()
+            if any(w_lower == k.lower() for k in keywords) and not any(w_lower == d.lower() for d in detected_keywords):
+                detected_keywords.append(w)
+
+        cards = []
+        jetzt = datetime.now(timezone.utc).isoformat()
+
+        # 1. Fact / Keyword-Card
+        if detected_keywords:
+            kw_str = ", ".join(detected_keywords[:3])
+            briefing_hint = f" ({briefing[:60]}...)" if briefing else ""
+            cards.append({
+                "id": str(uuid.uuid4()),
+                "type": "fact_check",
+                "title": f"Schlüsselbegriff: {kw_str}",
+                "content": f"Erwähnung im Kontext{briefing_hint}: »{text[:120]}...«",
+                "created_at": jetzt,
+            })
+
+        # 2. Moderations- / Nachfrage-Impuls
+        if len(text.split()) >= 4:
+            cards.append({
+                "id": str(uuid.uuid4()),
+                "type": "followup_question",
+                "title": "Nachfrage-Impuls für Moderation",
+                "content": f"Wie ordnet sich »{text[:80]}...« in das Thema »{projekt.get('title', '')}« ein?",
+                "created_at": jetzt,
+            })
+
+        # 3. Kapitelmarker-Vorschlag
+        marker_triggers = ["kapitel", "thema", "nächster punkt", "kommen wir zu", "als nächstes", "abschließend", "willkommen"]
+        if any(trig in text.lower() for trig in marker_triggers) or len(text) > 80:
+            label_candidate = text[:40].strip()
+            cards.append({
+                "id": str(uuid.uuid4()),
+                "type": "chapter_suggestion",
+                "title": "Kapitelmarker-Vorschlag",
+                "label": label_candidate,
+                "content": f"Vorschlag für Marker: »{label_candidate}«",
+                "created_at": jetzt,
+            })
+
+        # 4. Zusammenfassungs-Stichpunkt
+        cards.append({
+            "id": str(uuid.uuid4()),
+            "type": "summary_bullet",
+            "title": "Kernaussage",
+            "content": text[:150],
+            "created_at": jetzt,
+        })
+
+        return {
+            "status": "ok",
+            "cards": cards,
+            "keywords_detected": detected_keywords,
+            "engine": "local_rules",
+            "cloud_opt_in": monitor.get("cloud_opt_in", False),
+            "web_search": monitor.get("web_search", False),
+        }
+
     # -- Workspace-v1 Export / Import --
 
     def workspace_exportieren(self, project_id: str) -> Optional[dict]:
-        """Exportiert Assets und Line als valides klangpultlight-workspace-v1 Payload."""
+        """Exportiert Assets, Line und Teleprompter als valides klangpultlight-workspace-v1 Payload."""
         with self._lock:
             if self._projekt_holen_nolock(project_id) is None:
                 return None
             assets = self._assets_lesen(project_id)
             line = self._line_lesen(project_id)
+            teleprompter_data = self._teleprompter_lesen(project_id)
             pads = []
             for a in assets:
                 pad = {
@@ -440,9 +656,10 @@ class _ProjektStore:
                 "board": {"pads": pads},
                 "line": line,
                 "teleprompter": {
-                    "text": "",
-                    "font_size": 24,
-                    "scroll_speed": 1.0,
+                    "text": teleprompter_data.get("text", ""),
+                    "font_size": teleprompter_data.get("font_size", 24),
+                    "scroll_speed": teleprompter_data.get("scroll_speed", 1.0),
+                    "mode": teleprompter_data.get("mode", "manual"),
                 },
             }
 
@@ -493,6 +710,26 @@ class _ProjektStore:
             neue_line = [str(x) for x in roh_line if str(x).strip()]
             _json_schreiben(self._line_pfad(project_id), neue_line)
 
+            tele_payload = payload.get("teleprompter")
+            if isinstance(tele_payload, dict):
+                aktuell_tele = self._teleprompter_lesen(project_id)
+                if "text" in tele_payload:
+                    aktuell_tele["text"] = str(tele_payload["text"])
+                if "font_size" in tele_payload:
+                    try:
+                        aktuell_tele["font_size"] = max(8, int(tele_payload["font_size"]))
+                    except (ValueError, TypeError):
+                        pass
+                if "scroll_speed" in tele_payload:
+                    try:
+                        aktuell_tele["scroll_speed"] = max(0.1, float(tele_payload["scroll_speed"]))
+                    except (ValueError, TypeError):
+                        pass
+                if "mode" in tele_payload and str(tele_payload["mode"]) in {"manual", "time", "speech", "hybrid"}:
+                    aktuell_tele["mode"] = str(tele_payload["mode"])
+                aktuell_tele["updated_at"] = jetzt
+                _json_schreiben(self._teleprompter_pfad(project_id), aktuell_tele)
+
             return {
                 "status": "ok",
                 "assets_count": len(neue_assets),
@@ -527,6 +764,10 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
             self._handle_line_get(m.group(1))
         elif m := _RE_WORKSPACE.match(path):
             self._handle_workspace_get(m.group(1))
+        elif m := _RE_TELEPROMPTER.match(path):
+            self._handle_teleprompter_get(m.group(1))
+        elif m := _RE_MONITOR.match(path):
+            self._handle_monitor_get(m.group(1))
         else:
             self._json(404, {"error": "Nicht gefunden"})
 
@@ -542,6 +783,8 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
             self._handle_asset_post(m.group(1))
         elif m := _RE_WORKSPACE_IMPORT.match(path):
             self._handle_workspace_import_post(m.group(1))
+        elif m := _RE_MONITOR_ANALYZE.match(path):
+            self._handle_monitor_analyze_post(m.group(1))
         else:
             self._json(404, {"error": "Nicht gefunden"})
 
@@ -553,6 +796,10 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
             self._handle_asset_put(m.group(1), m.group(2))
         elif m := _RE_LINE.match(path):
             self._handle_line_put(m.group(1))
+        elif m := _RE_TELEPROMPTER.match(path):
+            self._handle_teleprompter_put(m.group(1))
+        elif m := _RE_MONITOR.match(path):
+            self._handle_monitor_put(m.group(1))
         elif m := _RE_PROJEKT.match(path):
             self._handle_projekt_put(m.group(1))
         else:
@@ -616,6 +863,65 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
             self._json(404, {"error": "Projekt nicht gefunden"})
         else:
             self._json(200, payload)
+
+    def _handle_teleprompter_get(self, project_id: str) -> None:
+        store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
+        data = store.hole_teleprompter(project_id)
+        if data is None:
+            self._json(404, {"error": "Projekt nicht gefunden"})
+        else:
+            self._json(200, {"teleprompter": data})
+
+    def _handle_teleprompter_put(self, project_id: str) -> None:
+        body = self._lese_body()
+        if body is None:
+            return
+        store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
+        try:
+            res = store.speichere_teleprompter(project_id, body)
+        except ValueError as exc:
+            self._json(400, {"error": str(exc)})
+            return
+        if res is None:
+            self._json(404, {"error": "Projekt nicht gefunden"})
+        else:
+            self._json(200, {"teleprompter": res})
+
+    def _handle_monitor_get(self, project_id: str) -> None:
+        store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
+        data = store.hole_monitor(project_id)
+        if data is None:
+            self._json(404, {"error": "Projekt nicht gefunden"})
+        else:
+            self._json(200, {"monitor": data})
+
+    def _handle_monitor_put(self, project_id: str) -> None:
+        body = self._lese_body()
+        if body is None:
+            return
+        store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
+        try:
+            res = store.speichere_monitor(project_id, body)
+        except ValueError as exc:
+            self._json(400, {"error": str(exc)})
+            return
+        if res is None:
+            self._json(404, {"error": "Projekt nicht gefunden"})
+        else:
+            self._json(200, {"monitor": res})
+
+    def _handle_monitor_analyze_post(self, project_id: str) -> None:
+        body = self._lese_body()
+        if body is None:
+            return
+        text = str(body.get("text", "")).strip()
+        context = body.get("context")
+        store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
+        res = store.monitor_analysieren(project_id, text, context)
+        if res is None:
+            self._json(404, {"error": "Projekt nicht gefunden"})
+        else:
+            self._json(200, res)
 
     # -- POST-Handler --
 

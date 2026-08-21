@@ -20,7 +20,7 @@
 - Einstufung: Aufwand: large; Scope: local; Priorität: medium – explizit offene Phase-7-Lieferung mit mehreren abhängigen Schnittstellen.
 - Erledigungsvermerk (2026-08-14): Der Phase-7-Planer-Slice für Assets, Line und Workspace-v1 ist vollständig implementiert und getestet. Frontend: `planer/app/assets.js` bietet CRUD für Board-Pads (Audio, Video, Bild mit Typ, Modus, Hotkey, Lautstärke, Farb-Presets), intuitive Ablauf-Line mit Sortierung/Auto-Cleanup beim Löschen sowie Workspace-v1 JSON Export/Import-Modal. Backend: `Recorder/bridge/projects_api.py` stellt `/api/projects/{id}/assets`, `/api/projects/{id}/line` und `/api/projects/{id}/workspace` (GET/POST) bereit. Schema- & Modellkonsistenz zu `shared/workspace_v1.json` und `Recorder/board/board_model.py` (`validate_workspace_payload`, `import_workspace_full`, `export_workspace_full`) verifiziert. Testabdeckung: 27 Unit- & Integrationstests in `Recorder/tests/test_projects_api.py`, statische A11y-Tests in `test_planer_a11y.py`. Pytest-Vollsuite: 417 passed, 1 skipped.
 
-### TW-KLANGPULTLIGHT-03: Implementiere den Phase-8-Planer-Slice für Teleprompter und KI-Monitor
+### TW-KLANGPULTLIGHT-03: [ERLEDIGT 2026-08-21] Implementiere den Phase-8-Planer-Slice für Teleprompter und KI-Monitor
 
 - Ergebnis: Der Planer stellt Teleprompter- und KI-Monitor-Funktionen auf Basis der vorgesehenen Live-Transcript-Chunks bereit, ohne den Recorder um einen verdeckten Batch-Export zu erweitern.
 - Quelle/Ableitung: `TODO.md` Phase 8, `KONZEPT.md`, `Recorder/shared/remote_protocol_v1.json`, STT-Bridge und vorhandene Planer-Struktur.
@@ -28,6 +28,7 @@
 - Prüfweg: Protokoll-/Integrationsfixtures mit `transcript_chunk`, Planer-Frontend-Smoke und dokumentierter Degradationsprüfung ohne Netzwerk.
 - Abhängigkeiten/Blocker: Workspace-/Transcript-Vertrag aus TW-KLANGPULTLIGHT-02 und die Entscheidung über zulässige KI-Kommandos; keine Cloud-Credentials einchecken.
 - Einstufung: Aufwand: large; Scope: local; Priorität: medium – zentrale, aber ausdrücklich nachgelagerte Phase-8-Funktion.
+- Erledigungsvermerk (2026-08-21): Der Phase-8-Planer-Slice für Teleprompter und KI-Monitor ist vollständig implementiert und getestet. Frontend: `planer/app/teleprompter.js` unterstützt manuelle, zeitgesteuerte, sprachgesteuerte (STT-Token-Sync) und hybride Modi, horizontalen Spiegelmodus für Beamerspiegel, Schriftgrößen- & Geschwindigkeitsregler, Cues und Tastatursteuerung; `planer/app/monitor.js` bietet Echtzeit-Live-Transkriptstream, strukturierte Offline-Karten (Faktenchecks, Nachfragen, 1-Klick-Kapitelmarken-Dispatch per WebSocket, Zusammenfassungen) sowie opt-in Web/Cloud-Schalter; `planer/app/remote.js` handhabt die bidirektionale WebSocket-Verbindung (Port 8768) mit automatischem Reconnect. Backend: `Recorder/bridge/projects_api.py` stellt `/api/projects/{id}/teleprompter`, `/api/projects/{id}/monitor` und `/api/projects/{id}/monitor/analyze` bereit sowie vollständigen Teleprompter-Schema-Roundtrip in Workspace-v1 JSON Export/Import. Tests: Unit-/Persistenz- & Analyse-Tests in `Recorder/tests/test_projects_api.py`, Protocol- & Matching-Vertragstests in `test_phase8_teleprompter_monitor.py`, A11y-Tests in `test_planer_a11y.py`. Pytest-Vollsuite: 425 passed (100% grün).
 
 ### TW-KLANGPULTLIGHT-04: Belege den Live-STT-End-to-End-Pfad und seine Degradationsgrenzen
 

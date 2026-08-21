@@ -128,13 +128,15 @@
 
 ## Phase 8 — Planer: Teleprompter + KI-Monitor
 
-- [ ] **Teleprompter:** Text schreiben/laden, Auto-Scroll, Modi **manuell / nach Zeit / nach Sprache / Hybrid**
-- [ ] **Modus „nach Sprache":** Auto-Scroll anhand der Live-STT-Chunks aus dem Recorder (Phase 5b)
-- [ ] **Live-Sync:** Prompter-Zeile mit Recorder über WebSocket koppeln
-- [ ] **KI-Monitor:** Panel mit Fakten/Quellen/Nachfragen, gespeist aus **Live-Transkriptions-Chunks
+- [x] **Teleprompter:** Text schreiben/laden, Auto-Scroll, Modi **manuell / nach Zeit / nach Sprache / Hybrid**
+- [x] **Modus „nach Sprache":** Auto-Scroll anhand der Live-STT-Chunks aus dem Recorder (Phase 5b)
+- [x] **Live-Sync:** Prompter-Zeile mit Recorder über WebSocket koppeln
+- [x] **KI-Monitor:** Panel mit Fakten/Quellen/Nachfragen, gespeist aus **Live-Transkriptions-Chunks
       (Phase 5b) + Projektplan/Notizen**; LLM liefert strukturierte Kommandos, manipuliert UI nicht direkt
-- [ ] Webrecherche-Adapter optional/konfigurierbar; Cloud-KI nur opt-in mit Key
-- [ ] **Meilenstein M8:** Teleprompter & Monitor laufen im Planer, live an Recorder gekoppelt ✔
+- [x] Webrecherche-Adapter optional/konfigurierbar; Cloud-KI nur opt-in mit Key
+- [x] **Meilenstein M8:** Teleprompter & Monitor laufen im Planer, live an Recorder gekoppelt ✔
+
+  Nachweis 2026-08-21: Teleprompter (`planer/app/teleprompter.js`) mit 4 Modi (manuell, zeit, sprache, hybrid), Spiegelmodus und Tastaturnavigation implementiert. KI-Monitor (`planer/app/monitor.js`) mit Live-Transkriptstream, strukturierter lokaler Analyse (Faktenchecks, Nachfragen, Zusammenfassungen), 1-Klick-Kapitelmarken-Dispatch und opt-in Schaltern realisiert. WebSocket-Bridge (`planer/app/remote.js`) an Recorder (`remote_protocol_v1.json`) angebunden. Backend-REST-Endpunkte für Teleprompter, Monitor und Analyse in `Recorder/bridge/projects_api.py`. Vollständige Testabdeckung (425 passed in Pytest).
 
 ---
 

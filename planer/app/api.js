@@ -222,3 +222,57 @@ export async function getWorkspace(projectId) {
 export async function importWorkspace(projectId, payload) {
   return _request("POST", `/api/projects/${projectId}/workspace/import`, payload);
 }
+
+// ---------------------------------------------------------------------------
+// Teleprompter (Phase 8)
+// ---------------------------------------------------------------------------
+
+/**
+ * Ruft die Teleprompter-Daten eines Projekts ab.
+ * @param {string} projectId
+ * @returns {Promise<{ok: boolean, data?: {teleprompter: object}, error?: string}>}
+ */
+export async function getTeleprompter(projectId) {
+  return _request("GET", `/api/projects/${projectId}/teleprompter`);
+}
+
+/**
+ * Aktualisiert die Teleprompter-Daten eines Projekts.
+ * @param {string} projectId
+ * @param {object} data {text, font_size, scroll_speed, mode, current_line, mirror}
+ */
+export async function updateTeleprompter(projectId, data) {
+  return _request("PUT", `/api/projects/${projectId}/teleprompter`, data);
+}
+
+// ---------------------------------------------------------------------------
+// KI-Monitor (Phase 8)
+// ---------------------------------------------------------------------------
+
+/**
+ * Ruft die KI-Monitor-Daten eines Projekts ab.
+ * @param {string} projectId
+ * @returns {Promise<{ok: boolean, data?: {monitor: object}, error?: string}>}
+ */
+export async function getMonitor(projectId) {
+  return _request("GET", `/api/projects/${projectId}/monitor`);
+}
+
+/**
+ * Aktualisiert die KI-Monitor-Daten eines Projekts.
+ * @param {string} projectId
+ * @param {object} data {briefing, keywords, cards, cloud_opt_in, web_search}
+ */
+export async function updateMonitor(projectId, data) {
+  return _request("PUT", `/api/projects/${projectId}/monitor`, data);
+}
+
+/**
+ * Sendet Transkriptionstext zur lokalen strukturierenden Analyse an den Server.
+ * @param {string} projectId
+ * @param {string} text
+ * @param {object} [context]
+ */
+export async function analyzeMonitorText(projectId, text, context = {}) {
+  return _request("POST", `/api/projects/${projectId}/monitor/analyze`, { text, context });
+}

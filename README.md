@@ -6,7 +6,7 @@
 
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Pytest](https://img.shields.io/badge/Pytest-417%20passed%20%2B%201%20gated-success.svg)](https://docs.pytest.org/)
+[![Pytest](https://img.shields.io/badge/Pytest-426%20passed%20%2B%201%20gated-success.svg)](https://docs.pytest.org/)
 [![License](https://img.shields.io/badge/License-Freeware-informational.svg)](#)
 [![Local-First](https://img.shields.io/badge/Architecture-Local--First-orange.svg)](#)
 [![LLM-Ready](https://img.shields.io/badge/LLM--Ready-llms.txt-purple.svg)](./llms.txt)

@@ -57,7 +57,7 @@ class RecordingLibrary:
 
         # Events-Log anlegen (leer)
         events_pfad = os.path.join(aufnahme_ordner, "events.jsonl")
-        with open(events_pfad, "w", encoding="utf-8") as f:
+        with open(events_pfad, "w", encoding="utf-8"):
             pass  # Leere Datei
 
         # Original-Branch

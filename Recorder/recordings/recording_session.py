@@ -12,12 +12,12 @@ import logging
 import os
 from typing import Optional
 
-_log = logging.getLogger(__name__)
-
 from core.app_state import AppState
 from core.event_log import EventLog
 from recordings.library import RecordingLibrary
 from recordings.models import RecordingMetadata
+
+_log = logging.getLogger(__name__)
 
 
 class RecordingSession:

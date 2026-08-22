@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import threading
 import time
-from collections import deque
 from typing import Callable, Optional
 
 import numpy as np

@@ -1,5 +1,4 @@
 """Tests für audio.drift_monitor — Drift-Erkennung und Callback."""
-import pytest
 
 
 def test_kein_drift_unter_schwelle():

@@ -58,7 +58,7 @@ def _engine_und_board(tmp_path, pad_liste):
     from audio.engine import AudioEngine
     from audio.mixer_channel import MixerChannel
     from core.config import AppConfig
-    from board.board_model import Board, Pad
+    from board.board_model import Board
 
     cfg = AppConfig(mock_audio=True, block_size=1024, samplerate=48000, channels=2, workspace_dir=str(tmp_path))
     kanaele = [MixerChannel(source_id="mic1", name="Mikrofon 1")]
@@ -169,7 +169,6 @@ def test_board_audio_summiert_auf_mix(tmp_path):
     from audio.engine import AudioEngine
     from audio.mixer_channel import MixerChannel
     from core.config import AppConfig
-    from audio.wav_recorder import WavRecorder
 
     cfg = AppConfig(mock_audio=True, block_size=1024, samplerate=48000, channels=2, workspace_dir=str(tmp_path))
     kanaele = [MixerChannel(source_id="mic1", name="Mikrofon 1")]
@@ -289,7 +288,6 @@ def test_ducking_skaliert_mic_im_mix(tmp_path):
     from audio.mixer_channel import MixerChannel
     from core.config import AppConfig
     from board.duck_controller import DuckController
-    from audio.wav_recorder import WavRecorder
 
     cfg = AppConfig(mock_audio=True, block_size=1024, samplerate=48000, channels=2, workspace_dir=str(tmp_path))
     kanaele = [MixerChannel(source_id="mic1", name="Mikrofon 1")]
@@ -599,7 +597,6 @@ def test_fade_out_ist_rampe(tmp_path):
 
 def test_trigger_unbekannte_id(tmp_path):
     """trigger() mit unbekannter Pad-ID löst keinen Fehler aus."""
-    from board.board_model import Board
     from board.board_player import BoardPlayer
 
     engine, board, _ = _engine_und_board(tmp_path, [])
@@ -621,10 +618,9 @@ def test_play_stop_toggle_kein_deadlock(tmp_path):
 
     Test: Toggle zweimal in kurzer Zeit — kein Hängen.
     """
-    from board.board_model import Board, Pad
+    from board.board_model import Pad
     from board.board_player import BoardPlayer
 
-    from board.board_model import Board, Pad
 
     wav_pfad = str(tmp_path / "jingle.wav")
     _erstelle_test_wav(wav_pfad, dauer_frames=48000)  # 1 s

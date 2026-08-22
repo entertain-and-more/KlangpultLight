@@ -1,6 +1,5 @@
 """Tests für core.event_log — JSON-Lines-Protokoll."""
 import json
-import os
 from pathlib import Path
 
 

@@ -7,7 +7,6 @@ import threading
 import time
 
 import numpy as np
-import pytest
 
 from stt.mock_engine import MockSttEngine
 from stt.stt_manager import SttManager

@@ -5,9 +5,8 @@ Abhängigkeiten: numpy (immer), cv2 und mss optional (lazy-import, Mock-Fallback
 """
 from __future__ import annotations
 
-import os
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np

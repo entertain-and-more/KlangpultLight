@@ -218,9 +218,6 @@ def test_kein_orphan_thread_nach_stop(tmp_path):
     """Nach stop() läuft kein LibraryApiServer-Thread mehr."""
     from bridge.library_api import LibraryApiServer
     library, _ = _erstelle_mock_library(tmp_path)
-
-    threads_vorher = {t.name for t in threading.enumerate()}
-
     server = LibraryApiServer(library=library)
     server.start(host="127.0.0.1", port=0)
     port = server.port

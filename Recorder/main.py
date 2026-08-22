@@ -95,10 +95,9 @@ def main() -> int:
     from core.app_state import AppState
     from core.config import AppConfig
     from recordings.library import RecordingLibrary
-    from recordings.recording_session import RecordingSession
     from sources.build_channels import build_channels
     from sources.loopback_detector import LoopbackDetector
-    from sources.source_config import load_sources_config, save_sources_config
+    from sources.source_config import load_sources_config
     from ui.main_window import MainWindow
 
     # --- Konfiguration ---

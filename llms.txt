@@ -3,25 +3,31 @@
 > Schlanke, freie Desktop- & Web-App (Recorder + Planer) für Podcasts, Audio-/Videoaufnahmen & Medienplanung.
 
 - **Repository:** entertain-and-more/KlangpultLight
-- **Modus:** Freeware / Funnel für Klangpult (Vollversion)
+- **Organization:** entertain-and-more
+- **Umbrella Ecosystem:** open-bricks
+- **Modus:** Freeware / Funnel für Klangpult (proprietäre Vollversion)
 - **Standard-Branch:** main
-- **Last checked:** 2026-08-21 (Phase 8 Teleprompter & KI-Monitor Integration verified)
+- **Last checked:** 2026-08-22 (Path B Discoverability, CI Matrix, Security Policy & Contract Parity verified)
 
 ## Core Components
 
 - `Recorder/`: Python/PySide6 Desktop-App für Audio-/Videoaufnahmen, System-Audio-Capture & Live-Transkription (424 bestandene Pytest-Tests).
 - `planer/`: Web-App (Python/HTTP) für Medien- und Projektplanung (Episoden, Assets, Line, Workspace-v1, Teleprompter, KI-Monitor).
 - `shared/`: Gemeinsame Datenmodelle, Protocols & Utilities (`remote_protocol_v1.json`, `workspace_v1.json`).
-- `tests/`: Zwei statische Pytest-Verträge; Accessibility bestanden, Registry wegen nicht hydrierbarer OneDrive-Rootdateien extern gegatet.
+- `tests/`: Drei Pytest-Vertragstests (`test_planer_accessibility_static.py`, `test_metadata.py`, `test_registry_status.py` extern gegatet).
+- `SECURITY.md`: Bilinguale Sicherheits- & Zero-Egress-Richtlinie.
+- `.github/workflows/ci.yml`: Multi-OS GitHub Actions CI Matrix (Ubuntu & Windows, Python 3.10–3.13).
 
 ## Usage & Commands
 
-- Full Pytest Suite: `pytest` (426 bestanden; 1 Registry-Test extern gegatet)
+- Full Pytest Suite: `pytest` (427 Tests; 426 bestanden, 1 Registry-Test extern gegatet)
+- Metadata & Contract Tests: `pytest tests/test_metadata.py`
+- Code Quality: `ruff check .`
 - Build EXE: `.\build_exe.bat`
 - Planer Start: `python planer/start.py` (oder `.\START_PLANER.bat`)
 - Recorder Start: `python Recorder/main.py` (oder `.\START_RECORDER.bat`)
 
 ## Search Phrases & Disambiguation
 
-- **Keywords:** `klangpult-light`, `podcast-recorder`, `audio-video-capture`, `media-planner`, `pyside6-recorder`, `local-first-media`
-- **Disambiguation:** Klangpult light ist die freie Desktop & Web Funnel-Version. Die vollumfängliche kostenpflichtige Variante heißt `Klangpult`.
+- **Keywords:** `klangpult-light`, `podcast-recorder`, `audio-video-capture`, `media-planner`, `pyside6-recorder`, `local-first-media`, `teleprompter-app`
+- **Disambiguation:** Klangpult light ist die freie Desktop- & Web-Funnel-Version. Die vollumfängliche kostenpflichtige Variante heißt `Klangpult`.

@@ -9,7 +9,6 @@ import time
 
 import pytest
 
-from audio.device_manager import DeviceManager
 from audio.engine import AudioEngine
 from audio.mixer_channel import MixerChannel
 from core.app_state import AppState
@@ -183,7 +182,7 @@ class TestStoppeVideoUndMuxFehlerprotokoll:
         damit ffmpeg-Fehler nicht lautlos verloren gehen.
         """
         import json as _json
-        from unittest.mock import MagicMock, patch
+        from unittest.mock import MagicMock
 
         engine, lib, session = _engine_und_session(tmp_path)
 
@@ -252,7 +251,7 @@ class TestStoppeVideoUndMuxFehlerprotokoll:
         mock_capture.stop.return_value = None
 
         # Session starten, dann EventLog manuell auf None setzen
-        meta = session.start("EventLog-Fehler-Test")
+        session.start("EventLog-Fehler-Test")
         session._video_recorder = mock_recorder
         session._video_capture = mock_capture
         session._video_pfad = str(tmp_path / "fake2.mp4")

@@ -298,7 +298,7 @@ def test_client_disconnect_kein_absturz(tmp_path):
     try:
         # Client verbinden und sofort trennen
         url = f"ws://127.0.0.1:{port}"
-        with ws_sync.connect(url) as ws:
+        with ws_sync.connect(url):
             pass  # Verbindung wird beim Exit sauber getrennt
 
         time.sleep(0.1)

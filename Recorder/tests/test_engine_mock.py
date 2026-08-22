@@ -1,5 +1,4 @@
 """Tests für audio.engine — AudioEngine im Mock-Modus (keine Hardware)."""
-import os
 import time
 import pytest
 

@@ -1,5 +1,4 @@
 """Tests für audio.device_manager — Mock-Geräteliste und Default-Zuweisung."""
-import os
 import pytest
 
 

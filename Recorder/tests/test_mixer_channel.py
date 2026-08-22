@@ -1,6 +1,5 @@
 """Tests für audio.mixer_channel — Gain, Mute, Peak."""
 import numpy as np
-import pytest
 
 
 def _block(wert: float, laenge: int = 1024, kanaele: int = 2) -> np.ndarray:

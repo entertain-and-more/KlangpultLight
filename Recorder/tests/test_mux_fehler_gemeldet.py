@@ -8,9 +8,6 @@ Fehler NICHT lautlos verschluckt — stattdessen:
 Die Tests patchen mux_audio_video direkt, um echtes FFmpeg nicht vorauszusetzen.
 """
 import logging
-import os
-import threading
-from collections import deque
 from unittest.mock import patch
 
 import numpy as np
@@ -68,7 +65,6 @@ def test_mux_fehler_wird_als_event_geloggt(tmp_path):
     Szenario: Dummy-Dateien existieren (path-checks bestehen), aber mux wirft RuntimeError.
     """
     from core.event_log import EventLog
-    from recordings.recording_session import RecordingSession
 
     session = _session_mit_event_log(tmp_path)
 
@@ -129,7 +125,6 @@ def test_mux_fehler_wird_als_event_geloggt(tmp_path):
 
 def test_mux_fehler_via_logging_ohne_event_log(tmp_path, caplog):
     """Wenn kein EventLog aktiv ist, muss der Mux-Fehler via logging.WARNING gemeldet werden."""
-    from recordings.recording_session import RecordingSession
 
     session = _session_mit_event_log(tmp_path)
     session._event_log = None  # Kein EventLog
@@ -172,7 +167,6 @@ def test_mux_fehler_loggt_sowohl_event_als_auch_warning(tmp_path, caplog):
     M-3 verlangt: Event-Log UND logging-Ausgabe (beide, nicht nur eines).
     """
     from core.event_log import EventLog
-    from recordings.recording_session import RecordingSession
 
     session = _session_mit_event_log(tmp_path)
     events_pfad = str(tmp_path / "events2.jsonl")

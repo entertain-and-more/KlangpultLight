@@ -113,7 +113,6 @@ def test_einzelner_feeder_puffer_korrekt(tmp_path):
     ergebnis = engine.stop_recording()
 
     import soundfile as sf
-    import os
     mix_daten, _ = sf.read(ergebnis["mix"], dtype="float32")
     energie = float(np.sum(mix_daten ** 2))
     assert energie > 0.0, "Einzelner Feeder-Puffer landete nicht im Mix"
@@ -142,7 +141,6 @@ def test_legacy_board_puffer_bleibt_kompatibel(tmp_path):
     ergebnis = engine.stop_recording()
 
     import soundfile as sf
-    import os
     mix_daten, _ = sf.read(ergebnis["mix"], dtype="float32")
     energie = float(np.sum(mix_daten ** 2))
     assert energie > 0.0, "Legacy _board_puffer landete nicht im Mix"
@@ -218,7 +216,6 @@ def test_overlap_mode_additiv(tmp_path):
     ergebnis = engine.stop_recording()
 
     import soundfile as sf
-    import os
     mix_daten, _ = sf.read(ergebnis["mix"], dtype="float32")
     max_amp = float(np.max(np.abs(mix_daten)))
 

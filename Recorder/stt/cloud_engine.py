@@ -193,7 +193,6 @@ def _als_wav_bytes(audio: np.ndarray, samplerate: int) -> bytes:
         pass
 
     # Fallback: stdlib wave-Modul
-    import struct
     import wave
 
     pcm = (np.clip(audio, -1.0, 1.0) * 32767).astype(np.int16)

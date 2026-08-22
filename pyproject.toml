@@ -10,12 +10,33 @@ readme = "README.md"
 license = {text = "Freeware / Proprietary"}
 requires-python = ">=3.10"
 authors = [{name = "Lukas Geiger"}]
-keywords = ["audio", "video", "recorder", "podcast", "media-planning", "pyside6", "freeware", "local-first"]
+keywords = [
+    "audio",
+    "video",
+    "recorder",
+    "podcast",
+    "media-planning",
+    "teleprompter",
+    "pyside6",
+    "freeware",
+    "local-first",
+    "zero-egress",
+    "entertain-and-more"
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Win32 (MS Windows)",
+    "Environment :: X11 Applications :: Qt",
     "Intended Audience :: End Users/Desktop",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Multimedia :: Sound/Audio :: Capture/Recording",
+    "Topic :: Multimedia :: Sound/Audio :: Players",
     "Topic :: Multimedia :: Video :: Capture"
 ]
 
@@ -23,9 +44,17 @@ classifiers = [
 Homepage = "https://github.com/entertain-and-more/KlangpultLight"
 Repository = "https://github.com/entertain-and-more/KlangpultLight.git"
 Documentation = "https://github.com/entertain-and-more/KlangpultLight#readme"
+Issues = "https://github.com/entertain-and-more/KlangpultLight/issues"
+Changelog = "https://github.com/entertain-and-more/KlangpultLight/blob/main/CHANGELOG.md"
+Security = "https://github.com/entertain-and-more/KlangpultLight/blob/main/SECURITY.md"
+Umbrella = "https://github.com/open-bricks/open-bricks"
 
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = "-ra -q"
 testpaths = ["Recorder/tests", "tests"]
 pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

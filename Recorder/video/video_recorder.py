@@ -232,7 +232,6 @@ class VideoRecorder:
 
         # Auf FFmpeg warten und Exit-Code prüfen
         returncode = self._prozess.wait(timeout=self._writer_join_timeout)
-        prozess = self._prozess
         self._prozess = None
 
         # stderr auslesen für Fehlermeldung

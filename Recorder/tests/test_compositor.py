@@ -9,7 +9,6 @@ Prüft:
   - Canvas-Größe immer exakt out_size
 """
 import numpy as np
-import pytest
 
 
 def _rotes_frame(h=72, w=128):

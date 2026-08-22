@@ -242,7 +242,7 @@ def test_ui_branch_anlegen_offscreen(tmp_path, monkeypatch):
     from recordings.library import RecordingLibrary
     from ui.main_window import MainWindow
 
-    app = QApplication.instance() or QApplication(sys.argv)
+    _app = QApplication.instance() or QApplication(sys.argv)
 
     cfg = AppConfig(mock_audio=True, block_size=1024, samplerate=48000, channels=2,
                     workspace_dir=str(tmp_path))

@@ -9,7 +9,6 @@ faster-whisper ist KEIN Pflicht-Requirement. Optionales Extra:
 """
 from __future__ import annotations
 
-import io
 import logging
 
 import numpy as np

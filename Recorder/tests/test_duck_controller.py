@@ -8,7 +8,6 @@ Belegt:
   - Grenzen werden korrekt eingehalten
   - Werte nach vollständiger Rampe exakt am Ziel
 """
-import math
 import pytest
 
 

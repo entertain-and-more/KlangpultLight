@@ -20,7 +20,6 @@ import time
 import numpy as np
 import soundfile as sf
 
-import pytest
 
 
 # ---------------------------------------------------------------------------

@@ -1,5 +1,4 @@
 """Tests für video.video_manager — VideoManager im Mock-Modus."""
-import os
 import pytest
 
 

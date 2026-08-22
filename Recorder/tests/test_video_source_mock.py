@@ -1,5 +1,4 @@
 """Tests für video.video_source — MockVideoSource, ohne Hardware."""
-import os
 import numpy as np
 import pytest
 

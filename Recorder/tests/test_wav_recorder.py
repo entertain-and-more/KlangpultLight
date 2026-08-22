@@ -1,7 +1,6 @@
 """Tests für audio.wav_recorder — Datei schreiben, Dauer, Rücklesbarkeit."""
 import numpy as np
 import soundfile as sf
-import pytest
 
 
 def test_wav_schreiben_und_dauer(tmp_path):

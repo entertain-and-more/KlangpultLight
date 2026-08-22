@@ -164,7 +164,7 @@ def test_m2_letzter_amp_aus_echter_amplitude(tmp_path):
     korrekt widerspiegeln, damit der Fade-out nicht zu hoch startet.
     """
     from board.board_model import Pad
-    from board.board_player import _PadFeeder, FADE_FRAMES
+    from board.board_player import _PadFeeder
     import threading
 
     # Sehr kurzes Asset: nur 10 Frames — weit kürzer als FADE_FRAMES (512)

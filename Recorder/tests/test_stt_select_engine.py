@@ -2,7 +2,6 @@
 
 Headless, kein echtes Modell, kein Netzwerk.
 """
-import pytest
 import numpy as np
 
 from stt.mock_engine import MockSttEngine

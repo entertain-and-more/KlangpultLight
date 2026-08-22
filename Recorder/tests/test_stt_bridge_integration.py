@@ -171,9 +171,9 @@ def test_on_chunk_sendet_transcript_chunk_ueber_bridge():
     assert "engine" in msg, "Feld 'engine' fehlt im transcript_chunk"
 
     assert isinstance(msg["text"], str), f"text sollte str sein, ist {type(msg['text'])}"
-    assert isinstance(msg["is_final"], bool), f"is_final sollte bool sein"
-    assert isinstance(msg["t_start"], (int, float)), f"t_start sollte numeric sein"
-    assert isinstance(msg["engine"], str), f"engine sollte str sein"
+    assert isinstance(msg["is_final"], bool), "is_final sollte bool sein"
+    assert isinstance(msg["t_start"], (int, float)), "t_start sollte numeric sein"
+    assert isinstance(msg["engine"], str), "engine sollte str sein"
 
     # Inhalt prüfen (Mock liefert "Segment 1")
     assert msg["text"].startswith("Segment"), f"Unerwarteter Text: {msg['text']!r}"

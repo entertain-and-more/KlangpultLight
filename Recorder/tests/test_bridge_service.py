@@ -10,7 +10,6 @@ Belegt:
 """
 from __future__ import annotations
 
-import os
 
 import pytest
 
@@ -133,8 +132,6 @@ def test_partieller_start_kein_ressourcenleck(tmp_path):
     )
 
     # Dritter start() (ProjectsApiServer) soll Exception werfen
-    original_start = BridgeService.start
-
     call_count = [0]
     def mock_projects_start(self, host="127.0.0.1", port=8769):
         call_count[0] += 1

@@ -1,7 +1,6 @@
 """Tests für core.config — AppConfig Defaults und save/load Roundtrip."""
 import json
 import os
-import pytest
 from pathlib import Path
 
 

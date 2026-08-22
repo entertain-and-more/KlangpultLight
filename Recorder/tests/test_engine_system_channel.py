@@ -10,7 +10,6 @@ import os
 import time
 import tempfile
 
-import pytest
 
 
 # ---------------------------------------------------------------------------
@@ -84,7 +83,7 @@ def test_system_kanal_wav_geschrieben():
         aufnahme_dir = os.path.join(tmp, "aufnahme_test")
         engine.start_recording(aufnahme_dir)
         time.sleep(0.25)  # Mock-Thread produziert Frames
-        ergebnis = engine.stop_recording()
+        engine.stop_recording()
 
         engine.stop()
 

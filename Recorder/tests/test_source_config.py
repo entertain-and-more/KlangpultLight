@@ -2,7 +2,6 @@
 
 Headless, kein GUI-Import, kein Hardware-Zugriff.
 """
-import json
 from pathlib import Path
 
 
@@ -101,7 +100,7 @@ def test_capture_sources_nur_enabled_und_capture():
 
 def test_capture_sources_beruecksichtigt_disabled():
     """capture_sources() schließt disabled Quellen aus."""
-    from sources.source_config import load_sources_config, SourceEntry
+    from sources.source_config import load_sources_config
     cfg = load_sources_config(None)
     # mic_1 deaktivieren
     eintrag = cfg.get("mic_1")

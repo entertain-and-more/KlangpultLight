@@ -7,10 +7,8 @@ Belegt:
   - load_board/save_board (UTF-8 ohne BOM)
   - import_from_workspace/export_to_workspace konsistent mit workspace_v1.json-Format
 """
-import json
 import os
 
-import pytest
 
 
 # ---------------------------------------------------------------------------
@@ -164,7 +162,7 @@ def test_load_board_nicht_existierend(tmp_path):
 
 def test_save_board_erstellt_verzeichnis(tmp_path):
     """save_board erstellt das Zielverzeichnis wenn nötig."""
-    from board.board_model import Board, Pad, save_board, load_board
+    from board.board_model import Board, Pad, save_board
 
     pfad = str(tmp_path / "unterordner" / "tief" / "board.json")
     save_board(Board(pads=[Pad(id="v1")]), pfad)
@@ -254,7 +252,7 @@ def test_export_to_workspace_format():
 
 def test_import_export_roundtrip():
     """import_from_workspace → export_to_workspace → import_from_workspace: konsistent."""
-    from board.board_model import Board, Pad, import_from_workspace, export_to_workspace
+    from board.board_model import import_from_workspace, export_to_workspace
 
     original_payload = {
         "format": "klangpultlight-workspace-v1",

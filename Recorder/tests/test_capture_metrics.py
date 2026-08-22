@@ -4,7 +4,6 @@ Portiert aus der Vollversion (Codex-Review): zählt Nullen im ROHEN Callback-Inp
 (vor jeder Verarbeitung) → WASAPI/Treiber vs. App. Plus RT-Log-Drossel via Status.
 """
 import numpy as np
-import pytest
 
 
 def _engine(tmp_path, channels=("mic1", "mic2")):

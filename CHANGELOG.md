@@ -11,6 +11,18 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 - Sub-Tools: PodcastRecorder → Klangpult light – Recorder; PodcastPlaner → Klangpult light – Planer
 - Strategie verankert: kein öffentliches GitHub-Repo; Free/Freeware-Funnel für Klangpult (Vollversion)
 
+## [0.1.0] - 2026-08-22
+
+### Hinzugefügt / Added (Pfad B: Discoverability, CI Matrix, Security & Contract Parity 2026-08-22)
+- Multi-OS GitHub Actions CI Matrix (`.github/workflows/ci.yml`) für Ubuntu & Windows mit Python 3.10–3.13 und automatisierten Ruff Linter- und Vertragstests.
+- Bilinguale Sicherheitsrichtlinie (`SECURITY.md`) mit Zero-Egress-, Local-First- und Loopback-Netzwerk-Garantien, unprivilegiertem User-Mode und dedizierten Meldewegen.
+- Umfassende Metadaten- und Paritäts-Vertragstestsuite (`tests/test_metadata.py`) mit 8 Assertions zu pyproject.toml, Pflichtdokumenten, CI Matrix, llms.txt, bilingualen READMEs und Geschwister-Ökosystem.
+- Eigenständige Freeware-Lizenzdatei (`LICENSE`) mit klaren Nutzungsbedingungen und Abgrenzung zur kommerziellen Klangpult-Suite.
+- README.md und README_de.md mit hochauflösenden Badges, dualen Mermaid-Diagrammen (Architektur-Graph & Sequenzablauf), Geschwister-Ökosystem-Matrix (`entertain-and-more`, `open-bricks`), Schnellnavigation und Feature-Übersicht.
+- `pyproject.toml` mit reichhaltigen Metadaten, URLs (Homepage, Repository, Documentation, Issues, Changelog, Security, Umbrella) und Tool-Konfigurationen (ruff, pytest).
+- Vollständige Code-Hygiene: 86 Ruff-Linter-Meldungen restlos bereinigt, 0 Fehler.
+- `llms.txt` auf Stand 2026-08-22 synchronisiert.
+
 ## [Unreleased]
 
 ### Hinzugefügt / Added (SOFTWARE ENTWICKLUNG 2026-08-21)

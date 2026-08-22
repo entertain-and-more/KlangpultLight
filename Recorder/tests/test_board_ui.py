@@ -11,8 +11,6 @@ Belegt:
 """
 import os
 import sys
-import threading
-import time
 
 import numpy as np
 import pytest
@@ -165,7 +163,6 @@ def test_panel_detach_buttons_haben_klaren_accessible_kontext(tmp_path, qt_app):
 def test_pad_klick_triggert_board_player(tmp_path, qt_app):
     """Klick auf einen Pad-Button ruft BoardPlayer.trigger(pad_id) auf."""
     from board.board_model import Board, Pad
-    from board.board_player import BoardPlayer
     from audio.engine import AudioEngine
     from audio.mixer_channel import MixerChannel
     from core.config import AppConfig
@@ -191,7 +188,6 @@ def test_pad_klick_triggert_board_player(tmp_path, qt_app):
 
     cfg = AppConfig(mock_audio=True, block_size=1024, samplerate=48000, channels=2, workspace_dir=str(tmp_path))
     kanaele = [MixerChannel(source_id="mic1", name="Mikrofon 1")]
-    from audio.engine import AudioEngine
     engine = AudioEngine(config=cfg, channels=kanaele)
     from core.app_state import AppState
     from recordings.library import RecordingLibrary
@@ -231,7 +227,6 @@ def test_aktive_pads_werden_hervorgehoben(tmp_path, qt_app):
     from recordings.library import RecordingLibrary
     from audio.device_manager import DeviceManager
     from ui.main_window import MainWindow
-    from PySide6.QtWidgets import QApplication
 
     aktive_ids: list[str] = ["p_aktiv"]
 
@@ -281,8 +276,8 @@ def test_aktive_pads_werden_hervorgehoben(tmp_path, qt_app):
     # Wir prüfen das benutzerdefinierte Property "aktiv"
     aktiv_prop = btn_aktiv.property("pad_aktiv")
     inaktiv_prop = btn_inaktiv.property("pad_aktiv")
-    assert aktiv_prop == True, f"Aktiver Pad-Button hat pad_aktiv={aktiv_prop!r}, erwartet True"
-    assert inaktiv_prop != True, f"Inaktiver Pad-Button hat pad_aktiv={inaktiv_prop!r}, erwartet nicht True"
+    assert aktiv_prop is True, f"Aktiver Pad-Button hat pad_aktiv={aktiv_prop!r}, erwartet True"
+    assert inaktiv_prop is not True, f"Inaktiver Pad-Button hat pad_aktiv={inaktiv_prop!r}, erwartet nicht True"
 
 
 # ---------------------------------------------------------------------------
@@ -361,9 +356,6 @@ def test_hotkeys_triggern_pads(tmp_path, qt_app):
     from recordings.library import RecordingLibrary
     from audio.device_manager import DeviceManager
     from ui.main_window import MainWindow
-    from PySide6.QtWidgets import QApplication
-    from PySide6.QtCore import Qt
-    from PySide6.QtGui import QKeyEvent
 
     getriggerte_ids: list[str] = []
 
@@ -443,8 +435,10 @@ def test_einspieler_typ_aus_endung(tmp_path, qt_app):
     fenster._board_player = BoardPlayer(engine=engine, board=board)
 
     # leere Dummy-Dateien genügen (Pfad/Endung zählt)
-    mp4 = tmp_path / "clip.mp4"; mp4.write_bytes(b"x")
-    png = tmp_path / "cover.png"; png.write_bytes(b"x")
+    mp4 = tmp_path / "clip.mp4"
+    mp4.write_bytes(b"x")
+    png = tmp_path / "cover.png"
+    png.write_bytes(b"x")
     fenster._einspieler_hinzufuegen(str(mp4))
     fenster._einspieler_hinzufuegen(str(png))
 

@@ -1,7 +1,6 @@
 """Tests für video.video_recorder.mux_audio_video — Audio-Video-Mux mit ffmpeg."""
 import os
 import shutil
-import struct
 import wave
 import numpy as np
 import pytest

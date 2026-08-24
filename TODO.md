@@ -90,14 +90,16 @@
 
 > Vom User entschieden: Live-STT ist DRIN (nur Batch-Export raus). Läuft im Recorder, da dort der Audiostream liegt.
 
-- [ ] `recorder/stt/`: Engine-Abstraktion (`engine_base.py`) — **zwei Adapter parallel**:
-  - [ ] **lokal:** faster-whisper (Streaming/Chunking, offline, datenschutzfreundlich)
-  - [ ] **Cloud:** Adapter (z. B. OpenAI/Deepgram), nur opt-in mit Key
-  - [ ] Umschaltung in den Einstellungen; Auto-Default lokal, wenn kein Key konfiguriert
-- [ ] STT speist sich aus dem laufenden Mix/Mic-Stream (eigener Worker-Thread, kein GUI-Block)
-- [ ] `remote_protocol_v1` um `transcript_chunk`-Nachrichtentyp erweitern (`shared/`)
-- [ ] Recorder pusht erkannte Chunks über die Bridge (kein Transkript-Datei-Export!)
-- [ ] **Meilenstein M5b:** Live-Chunks erscheinen beim verbundenen Planer ✔
+- [x] `recorder/stt/`: Engine-Abstraktion (`engine_base.py`) — **zwei Adapter parallel**:
+  - [x] **lokal:** faster-whisper (Streaming/Chunking, offline, datenschutzfreundlich)
+  - [x] **Cloud:** Adapter (z. B. OpenAI/Deepgram), nur opt-in mit Key
+  - [x] Umschaltung in den Einstellungen; Auto-Default lokal, wenn kein Key konfiguriert
+- [x] STT speist sich aus dem laufenden Mix/Mic-Stream (eigener Worker-Thread, kein GUI-Block)
+- [x] `remote_protocol_v1` um `transcript_chunk`-Nachrichtentyp erweitern (`shared/`)
+- [x] Recorder pusht erkannte Chunks über die Bridge (kein Transkript-Datei-Export!)
+- [x] **Meilenstein M5b:** Live-Chunks erscheinen beim verbundenen Planer ✔
+
+  Nachweis 2026-08-24 (TW-KLANGPULTLIGHT-04): Durchgehender Live-STT-End-to-End-Pfad (AudioEngine-Tap → SttManager → LiveSttEngine → BridgeService WebSocket Port 8768 → Planer-Event `transcript_chunk`) sowie alle Degradationsgrenzen (LocalWhisperEngine fehlende Libs/CUDA-OOM, CloudSttEngine Opt-in/API-Key/Timeout/Connection-Error/401/429, select_engine Fallbacks, Puffer-Resilienz gegen NaN/Inf/leere Arrays) durch 11 Vertragstests in `Recorder/tests/test_stt_e2e_degradation_contract.py` und Runbook `docs/STT_E2E_DEGRADATION_REPORT.md` nachgewiesen. Pytest-Vollsuite: 437 passed (100% grün).
 
 ---
 

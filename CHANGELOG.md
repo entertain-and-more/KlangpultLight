@@ -25,6 +25,17 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Hinzugefügt / Added (SOFTWARE ENTWICKLUNG 2026-08-24)
+- Live-STT End-to-End-Pfad & Degradationsgrenzen (`TW-KLANGPULTLIGHT-04`): Vollständige Verifikation und Härtung des Live-Transkriptions-Subsystems.
+- Neue automatisierte Vertragstestsuite `Recorder/tests/test_stt_e2e_degradation_contract.py` (11 Tests):
+  - End-to-End-Pipeline: AudioEngine-Sink (`feed`) → SttManager-Fensterakkumulation → LiveSttEngine → BridgeService (WebSocket Port 8768) → Planer-Event `transcript_chunk` mit vollständigen Metadaten (`type`, `text`, `is_final`, `t_start`, `engine`).
+  - Fehlertolerante Degradation für `LocalWhisperEngine` bei fehlendem `faster-whisper`, Modellladefehlern oder Inferenz-Exceptions (sauberes `[]`, kein GUI-/Aufnahme-Block).
+  - Striktes Opt-in und Resilienz für `CloudSttEngine` bei fehlendem `OPENAI_API_KEY`, Timeouts, Connection Drops oder 401/429-API-Fehlern.
+  - Deterministische Fallback-Hierarchie in `select_engine` (Cloud → Local → Mock → inaktive Instanz, niemals `None`).
+  - Puffer- und Format-Resilienz bei NaN-/Inf-Audiodaten, leeren Blöcken und kontrolliertem Shutdown ohne verwaiste Threads.
+- Runbook und Nachweisdokument in `docs/STT_E2E_DEGRADATION_REPORT.md`.
+- Pytest-Gesamtsuite auf 437 bestandene Tests (437 passed, 100% grün) erweitert.
+
 ### Hinzugefügt / Added (SOFTWARE ENTWICKLUNG 2026-08-21)
 - Phase-8-Planer-Slice (`TW-KLANGPULTLIGHT-03`): End-to-End-Integration von Teleprompter, KI-Monitor und WebSocket-Live-Sync.
 - Teleprompter-Modul (`planer/app/teleprompter.js`): 4 Betriebsmodi (manuell, zeitgesteuert, sprachgesteuert via STT-Token-Sync, hybrid), horizontaler Spiegelmodus für Beamer/Prompter-Glas, Schriftgrößen- (16–64px) und Geschwindigkeitsregler (0.2–3.0x), Cue-Cursor, Tastaturnavigation (Leertaste, Pfeiltasten, Escape) und automatisches Speichern.

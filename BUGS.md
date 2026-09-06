@@ -45,6 +45,20 @@ Angelegt: 2026-06-22.
   ARIA-Namen (`aria-label`), Fokus-Falle für Modal-Dialoge und Ersetzung des nativen
   `window.confirm` durch ein zugängliches Confirmation-Modal erweitert.
   Regressionstest: `Recorder/tests/test_planer_a11y.py`.
+- **[FIXED] Path-Traversal-Schutz und Aufnahme-Validierung in RecordingLibrary (2026-09-06):**
+  `Recorder/recordings/library.py` prüfte in `recording_dir()` und `delete_recording()`
+  keine relativen Pfadelemente (`..`, `.`), Pfadtrennzeichen (`/`, `\\`) oder ungültige
+  IDs ab. Dadurch konnte `delete_recording("..")` über `shutil.rmtree()` den gesamten
+  übergeordneten Workspace samt Projekten und Einstellungen unwiderruflich löschen,
+  und Ordner ohne `metadata.json` konnten versehentlich entfernt werden.
+  Fix: `__init__()` normalisiert das Basisverzeichnis absolut, `recording_dir()`
+  validiert Eingaben strikt gegen Pfadtrenner und Directory Traversal und liefert
+  garantiert einen absoluten Pfad. `delete_recording()` prüft vor dem Löschen auf
+  Existenz von `metadata.json`. `add_branch()` validiert auf nicht-leere Namen.
+  Regressionstests: `Recorder/tests/test_recordings_library.py::TestDeleteRecording::test_loeschen_mit_path_traversal_verhindert`,
+  `test_loeschen_ignoriert_ordner_ohne_metadata_json`,
+  `TestRecordingDirValidation::test_recording_dir_absoluter_pfad_und_traversal_schutz`,
+  `TestAddBranchValidation::test_add_branch_leerer_name_wirft`.
 
 ---
 

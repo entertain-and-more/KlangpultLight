@@ -25,9 +25,10 @@ class RecordingLibrary:
             workspace_dir: Wurzelverzeichnis des Workspace (z. B. './workspace').
                            Aufnahmen landen unter <workspace_dir>/recordings/.
         """
-        self._workspace = workspace_dir
-        self._recordings_dir = os.path.join(workspace_dir, "recordings")
+        self._workspace = os.path.abspath(workspace_dir)
+        self._recordings_dir = os.path.join(self._workspace, "recordings")
         os.makedirs(self._recordings_dir, exist_ok=True)
+
 
     def create_recording(self, title: str) -> RecordingMetadata:
         """Legt eine neue Aufnahme an.
@@ -94,8 +95,25 @@ class RecordingLibrary:
 
         Returns:
             Absoluter Pfad zum Aufnahme-Ordner.
+
+        Raises:
+            ValueError: Wenn die recording_id ungültig ist oder Path-Traversal enthält.
         """
-        return os.path.join(self._recordings_dir, recording_id)
+        if not isinstance(recording_id, str) or not recording_id.strip():
+            raise ValueError("Ungültige recording_id: darf nicht leer sein.")
+        bereinigt = recording_id.strip()
+        if any(sep in bereinigt for sep in ("/", "\\")) or bereinigt in (".", ".."):
+            raise ValueError(
+                f"Ungültige recording_id mit Pfadtrennzeichen oder Traversal: '{recording_id}'"
+            )
+        abs_recordings = os.path.abspath(self._recordings_dir)
+        ziel_pfad = os.path.abspath(os.path.join(abs_recordings, bereinigt))
+        if os.path.dirname(ziel_pfad) != abs_recordings or os.path.basename(ziel_pfad) != bereinigt:
+            raise ValueError(
+                f"Ungültige recording_id außerhalb des Zielverzeichnisses: '{recording_id}'"
+            )
+        return ziel_pfad
+
 
     def list_recordings(self) -> List[RecordingMetadata]:
         """Gibt alle gespeicherten Aufnahmen zurück, neueste zuerst.
@@ -139,14 +157,18 @@ class RecordingLibrary:
 
         Args:
             recording_id: ID der übergeordneten Aufnahme.
-            name:         Anzeigename des neuen Branches.
+            name:         Anzeigename des neuen Branches (nicht leer).
 
         Returns:
             Neu angelegter Branch.
 
         Raises:
-            ValueError: Wenn die Aufnahme nicht gefunden wird.
+            ValueError: Wenn die Aufnahme nicht gefunden wird oder der Name leer ist.
         """
+        branch_name = (name or "").strip()
+        if not branch_name:
+            raise ValueError("Branch-Name darf nicht leer sein.")
+
         aufnahmen = self.list_recordings()
         meta = next((m for m in aufnahmen if m.recording_id == recording_id), None)
         if meta is None:
@@ -157,7 +179,7 @@ class RecordingLibrary:
         neuer_branch = Branch(
             branch_id=f"branch_{kurz_id}",
             recording_id=recording_id,
-            name=name,
+            name=branch_name,
             created_at=jetzt.isoformat(),
             audio_path="",
             video_path="",
@@ -202,13 +224,17 @@ class RecordingLibrary:
             recording_id: ID der zu löschenden Aufnahme.
 
         Raises:
-            ValueError: Wenn die Aufnahme nicht existiert.
+            ValueError: Wenn die Aufnahme nicht existiert oder ungültig ist.
         """
         import shutil
         import time
 
         ordner = self.recording_dir(recording_id)
         if not os.path.isdir(ordner):
+            raise ValueError(f"Aufnahme '{recording_id}' nicht gefunden.")
+        # Verifizieren, dass es sich um einen validen Aufnahmeordner mit metadata.json handelt
+        meta_pfad = os.path.join(ordner, "metadata.json")
+        if not os.path.isfile(meta_pfad):
             raise ValueError(f"Aufnahme '{recording_id}' nicht gefunden.")
         # OneDrive-/Windows-Lock: kurzer Retry, falls eine Datei noch gehalten wird.
         for versuch in range(3):
@@ -219,6 +245,7 @@ class RecordingLibrary:
                 if versuch == 2:
                     raise
                 time.sleep(0.3)
+
 
     def update_metadata(self, meta: RecordingMetadata) -> None:
         """Schreibt die Metadaten einer Aufnahme neu (atomic via Temp-Datei + Rename).

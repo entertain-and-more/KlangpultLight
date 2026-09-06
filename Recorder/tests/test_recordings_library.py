@@ -187,3 +187,54 @@ class TestDeleteRecording:
         ids = {m.recording_id for m in lib.list_recordings()}
         assert b.recording_id in ids
         assert a.recording_id not in ids
+
+    def test_loeschen_mit_path_traversal_verhindert(self, tmp_path):
+        """delete_recording darf bei Traversal-Versuchen niemals Workspace löschen."""
+        lib = RecordingLibrary(str(tmp_path))
+        lib.create_recording("Wichtig")
+        recordings_dir = tmp_path / "recordings"
+        assert recordings_dir.exists()
+
+        ungueltige_ids = ["..", ".", "", "   ", "../..", "sub/aufnahme", "..\\aufnahme", "/etc/passwd"]
+        for bad_id in ungueltige_ids:
+            with pytest.raises(ValueError):
+                lib.delete_recording(bad_id)
+
+        # Workspace und Recordings müssen intakt sein
+        assert tmp_path.exists(), "Workspace wurde durch Traversal gelöscht!"
+        assert recordings_dir.exists(), "Recordings-Ordner wurde gelöscht!"
+        assert len(lib.list_recordings()) == 1
+
+    def test_loeschen_ignoriert_ordner_ohne_metadata_json(self, tmp_path):
+        """Ordner ohne metadata.json dürfen nicht versehentlich gelöscht werden."""
+        lib = RecordingLibrary(str(tmp_path))
+        fremd_ordner = tmp_path / "recordings" / "fremde_dateien"
+        fremd_ordner.mkdir(parents=True, exist_ok=True)
+        (fremd_ordner / "notiz.txt").write_text("Wichtig", encoding="utf-8")
+
+        with pytest.raises(ValueError, match="nicht gefunden"):
+            lib.delete_recording("fremde_dateien")
+
+        assert fremd_ordner.exists(), "Fremdordner ohne metadata.json wurde gelöscht!"
+
+
+class TestRecordingDirValidation:
+    def test_recording_dir_absoluter_pfad_und_traversal_schutz(self, tmp_path):
+        """recording_dir liefert absoluten Pfad und weist Traversal ab."""
+        lib = RecordingLibrary(str(tmp_path))
+        meta = lib.create_recording("Valide")
+        rec_dir = lib.recording_dir(meta.recording_id)
+        assert os.path.isabs(rec_dir), "recording_dir muss absoluten Pfad liefern"
+
+        ungueltige = ["..", ".", "", "  ", "a/b", "a\\b", "/root"]
+        for bad in ungueltige:
+            with pytest.raises(ValueError):
+                lib.recording_dir(bad)
+
+
+class TestAddBranchValidation:
+    def test_add_branch_leerer_name_wirft(self, tmp_path):
+        lib = RecordingLibrary(str(tmp_path))
+        meta = lib.create_recording("Basis")
+        with pytest.raises(ValueError, match="nicht leer"):
+            lib.add_branch(meta.recording_id, "   ")

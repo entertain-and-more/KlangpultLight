@@ -6,7 +6,7 @@
 
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Pytest](https://img.shields.io/badge/Pytest-427%20tests%20(426%20passed)-success.svg)](https://docs.pytest.org/)
+[![Pytest](https://img.shields.io/badge/Pytest-450%20tests%20(449%20passed)-success.svg)](https://docs.pytest.org/)
 [![CI](https://img.shields.io/badge/CI-Multi--OS%20Matrix-blue.svg)](https://github.com/entertain-and-more/KlangpultLight/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Freeware-informational.svg)](./LICENSE)
 [![Local-First](https://img.shields.io/badge/Architecture-Local--First%20%7C%20Zero--Egress-orange.svg)](./SECURITY.md)
@@ -22,7 +22,7 @@
 > License: Freeware / Proprietary, Closed-Source.
 
 > [!NOTE]
-> For AI agents and automated tools: See [llms.txt](./llms.txt) (Last checked: 2026-08-22) for machine-readable repository overview and test contracts.
+> For AI agents and automated tools: See [llms.txt](./llms.txt) (Last checked: 2026-09-08) for machine-readable repository overview and test contracts.
 
 ---
 

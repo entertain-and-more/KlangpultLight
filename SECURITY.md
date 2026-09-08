@@ -40,7 +40,8 @@
 If you discover a security vulnerability, please **do not open a public GitHub issue**. Instead, report it privately:
 
 - **Security Team Email**: [security@ellmos.ai](mailto:security@ellmos.ai)
-- **Maintainer Support**: [support@lukasgeiger.com](mailto:support@lukasgeiger.com)
+- **Umbrella Security**: [security@open-bricks.org](mailto:security@open-bricks.org)
+- **Maintainer Support**: [support@lukasgeiger.com](mailto:support@lukasgeiger.com) / [lukas@open-bricks.org](mailto:lukas@open-bricks.org)
 - **GitHub Security Advisories**: You can also report vulnerabilities via [GitHub Security Advisories](https://github.com/entertain-and-more/KlangpultLight/security/advisories/new).
 
 We will acknowledge receipt within 48 hours and provide updates on resolution and remediation.
@@ -71,10 +72,20 @@ We will acknowledge receipt within 48 hours and provide updates on resolution an
 4. **Sichere Medienverarbeitung & Subprozess-Grenzen**:
    - Subprozesse (z. B. FFmpeg-Muxing) werden mit isolierten Argumenten, strikten Pipe-Timeouts und kontrollierten Fehlerbehandlungen ausgeführt.
 
+### Unterstützte Versionen
+
+| Version | Unterstützt        |
+| ------- | ------------------ |
+| 0.1.x   | :white_check_mark: |
+| < 0.1   | :x:                |
+
 ### Schwachstelle melden
 
 Bitte eröffnen Sie bei Sicherheitsbedenken **kein öffentliches GitHub-Issue**, sondern kontaktieren Sie uns vertraulich:
 
 - **Sicherheitsteam E-Mail**: [security@ellmos.ai](mailto:security@ellmos.ai)
-- **Maintainer Support**: [support@lukasgeiger.com](mailto:support@lukasgeiger.com)
+- **Dachorganisation Security**: [security@open-bricks.org](mailto:security@open-bricks.org)
+- **Maintainer Support**: [support@lukasgeiger.com](mailto:support@lukasgeiger.com) / [lukas@open-bricks.org](mailto:lukas@open-bricks.org)
 - **GitHub Security Advisories**: [Schwachstelle privat melden](https://github.com/entertain-and-more/KlangpultLight/security/advisories/new)
+
+Wir bestätigen den Eingang jeder Meldung innerhalb von 48 Stunden und informieren transparent über Schutzmaßnahmen und Updates.

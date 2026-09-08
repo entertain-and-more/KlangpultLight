@@ -7,20 +7,20 @@
 - **Umbrella Ecosystem:** open-bricks
 - **Modus:** Freeware / Funnel für Klangpult (proprietäre Vollversion)
 - **Standard-Branch:** main
-- **Last checked:** 2026-08-22 (Path B Discoverability, CI Matrix, Security Policy & Contract Parity verified)
+- **Last checked:** 2026-09-08 (Path A Repository-Hygiene, PEP 621 Standard-Metadaten, CI-Concurrency-Härtung, bilinguale Security-Parität & Vertragstests verifiziert)
 
 ## Core Components
 
-- `Recorder/`: Python/PySide6 Desktop-App für Audio-/Videoaufnahmen, System-Audio-Capture & Live-Transkription (424 bestandene Pytest-Tests).
+- `Recorder/`: Python/PySide6 Desktop-App für Audio-/Videoaufnahmen, System-Audio-Capture & Live-Transkription (446 bestandene Pytest-Tests).
 - `planer/`: Web-App (Python/HTTP) für Medien- und Projektplanung (Episoden, Assets, Line, Workspace-v1, Teleprompter, KI-Monitor).
 - `shared/`: Gemeinsame Datenmodelle, Protocols & Utilities (`remote_protocol_v1.json`, `workspace_v1.json`).
 - `tests/`: Drei Pytest-Vertragstests (`test_planer_accessibility_static.py`, `test_metadata.py`, `test_registry_status.py` extern gegatet).
-- `SECURITY.md`: Bilinguale Sicherheits- & Zero-Egress-Richtlinie.
-- `.github/workflows/ci.yml`: Multi-OS GitHub Actions CI Matrix (Ubuntu & Windows, Python 3.10–3.13).
+- `SECURITY.md`: Bilinguale Sicherheits- & Zero-Egress-Richtlinie mit Unterstützte-Versionen-Matrix und SLA.
+- `.github/workflows/ci.yml`: Multi-OS GitHub Actions CI Matrix (Ubuntu, Windows & macOS, Python 3.10–3.13, Concurrency cancel-in-progress, Pip Caching).
 
 ## Usage & Commands
 
-- Full Pytest Suite: `pytest` (427 Tests; 426 bestanden, 1 Registry-Test extern gegatet)
+- Full Pytest Suite: `pytest` (450 Tests; 449 bestanden, 1 Registry-Test extern gegatet)
 - Metadata & Contract Tests: `pytest tests/test_metadata.py`
 - Code Quality: `ruff check .`
 - Build EXE: `.\build_exe.bat`

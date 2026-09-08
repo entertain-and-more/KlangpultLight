@@ -23,6 +23,16 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 - Vollständige Code-Hygiene: 86 Ruff-Linter-Meldungen restlos bereinigt, 0 Fehler.
 - `llms.txt` auf Stand 2026-08-22 synchronisiert.
 
+## [0.1.1] - 2026-09-08
+
+### Härtung & Hygiene (Pfad A: Repository-Hygiene & CI-Workflow-Härtung [G 2026-09-08])
+- **CI-Workflow-Härtung (`.github/workflows/ci.yml`)**: Concurrency-Steuerung mit `cancel-in-progress: true` integriert; Multi-OS-Matrix um `macos-latest` erweitert (Ubuntu, Windows & macOS auf Python 3.10–3.13); Pip-Dependency-Caching (`cache: 'pip'`) in `actions/setup-python@v5` aktiviert.
+- **PEP 621 Metadaten & URLs (`pyproject.toml`)**: Vollständige Ökosystem-Links (`Parent Organization`, `Ecosystem`), OS-Klassifikatoren (`Operating System :: MacOS`, `Operating System :: OS Independent`) sowie standardisierte `[tool.ruff.lint]`-Sektion ergänzt.
+- **Sicherheitsrichtlinie & Bilinguale Parität (`SECURITY.md`)**: Zweisprachige Unterstützte-Versionen-Matrix (0.1.x aktiv, <0.1 deprecated) im deutschen Abschnitt nachgezogen; Meldewege um Dachorganisations-Kontakt (`security@open-bricks.org` / `lukas@open-bricks.org`) erweitert.
+- **Linter- & Code-Hygiene**: Unbenutzten Import `patch` in `Recorder/tests/test_stt_e2e_degradation_contract.py` bereinigt; `ruff check .` meldet 0 Fehler / 100% sauber.
+- **Automatisierte Vertragstestsuite (`tests/test_metadata.py`)**: Assertions für CI-Concurrency, macOS-Runner, PEP-621-Ecosystem-URLs, bilinguale SECURITY.md-Tabellen und aktuelle Synchronisationsstempel gehärtet (8 Tests, 100% grün).
+- **Dokumentations- & Badge-Parität**: Pytest-Testabdeckung in `README.md`, `README_de.md` und `llms.txt` auf 450 Tests (449 passed, 1 skipped) und Stempel 2026-09-08 aktualisiert.
+
 ## [Unreleased]
 
 ### Hinzugefügt / Added (SOFTWARE ENTWICKLUNG 2026-08-24)

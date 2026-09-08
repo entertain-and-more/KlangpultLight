@@ -43,6 +43,11 @@ class TestKlangpultLightMetadata(unittest.TestCase):
             urls = project.get("urls", {})
             self.assertIn("Homepage", urls)
             self.assertIn("Repository", urls)
+            self.assertIn("Parent Organization", urls)
+            self.assertIn("Ecosystem", urls)
+            self.assertIn("Umbrella", urls)
+            classifiers = project.get("classifiers", [])
+            self.assertTrue(any("OS Independent" in c for c in classifiers))
 
     def test_core_documents_exist_and_non_empty(self):
         """Verify all core governance and documentation files are present."""
@@ -72,10 +77,13 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         self.assertIn("## English", text)
         self.assertIn("## Deutsch", text)
         self.assertIn("security@ellmos.ai", text)
+        self.assertIn("security@open-bricks.org", text)
         self.assertIn("support@lukasgeiger.com", text)
         self.assertIn("advisories/new", text)
         self.assertIn("Zero-Egress", text)
         self.assertIn("Local-First", text)
+        self.assertIn("Unterstützte Versionen", text)
+        self.assertIn("Supported Versions", text)
         self.assertIn("127.0.0.1:8767", text)
         self.assertIn("127.0.0.1:8769", text)
         self.assertIn("127.0.0.1:8770", text)
@@ -89,6 +97,8 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         self.assertIn("actions/setup-python@v5", text)
         self.assertIn("ubuntu-latest", text)
         self.assertIn("windows-latest", text)
+        self.assertIn("macos-latest", text)
+        self.assertIn("cancel-in-progress: true", text)
         self.assertIn("ruff check .", text)
         self.assertIn("test_metadata.py", text)
 
@@ -100,7 +110,8 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         self.assertIn("entertain-and-more/KlangpultLight", text)
         self.assertIn("entertain-and-more", text)
         self.assertIn("open-bricks", text)
-        self.assertIn("2026-08-22", text)
+        self.assertIn("2026-09-08", text)
+        self.assertIn("449", text)
         self.assertIn("SECURITY.md", text)
         self.assertIn("ci.yml", text)
 

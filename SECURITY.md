@@ -44,7 +44,9 @@ If you discover a security vulnerability, please **do not open a public GitHub i
 - **Maintainer Support**: [support@lukasgeiger.com](mailto:support@lukasgeiger.com) / [lukas@open-bricks.org](mailto:lukas@open-bricks.org)
 - **GitHub Security Advisories**: You can also report vulnerabilities via [GitHub Security Advisories](https://github.com/entertain-and-more/KlangpultLight/security/advisories/new).
 
-We will acknowledge receipt within 48 hours and provide updates on resolution and remediation.
+- We acknowledge receipt within **48 hours**.
+- We commit to providing a formal triage evaluation within **5 business days**.
+- Regular progress updates are communicated until full remediation and release.
 
 ---
 
@@ -88,4 +90,6 @@ Bitte eröffnen Sie bei Sicherheitsbedenken **kein öffentliches GitHub-Issue**,
 - **Maintainer Support**: [support@lukasgeiger.com](mailto:support@lukasgeiger.com) / [lukas@open-bricks.org](mailto:lukas@open-bricks.org)
 - **GitHub Security Advisories**: [Schwachstelle privat melden](https://github.com/entertain-and-more/KlangpultLight/security/advisories/new)
 
-Wir bestätigen den Eingang jeder Meldung innerhalb von 48 Stunden und informieren transparent über Schutzmaßnahmen und Updates.
+- Wir bestätigen den Eingang jeder Meldung innerhalb von **48 Stunden**.
+- Wir sichern eine qualifizierte Triage-Bewertung innerhalb von **5 Werktagen** zu.
+- Regelmäßige Status-Updates bis zur vollständigen Behebung und Veröffentlichung des Patches.

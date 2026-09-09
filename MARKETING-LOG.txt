@@ -1,0 +1,72 @@
+================================================================================
+MARKETING & DISCOVERABILITY LOG: entertain-and-more/KlangpultLight
+================================================================================
+
+[2026-09-09 11:55 CEST] PFAD B AUDIT & UPGRADE REPORT
+Repository: entertain-and-more/KlangpultLight
+Canonical Local Path: C:\_Local_DEV\repos\KlangpultLight
+Plan D Mirror: C:\Users\lukas\OneDrive\.TOPICS\.SOFTWARE\PRODUCTION\DEV_KlangpultLight
+Branch: main
+Target Version: 0.1.1 (Alpha)
+
+1. DISCOVERABILITY & POSITIONING
+- Primary Category: Multichannel Audio/Video Recording & Offline Podcast Planning
+- Target Audience: Content creators, podcasters, voice actors, game streamers, local-first creators
+- Core Value Proposition:
+  - 100% offline, zero-cloud egress audio/video recording workstation (WASAPI/MME loopback capture)
+  - Seamless coupling of PySide6 native desktop recorder and browser-based teleprompter & episode planner
+  - Local STT transcription monitor with zero external API dependencies
+  - Compliant, non-elevated user-mode operation (RunAsInvoker)
+- Ecosystem Positioning:
+  - Parent Organization: entertain-and-more (Media, Audio & Gaming)
+  - Commercial Counterpart: Klangpult (commercial multi-track cutter, batch export & OCR)
+  - Umbrella Hub: open-bricks
+
+2. VISUAL ASSETS & DESIGN
+- Hero Banners: docs/assets/banner.svg
+- Application Icon: DesktopIcon.ico, DesktopIcon.png
+- UI Screenshots: README/screenshots/main.png (Recorder UI)
+- Interactive Mermaid Diagrams:
+  - Dual Mermaid diagrams deployed in both README.md and README_de.md:
+    1. System Architecture Flowchart (graph TD): Engine -> PySide6 Desktop Recorder + Web Planer + Loopback Capture + STT + Soundboard
+    2. End-to-End Media & Recording Lifecycle (sequenceDiagram with autonumbering): 14-step creator workflow from episode planning to atomic audio finalization
+- Badges:
+  - Status: Public Alpha
+  - Version: v0.1.1
+  - Pytest: 450 tests (449 passed, 1 gated)
+  - CI: Multi-OS Matrix (Linux | Windows | macOS)
+  - Python: 3.10 | 3.11 | 3.12 | 3.13
+  - Platforms: Windows | Linux | macOS
+  - Architecture: Local-First | 100% Zero-Egress
+  - Security: Unprivileged (RunAsInvoker)
+  - Security SLA: 48h response | 5d triage
+  - Code Style: Ruff
+  - Ecosystem: entertain-and-more
+  - Umbrella: open-bricks
+  - License: Freeware
+  - LLM-Ready: llms.txt
+
+3. SEO & SEARCH PHRASES
+- Primary Keywords: klangpult-light, podcast-recorder, audio-video-capture, media-planner, pyside6-recorder, local-first-media, teleprompter-app, wasapi-loopback, zero-egress-recorder, soundboard-pads
+- Secondary Keywords: offline-transcription, faster-whisper-local, ffmpeg-remux, multichannel-audio-recording, streaming-audio-capture, open-bricks, entertain-and-more
+
+4. GOVERNANCE & RUNTIME INVARIANTS (10 INVARIANTS)
+1. 100% Local-First & Zero-Egress: No telemetry, no remote network calls, no cloud tracking.
+2. Unprivileged Execution: Pure user-space execution (RunAsInvoker), 0 admin rights required.
+3. Strict Loopback IPC Isolation: All communication bound to 127.0.0.1 (ports 8767, 8769, 8770).
+4. Safe Subprocess Boundaries: FFmpeg remuxing with sanitized arguments and anti-path-traversal checks.
+5. Bounded Buffer & Multichannel Audio Integrity: NaN/Inf data sanitization and atomic session finalization.
+6. Offline STT Degradation Boundary: Graceful fallback without UI deadlock or recording interruption.
+7. Caller-Controlled Session Storage: Explicit creator folder ownership with 0 automatic purge.
+8. Cross-Platform Operating Parity: Core logic, protocols, and data models identical across OS.
+9. Multi-Host & Sync Resilience: .gitignore hardened against sync conflicts and agent locks.
+10. 48h Response & 5-Day Triage SLA: Dedicated security triage via security@open-bricks.org and security@ellmos.ai.
+
+5. SIBLING ECOSYSTEM INTEGRATION
+- Gaming & Media Line (entertain-and-more): BattleStage, ChainReaction, StreetRacer, RealmWars, GhostTrain, RescueMe, HauntedHouse, MafiaCastle, CuteStrike, BattleChess3D, Klangpult, rpx
+- Cross-Organizational Partners (open-bricks): system-auditor, CleanMarkdown, PDFtoPDFocr, ExplorerPro, ellmos-voice-io, WikiStub-Seed, automation-master
+
+6. RECOMMENDATIONS FOR FUTURE ITERATIONS
+- Introduce dark/light theme toggle in Planer web interface.
+- Add audio waveform visualization export for podcast chapter thumbnails.
+- Provide pre-packaged macOS DMG and Linux AppImage alongside Windows EXE.

@@ -39,5 +39,8 @@ jobs:
       - name: Run Ruff Linter
         run: ruff check .
 
+      - name: Bytecode Compilation Gate
+        run: python -m compileall -q .
+
       - name: Run Contract and Static Verification Tests
         run: pytest tests/test_planer_accessibility_static.py tests/test_metadata.py

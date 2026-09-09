@@ -23,6 +23,20 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 - Vollständige Code-Hygiene: 86 Ruff-Linter-Meldungen restlos bereinigt, 0 Fehler.
 - `llms.txt` auf Stand 2026-08-22 synchronisiert.
 
+## [0.1.2] - 2026-09-09
+
+### Marketing, Discoverability & Visuelle Architektur (Pfad B [G 2026-09-09])
+- **14-Punkte-Schnellnavigation mit bidirektionaler Anker-Parität**: `README.md` und `README_de.md` auf eine standardisierte 14-Punkte-Navigationsstruktur synchronisiert, inklusive expliziter HTML-Anker-Tags für lückenlose Funktionsfähigkeit in allen Markdown-Renderern.
+- **Tabelle der 10 Governance- & Laufzeit-Invarianten**: Verbindliche Spezifikation der 10 Kerninvarianten (100% Local-First & Zero-Egress, unprivilegierter Betrieb / RunAsInvoker, strikte Loopback-IPC-Isolation, sichere FFmpeg-Subprozessgrenzen, begrenzte Audio-Pufferintegrität, Offline-STT-Degradationsgrenze, Nutzer-kontrollierte Session-Speicherung, plattformübergreifende Betriebsparität, Multi-Host- & Synchronisations-Resilienz, 48h Antwort- & 5-Tage-Triage-SLA) in beiden README-Dateien.
+- **Shields.io Badge-Suite Modernisierung**: Status Public Alpha, Python 3.10–3.13, Pytest 450 Tests (449 bestanden, 1 Registry-Test extern gegatet), Multi-OS CI Matrix, Freeware-Lizenz, Local-First / Zero-Egress Architektur, unprivilegierter Betrieb (RunAsInvoker), Security SLA (48h Antwort | 5d Triage), Code-Stil Ruff, Ökosystem `entertain-and-more`, Dachorganisation `open-bricks`, LLM-Ready `llms.txt`.
+- **Duale Mermaid-Visualisierungen**: Vollständiges Systemarchitektur-Ablaufdiagramm (`graph TD`) und End-to-End Medien- & Aufnahme-Lebenszyklus (`sequenceDiagram` mit automatischer Nummerierung und 14 Schritten) in beiden READMEs verankert.
+- **Geschwister-Ökosystem & Werkzeug-Matrix**: Dokumentation von 17 verwandten und kooperierenden Projekten über `entertain-and-more` (BattleStage, ChainReaction, StreetRacer, RealmWars, GhostTrain, RescueMe, HauntedHouse, MafiaCastle, CuteStrike, BattleChess3D, Klangpult) und `open-bricks` (system-auditor, automation-master, ExplorerPro, CleanMarkdown, ellmos-voice-io, WikiStub-Seed).
+- **Sicherheitsrichtlinie & Triage-Zusage (`SECURITY.md`)**: Verbindliche 5-Werktage-Triage-Zusage (5 business days / 5 Werktagen) neben dem 48-Stunden-Reaktions-SLA zweisprachig verankert; offizielle Kontakte `security@open-bricks.org`, `security@ellmos.ai`, `support@lukasgeiger.com` und `lukas@open-bricks.org` sowie GitHub Security Advisories hinterlegt.
+- **CI-Bytecode-Kompilierungsgate (`.github/workflows/ci.yml`)**: Automatischer Syntax- und Bytecode-Validierungsschritt (`python -m compileall -q .`) vor Ausführung der Vertragstests integriert.
+- **.gitignore-Härtung**: Vollständiger Schutz vor Multi-Host-Synchronisationskonflikten (`*-conflict-*`, `*.sync-temp-*`, `*.sync-conflict-*`, `*.conflict`, `*-CONFLIT-*`), Multi-Agent-Locks (`LOCK.*`, `*.lock`, `LOCK*.txt`, `LOCK`), Caches (`.ruff_cache/`, `.pytest_cache/`, `.coverage`, `wheelhouse/`, `.wheel-smoke/`) und temporären Dateien (`*.tmp`, `*.bak`, `*.swp`, `*~`, `*.log`).
+- **Lokales Marketing-Register (`MARKETING-LOG.txt`)**: Detaillierter Audit- und Discoverability-Bericht für SEO-Keywords, Positionierung, Zielgruppen, Visual Assets und Invarianten angelegt.
+- **Vertragstestsuite (`tests/test_metadata.py`)**: Umfassend erweitert zur automatisierten Validierung der 14-Punkte-Navigationsparität, 10 Governance-Invarianten, CI-Bytecode-Kompilierungsgates, Sicherheits-SLAs, .gitignore-Hygiene und Sibling-Ecosystem-Vollständigkeit.
+
 ## [0.1.1] - 2026-09-08
 
 ### Härtung & Hygiene (Pfad A: Repository-Hygiene & CI-Workflow-Härtung [G 2026-09-08])

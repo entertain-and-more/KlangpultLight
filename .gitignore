@@ -6,11 +6,17 @@ workspace/
 *.flac
 *.mp3
 
-# Python
+# Python & Test-Caches
 __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
+.ruff_cache/
+.coverage
+coverage/
+htmlcov/
+wheelhouse/
+.wheel-smoke/
 .venv/
 venv/
 env/
@@ -42,11 +48,30 @@ node_modules/
 output/playwright/
 .playwright-cli/
 
+# Multi-Host Synchronisation & Konfliktkopien (Cloud-Sync)
+*-conflict-*
+*.sync-temp-*
+*.sync-conflict-*
+*.conflict
+*-CONFLIT-*
+
+# Multi-Agent Locks & Schutzsperren
+LOCK.*
+*.lock
+LOCK*.txt
+LOCK
+
 # Interne Steuer-/Planungsdateien
 Plan.txt
 _archive/
-LOCK*.txt
 
 # Auto-generierte Berichte/Reviews (TICKET-MASTER) - nicht versionieren
 _codex/
 _reports/
+
+# Temporäre Dateien & Editor-Backups
+*.tmp
+*.bak
+*.swp
+*~
+*.log

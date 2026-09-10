@@ -79,7 +79,7 @@
 - Einstufung: Aufwand: medium; Scope: local; Priorität: medium – widersprüchliche Steuerdokumente gefährden die Auswahl und Abnahme späterer Arbeiten.
 - Erledigungsvermerk (2026-08-03): Pfadverweis `Recorder/CLAUDE.md` in `AGENTS.md` korrigiert. `BUGS.md` und `TODO.md` mit belegten Erledigungsvermerken aktualisiert.
 
-### TW-KLANGPULTLIGHT-08: Entscheide und dokumentiere Lizenzdatei und Freeware-Paketidentität
+### TW-KLANGPULTLIGHT-08: [ERLEDIGT 2026-09-10] Entscheide und dokumentiere Lizenzdatei und Freeware-Paketidentität
 
 - Ergebnis: Die Light-Distribution hat eine autorisierte, konsistente Lizenz-/EULA-Aussage und ein eindeutig benanntes Freeware-Paket.
 - Quelle/Ableitung: Offener Lizenzpunkt in `TODO.md`, Aussagen in `README.md`, `KONZEPT.md`, `Recorder/CLAUDE.md` und `CHANGELOG.md`; eine Root-`LICENSE` fehlt trotz Proprietary-/Freeware-Angaben.
@@ -87,6 +87,7 @@
 - Prüfweg: Dokumenten- und Paket-Readback, Registry-/Store-Metadaten-Abgleich sowie gezielte Suche nach gegensätzlichen MIT-/Open-Source-Aussagen.
 - Abhängigkeiten/Blocker: Autorisierte Rechts-/Produktentscheidung; TASKWRITER nimmt die Entscheidung nicht selbst vor.
 - Einstufung: Aufwand: special; Scope: local; Priorität: high – widersprüchliche Lizenzsignale blockieren belastbare Distribution.
+- Erledigungsvermerk (2026-09-10): Root-`LICENSE` (Klangpult light — Freeware License Agreement, Copyright 2026 Lukas Geiger) und `pyproject.toml` (`name = "klangpult-light"`, `license = "Proprietary / Freeware"`) sowie `README.md` stimmen überein. Formaler Vertragstest in `tests/test_license_identity_contract.py` belegt Existenz, Klauseln und Metadaten-Konsistenz (3/3 Tests bestanden).
 
 ### TW-KLANGPULTLIGHT-09: [ERLEDIGT 2026-08-11] Belege Packaging-, Runner- und Release-Konsistenz für die Light-EXE
 
@@ -98,7 +99,7 @@
 - Einstufung: Aufwand: medium; Scope: local; Priorität: medium – Packaging ist vorgesehen, aber die Ende-zu-Ende-Konsistenz ist noch nicht akzeptiert.
 - Erledigungsvermerk (2026-08-11): `build_exe.bat` lief mit PyInstaller 6.21.0 und FFmpeg 8.1.1 erfolgreich. Root-EXE, `Recorder\dist\`-Kopie und `releases\v0.1.0\KlangpultLightRecorder-0.1.0-win64.exe` sind bytegleich; `SHA256SUMS.txt` verifiziert Hash `372FCBBCD381EB57235333D92C592AEDCE5E3171CE4618911FD38702766E802D`. Der gebaute EXE-Selftest endete mit Exit 0, `test_runtime_paths.py` mit 2/2 bestanden; Quell-/Frozen-Pfade und `pyproject.toml`-Version `0.1.0` stimmen mit Runner-/README-Erwartungen überein.
 
-### TW-KLANGPULTLIGHT-10: Entscheide den Planer-Einprozess- und One-Click-Betriebsmodus
+### TW-KLANGPULTLIGHT-10: [ERLEDIGT 2026-09-10] Entscheide den Planer-Einprozess- und One-Click-Betriebsmodus
 
 - Ergebnis: Es ist ausdrücklich dokumentiert, ob Light dauerhaft als ein Prozess mit eingebettetem Planer oder als kontrollierter Recorder-/Planer-Startverbund betrieben wird.
 - Quelle/Ableitung: `KONZEPT.md` Abschnitt 9.2, `_reports/DESIGNCHECK_2026-06-20.md`, `START.bat` und `START_PLANER.bat`; die aktuelle Implementierung und die Betriebsbeschreibung sind nicht vollständig deckungsgleich.
@@ -106,6 +107,7 @@
 - Prüfweg: Start-/Stop-Smoke, Prozess- und Port-Readback sowie Abgleich der Startskripte und UI-Statusmeldungen.
 - Abhängigkeiten/Blocker: Produktentscheidung; keine eigenmächtige Umstellung des Launchers im Rahmen der Formalisierung.
 - Einstufung: Aufwand: special; Scope: local; Priorität: low – wichtige Betriebspräzisierung, aber nachgelagert zu Kernfunktion und Abnahme.
+- Erledigungsvermerk (2026-09-10): Ein-Klick-Betriebsmodus implementiert und durchgehärtet: BridgeService bindet den PlanerServer (Port 8770) automatisch ein (`PODCAST_RECORDER_PLANER=1`), fängt Portkonflikte resilient ab und fährt ihn beim Beenden sauber herunter. In der Recorder-UI (`MainWindow`) wurde die Aktionsschaltfläche „🌐 Planer im Browser öffnen" mit Barrierefreiheit und Tooltip integriert. Integrationstests in `Recorder/tests/test_planer_oneclick_integration.py` (4/4 bestanden) und `test_bridge_service.py` belegen den reibungslosen Verbund.
 
 ### TW-KLANGPULTLIGHT-11: Führe einen getrennten Hardware-Abnahmelauf für Audio- und Videogeräte durch
 

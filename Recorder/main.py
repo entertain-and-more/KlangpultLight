@@ -196,13 +196,22 @@ def main() -> int:
     from bridge.bridge_service import BridgeService
     bridge: BridgeService | None = None
     if BridgeService.soll_starten():
+        planer_port = (
+            int(os.environ.get("PLANER_PORT", "8770"))
+            if BridgeService.soll_planer_starten()
+            else None
+        )
         bridge = BridgeService(
             library=library,
             engine=engine,
             state=state,
             board_player=board_player,
+            planer_port=planer_port,
         )
         bridge.start()
+
+    if hasattr(fenster, "set_bridge"):
+        fenster.set_bridge(bridge)
 
     # --- STT-Manager aufsetzen (nach Bridge-Start, vor Selftest) ---
     stt_env = os.environ.get("PODCAST_RECORDER_STT", "").strip()

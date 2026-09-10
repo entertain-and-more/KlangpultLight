@@ -23,6 +23,14 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 - Vollständige Code-Hygiene: 86 Ruff-Linter-Meldungen restlos bereinigt, 0 Fehler.
 - `llms.txt` auf Stand 2026-08-22 synchronisiert.
 
+## [0.1.3] - 2026-09-10
+
+### One-Click Planer-Integration & Lizenzvertrag (TW-KLANGPULTLIGHT-08 / TW-KLANGPULTLIGHT-10) [G 2026-09-10]
+- **Integrierter Planer-Lebenszyklus in BridgeService**: `BridgeService` startet den `PlanerServer` standardmäßig mit (`PODCAST_RECORDER_PLANER=1`, Port 8770), leitet Aufrufe an Library- und Projects-APIs weiter, fängt Portkonflikte resilient ab und fährt den Server beim Schließen der Anwendung sauber herunter (`TW-KLANGPULTLIGHT-10`).
+- **Recorder UI Schnellstart**: Neuer Aktions-Button „🌐 Planer im Browser öffnen" in der Recorder-Aufnahmeliste (`MainWindow`) mit barrierefreier Beschriftung (`accessibleName`, `toolTip`), automatischer Ermittlung des aktiven Bridge-Ports und Rückmeldung in der Statusleiste.
+- **Lizenz- und Identitäts-Vertragstest**: `tests/test_license_identity_contract.py` validiert Root-`LICENSE` (Klangpult light — Freeware License Agreement, Copyright 2026 Lukas Geiger), `pyproject.toml` Metadaten und `README.md`-Referenzen automatisiert gegen Widersprüche (`TW-KLANGPULTLIGHT-08`).
+- **Integrationstests**: `Recorder/tests/test_planer_oneclick_integration.py` und erweiterte `Recorder/tests/test_bridge_service.py` prüfen den vollständigen 4-Dienste-Verbund (Library HTTP, Remote WS, Projects HTTP, Planer Web) Ende-zu-Ende. Gesamte Testsuite: 460 Tests bestanden.
+
 ## [0.1.2] - 2026-09-09
 
 ### Marketing, Discoverability & Visuelle Architektur (Pfad B [G 2026-09-09])

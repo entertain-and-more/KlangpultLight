@@ -174,3 +174,43 @@ def test_soll_starten_aus_bei_wert_0(monkeypatch):
 
     monkeypatch.setenv("PODCAST_RECORDER_BRIDGE", "0")
     assert BridgeService.soll_starten() is False
+
+
+def test_soll_planer_starten_env(monkeypatch):
+    """soll_planer_starten() respektiert PODCAST_RECORDER_PLANER."""
+    from bridge.bridge_service import BridgeService
+
+    monkeypatch.delenv("PODCAST_RECORDER_PLANER", raising=False)
+    assert BridgeService.soll_planer_starten() is True
+
+    monkeypatch.setenv("PODCAST_RECORDER_PLANER", "1")
+    assert BridgeService.soll_planer_starten() is True
+
+    monkeypatch.setenv("PODCAST_RECORDER_PLANER", "0")
+    assert BridgeService.soll_planer_starten() is False
+
+
+def test_bridge_service_planer_lifecycle(tmp_path):
+    """BridgeService startet und stoppt PlanerServer sauber wenn planer_port übergeben wird."""
+    from bridge.bridge_service import BridgeService
+
+    srv = BridgeService(
+        library_port=0,
+        ws_port=0,
+        projects_port=0,
+        projects_data_dir=str(tmp_path / "data"),
+        host="127.0.0.1",
+        planer_port=0,
+    )
+    srv.start()
+    try:
+        assert srv.planer is not None, "planer-Property ist None nach start mit planer_port=0"
+        assert srv.planer_port is not None and srv.planer_port > 0, (
+            f"planer_port nicht gebunden: {srv.planer_port}"
+        )
+    finally:
+        srv.stop()
+
+    assert srv.planer is None, "planer muss nach stop() None sein"
+    assert srv.planer_port is None, "planer_port muss nach stop() None sein"
+

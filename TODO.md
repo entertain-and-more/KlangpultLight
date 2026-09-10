@@ -148,7 +148,7 @@
 - [ ] README + Quickstart je Tool, Datenschutz-Hinweise
 - [x] Recorder: lokaler Onefile-PyInstaller-Build + Root-EXE + README-Screenshot
 - [ ] Optional ergänzen: zusätzlicher onedir-Build und Desktop-Verknüpfung
-- [ ] Planer: lokaler Start dokumentiert (eine zu startende Sache, idealerweise vom Recorder mitgestartet)
+- [x] Planer: lokaler Start dokumentiert (vom Recorder per BridgeService mitgestartet, UI-Button „🌐 Planer im Browser öffnen") ✔ (2026-09-10)
 - [ ] Eintrag in `.SOFTWARE`-Registry aktualisieren; Memory/Hub-Index ergänzen
 
 ---
@@ -163,8 +163,8 @@
   (Abschnitt „CASH-Strategie & Rebranding 2026-06-27").
 - [x] **Rebrand abgeschlossen (2026-06-27):** Klangpult light = Freeware-Funnel (Closed-Source,
   kein öffentliches GitHub-Repo). Sub-Tools: Klangpult light – Recorder, Klangpult light – Planer.
-- [ ] **Lizenzmodell abstimmen:** Die light-Variante ist Proprietär/Freeware — LICENSE-Datei
-  nach finalem Entscheid synchronisieren.
+- [x] **Lizenzmodell abstimmen:** Die light-Variante ist Freeware — LICENSE-Datei
+  (Klangpult light — Freeware License Agreement) im Root verankert und per Testvertrag abgesichert ✔ (2026-09-10)
 
 ---
 

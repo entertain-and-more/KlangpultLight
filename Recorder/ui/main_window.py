@@ -97,6 +97,7 @@ class MainWindow(QMainWindow):
         loopback_route: Optional[LoopbackRoute] = None,
         sources_config_path: Optional[str] = None,
         board_player=None,
+        bridge: Optional[object] = None,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -110,6 +111,7 @@ class MainWindow(QMainWindow):
         self._sources_config_path: Optional[str] = sources_config_path
         self._session: Optional[RecordingSession] = None
         self._aufnahme_läuft = False
+        self._bridge = bridge
 
         # Board-Player (optional; injiziert von main.py)
         self._board_player = board_player
@@ -136,6 +138,10 @@ class MainWindow(QMainWindow):
         self._setup_timer()
         self._aktualisiere_status()
         self._lade_aufnahmeliste()
+
+    def set_bridge(self, bridge: Optional[object]) -> None:
+        """Setzt die Bridge-Instanz nachträglich (z. B. wenn die Bridge nach der UI gestartet wird)."""
+        self._bridge = bridge
 
     # -------------------------------------------------------------------------
     # UI-Aufbau
@@ -702,9 +708,22 @@ class MainWindow(QMainWindow):
         # Video-Pads: no-op (Video läuft über eigene VideoCaptureLoop-Infrastruktur)
 
     def _baue_aufnahmeliste(self) -> QWidget:
-        """Rechtes Panel mit Aufnahme-TreeWidget."""
+        """Rechtes Panel mit Aufnahme-TreeWidget und Planer-Schnellstart."""
         box = QGroupBox("Aufnahmen")
         layout = QVBoxLayout(box)
+
+        # Schnelleinsprung / Ein-Klick-Verbund: Planer im Standard-Browser öffnen
+        self._btn_planer = QPushButton("🌐 Planer im Browser öffnen")
+        self._btn_planer.setObjectName("btn_planer_oeffnen")
+        self._btn_planer.setToolTip(
+            "Öffnet die Web-App zur Episoden- und Medienplanung (Standard: http://127.0.0.1:8770) im Browser"
+        )
+        self._btn_planer.setAccessibleName("Planer im Browser öffnen")
+        self._btn_planer.setAccessibleDescription(
+            "Öffnet den Klangpult light Planer im Standard-Webbrowser zur Planung und Teleprompter-Nutzung."
+        )
+        self._btn_planer.clicked.connect(self._oeffne_planer)
+        layout.addWidget(self._btn_planer)
 
         self._aufnahme_tree = QTreeWidget()
         self._aufnahme_tree.setHeaderLabels(["Titel", "Dauer", "Erstellt"])
@@ -725,6 +744,26 @@ class MainWindow(QMainWindow):
         layout.addWidget(self._aufnahme_tree)
 
         return box
+
+    def _oeffne_planer(self) -> str:
+        """Öffnet die Planer-Web-App im Standard-Browser und gibt die URL zurück."""
+        import webbrowser
+        port = 8770
+        if self._bridge is not None and getattr(self._bridge, "planer_port", None) is not None:
+            port = self._bridge.planer_port
+        else:
+            try:
+                port = int(os.environ.get("PLANER_PORT", "8770"))
+            except ValueError:
+                port = 8770
+        url = f"http://127.0.0.1:{port}/"
+        try:
+            webbrowser.open(url)
+        except Exception:
+            pass
+        if getattr(self, "_statusleiste", None) is not None:
+            self._statusleiste.showMessage(f"Planer im Browser geöffnet: {url}", 4000)
+        return url
 
     # -------------------------------------------------------------------------
     # Timer / Pegel-Polling

@@ -26,23 +26,38 @@ _PLANER_PORT = 8770
 
 
 def _get_planer_server_cls():
-    """Importiert PlanerServer dynamisch, ohne feste Pfadabhängigkeit."""
+    """Importiert PlanerServer dynamisch, ohne feste Pfadabhängigkeit (Quellcode & Frozen)."""
     try:
         from planer_server import PlanerServer  # type: ignore
         return PlanerServer
     except ImportError:
         pass
 
+    candidates: list[Path] = []
+
+    # 1. Frozen Mode (PyInstaller onefile _MEIPASS oder onedir)
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        candidates.append(Path(meipass) / "planer" / "server")
+
+    exe_dir = Path(sys.executable).parent
+    candidates.append(exe_dir / "planer" / "server")
+    candidates.append(exe_dir / "_internal" / "planer" / "server")
+
+    # 2. Regulärer Quellcode-Pfad (Projekt-Wurzel)
     base = Path(__file__).resolve().parent.parent.parent
-    cand = base / "planer" / "server"
-    if cand.is_dir() and str(cand) not in sys.path:
-        sys.path.insert(0, str(cand))
-        try:
-            from planer_server import PlanerServer  # type: ignore
-            return PlanerServer
-        except ImportError:
-            pass
+    candidates.append(base / "planer" / "server")
+
+    for cand in candidates:
+        if cand.is_dir() and str(cand) not in sys.path:
+            sys.path.insert(0, str(cand))
+            try:
+                from planer_server import PlanerServer  # type: ignore
+                return PlanerServer
+            except ImportError:
+                pass
     return None
+
 
 
 class BridgeService:

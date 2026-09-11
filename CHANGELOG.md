@@ -23,6 +23,15 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 - Vollständige Code-Hygiene: 86 Ruff-Linter-Meldungen restlos bereinigt, 0 Fehler.
 - `llms.txt` auf Stand 2026-08-22 synchronisiert.
 
+## [0.1.4] - 2026-09-11
+
+### Onedir-Packaging, Desktop-Integration & Standalone-Planer-Bundling (TW-KLANGPULTLIGHT-12) [G 2026-09-11]
+- **PyInstaller Onedir-Spezifikation**: `KlangpultLightRecorderOnedir.spec` für schnellen Sofortstart ohne Laufzeit-Dekompressionsaufwand hinzugefügt; `build_onedir.bat` erzeugt die entpackte Standalone-Distribution unter `dist/KlangpultLightRecorder/` und `releases/v0.1.0/onedir/` inklusive SHA256-Prüfsummen (`TW-KLANGPULTLIGHT-12`).
+- **Standalone-Planer-Bundling**: `shared/` und `planer/` (HTML, JS, CSS, Server) sowohl in `KlangpultLightRecorder.spec` als auch `KlangpultLightRecorderOnedir.spec` eingebunden, sodass der compilierte Desktop-Recorder den Web-Planer ohne separate Python-Umgebung ausliefern kann.
+- **Resiliente Frozen-Pfadauflösung**: `BridgeService._get_planer_server_cls` und `planer_server._resolve_static_root` erkennen Quellbaum, PyInstaller `_MEIPASS` (Onefile) sowie Anwendungsverzeichnis und `_internal/` (Onedir) nahtlos.
+- **Desktop-Shortcut-Generator**: `scripts/create_desktop_shortcut.py` und `CREATE_DESKTOP_SHORTCUT.bat` erlauben die 1-Klick-Einrichtung einer Windows-Desktopverknüpfung (`.lnk`) mit `DesktopIcon.ico` und korrektem Arbeitsverzeichnis.
+- **Automatisierte Absicherung**: 9 neue Tests in `Recorder/tests/test_onedir_packaging_and_shortcut.py` prüfen Specs, Skripte, Verknüpfungs-Dry-Run und Pfadauflösung.
+
 ## [0.1.3] - 2026-09-10
 
 ### One-Click Planer-Integration & Lizenzvertrag (TW-KLANGPULTLIGHT-08 / TW-KLANGPULTLIGHT-10) [G 2026-09-10]

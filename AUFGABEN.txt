@@ -118,6 +118,21 @@
 - Abhängigkeiten/Blocker: Zugängliche, autorisierte Audio-/Videogeräte und FFmpeg; kein Hardware-Gate durch statische Tests vortäuschen.
 - Einstufung: Aufwand: special; Scope: local; Priorität: medium – reale Geräteabnahme ist für Recorder-Vertrauen erforderlich und bislang unbelegt.
 
+### TW-KLANGPULTLIGHT-12: [ERLEDIGT 2026-09-11] Implementiere Onedir-Build-Konfiguration, Desktop-Shortcut-Integration und Standalone-Planer-Bundling
+
+- Ergebnis: Für Klangpult light stehen eine schnelle Onedir-Distribution (ohne Dekompressions-Latenz beim Start), ein Desktop-Verknüpfungs-Generator mit Anwendungsicon sowie vollständiges Standalone-Planer-Bundling im Quell- und Frozen-Betrieb zur Verfügung.
+- Quelle/Ableitung: `TODO.md` Phase 9 („Optional ergänzen: zusätzlicher onedir-Build und Desktop-Verknüpfung"), `KONZEPT.md` Abschnitt 6 und 9.2, `KlangpultLightRecorder.spec`, `KlangpultLightRecorderOnedir.spec`, `build_onedir.bat`, `scripts/create_desktop_shortcut.py`.
+- Definition of Done: Onedir-Spec mit `shared` und `planer`-Bundling, automatisierter Build- und Prüfpfad via `build_onedir.bat`, plattformrobuste Verknüpfungserstellung (`scripts/create_desktop_shortcut.py` / `CREATE_DESKTOP_SHORTCUT.bat`) mit Icon- und Arbeitsverzeichnis-Anbindung, Frozen-Pfadauflösung in `BridgeService` und `PlanerServer` sowie vollständige automatisierte Absicherung in `Recorder/tests/test_onedir_packaging_and_shortcut.py`.
+- Prüfweg: Gezielte Unit- und Integrationstests (9/9 bestanden), Compileall, Ruff-Linting und vollständige Pytest-Suite.
+- Abhängigkeiten/Blocker: Keine; rein lokale Ergänzungen ohne Cloud-Egress und ohne externe API-Abhängigkeit.
+- Einstufung: Aufwand: medium; Scope: local; Priorität: medium – schließt offene Phase-9-Aufgaben ab und verbessert die Benutzerfreundlichkeit für Desktop-Anwender signifikant.
+- Erledigungsvermerk (2026-09-11):
+  1. `KlangpultLightRecorder.spec` und `KlangpultLightRecorderOnedir.spec` bündeln `shared/` und `planer/` vollständig.
+  2. `build_onedir.bat` erzeugt die entpackte Standalone-Distribution unter `dist/KlangpultLightRecorder` und `releases/v0.1.0/onedir/` inklusive SHA256-Prüfsumme.
+  3. `scripts/create_desktop_shortcut.py` und `CREATE_DESKTOP_SHORTCUT.bat` erlauben die 1-Klick-Einrichtung einer Windows-Desktopverknüpfung mit `DesktopIcon.ico`.
+  4. `BridgeService._get_planer_server_cls` und `planer_server._resolve_static_root` erkennen Quell- und Frozen-Laufzeitumgebungen (`sys._MEIPASS`, `sys.executable`).
+  5. 9 neue automatisierte Tests in `Recorder/tests/test_onedir_packaging_and_shortcut.py` verifizieren Specs, Skripte und Pfadauflösung (9/9 bestanden).
+
 ### TASKWRITER-CLOSEOUT (2026-07-22)
 
 Der Light-Slice wurde als eigenständiges, selektiertes Projekt geprüft. Elf aus den Projektquellen abgeleitete offene Punkte wurden als formale TASKPLAN-Aufgaben mit Ergebnis, Quelle, DoD, Prüfweg, Blockern sowie Aufwand/Scope/Priorität dokumentiert und werden nachfolgend über die TASKPLAN-API synchronisiert. Es wurde keine Aufgabe ausgeführt, kein Build, kein Browser-/Hardwarelauf, kein Upload und keine Veröffentlichung vorgenommen. Vorbestehende Änderungen und fremde Sperren blieben unangetastet; der OneDrive-Cloud-Lock-Risikohinweis bleibt sichtbar.
@@ -169,3 +184,14 @@ Privates GitHub-Repo `entertain-and-more/KlangpultLight` angelegt (Sichtbarkeit:
   4. Schema- und Modellkonsistenz: Datenmodell-Validierung und -Austausch nach `shared/workspace_v1.json` via `Recorder/board/board_model.py` (`validate_workspace_payload`, `import_workspace_full`, `export_workspace_full`).
   5. Testsuite & Verifikation: 4 neue Testfunktionen mit 15+ Assertions in `Recorder/tests/test_projects_api.py` (Assets CRUD, Auto-Line-Cleanup, Line-Validation, Workspace-v1 Export/Import und Persistenz nach Serverneustart).
   6. Vollsuite-Ergebnis: 417 passed, 1 skipped in 84.29s (100% grün).
+
+### TASKEXECUTION-CLOSEOUT (2026-09-11, 18:35 Uhr)
+
+- Projekt: `KlangpultLight` (`ENTERTAINMENT/DEV_KlangpultLight` in `C:\_Local_DEV\repos\KlangpultLight`).
+- Erledigte Aufgabe: `TW-KLANGPULTLIGHT-12` (Onedir-Build-Konfiguration, Desktop-Shortcut-Integration und Standalone-Planer-Bundling).
+- Durchgeführte Maßnahmen:
+  1. Build & Packaging: `KlangpultLightRecorderOnedir.spec` für instantanen Anwendungsstart ohne Laufzeit-Dekompressionsverzögerung erstellt; `shared` und `planer` sowohl in Onefile- als auch Onedir-Spezifikationen eingebunden.
+  2. Build-Automation: `build_onedir.bat` angelegt zur automatisierten Erstellung des Onedir-Releases unter `dist/KlangpultLightRecorder` und `releases/v0.1.0/onedir/` mit SHA256-Prüfsummen-Generierung.
+  3. Desktop-Shortcut: `scripts/create_desktop_shortcut.py` und `CREATE_DESKTOP_SHORTCUT.bat` implementiert (PowerShell COM WScript.Shell, Einbindung von `DesktopIcon.ico` und korrektem Arbeitsverzeichnis).
+  4. Frozen Runtime Resilience: `BridgeService._get_planer_server_cls` und `planer_server._resolve_static_root` erkennen Quell- und PyInstaller-Umgebungen (`_MEIPASS`, `exe_dir`, `_internal`) nahtlos.
+  5. Testsuite & Verifikation: 9 neue automatisierte Tests in `Recorder/tests/test_onedir_packaging_and_shortcut.py` (Spec-Integrität, Batch-Skripte, Desktop-Shortcut Dry-Run, dynamische Planer- und Static-Root-Auflösung) erfolgreich ausgeführt (9/9 bestanden). Code-Hygiene: ruff check & compileall 100% fehlerfrei.

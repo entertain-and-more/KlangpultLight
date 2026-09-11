@@ -1,8 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller-Spec für den Klangpult light – Recorder (onefile).
+"""PyInstaller-Spec fuer den Klangpult light – Recorder (onedir).
 
-Die EXE läuft als eigenständiger Desktop-Recorder direkt aus dem Projekt-Root.
-Workspace-Daten sollen im EXE-Ordner landen, nicht in _MEIPASS oder Temp.
+Erzeugt ein entpacktes Verzeichnis (dist/KlangpultLightRecorder) mit schnellem Sofortstart
+ohne temporaeres Entpacken zur Laufzeit.
 """
 
 a = Analysis(
@@ -39,15 +39,23 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
+    exclude_binaries=True,
     name="KlangpultLightRecorder",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
-    runtime_tmpdir=None,
     console=False,
     icon="DesktopIcon.ico",
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=False,
+    name="KlangpultLightRecorder",
 )

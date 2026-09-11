@@ -147,7 +147,7 @@
 - [ ] End-to-End-Durchlauf mit **frischen Subagenten** (unbelastet) gegen die Feature-Mapping-Tabelle (KONZEPT §6)
 - [ ] README + Quickstart je Tool, Datenschutz-Hinweise
 - [x] Recorder: lokaler Onefile-PyInstaller-Build + Root-EXE + README-Screenshot
-- [ ] Optional ergänzen: zusätzlicher onedir-Build und Desktop-Verknüpfung
+- [x] Optional ergänzen: zusätzlicher onedir-Build und Desktop-Verknüpfung ✔ (2026-09-11, TW-KLANGPULTLIGHT-12)
 - [x] Planer: lokaler Start dokumentiert (vom Recorder per BridgeService mitgestartet, UI-Button „🌐 Planer im Browser öffnen") ✔ (2026-09-10)
 - [ ] Eintrag in `.SOFTWARE`-Registry aktualisieren; Memory/Hub-Index ergänzen
 

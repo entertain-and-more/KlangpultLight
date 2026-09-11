@@ -204,10 +204,12 @@ class TestKlangpultLightMetadata(unittest.TestCase):
             self.assertIn("8770", text)
 
     def test_changelog_entry_present(self):
-        """Verify CHANGELOG.md contains the latest Pfad B release entry."""
+        """Verify CHANGELOG.md contains release entries."""
         changelog_file = PROJECT_ROOT / "CHANGELOG.md"
         self.assertTrue(changelog_file.is_file(), "CHANGELOG.md must exist")
         text = changelog_file.read_text(encoding="utf-8")
+        self.assertIn("## [0.1.4] - 2026-09-11", text)
+        self.assertIn("TW-KLANGPULTLIGHT-12", text)
         self.assertIn("## [0.1.2] - 2026-09-09", text)
         self.assertIn("Pfad B", text)
         self.assertIn("14-Punkte-Schnellnavigation", text)

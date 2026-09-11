@@ -21,6 +21,7 @@ import json
 import logging
 import mimetypes
 import os
+import sys
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
@@ -34,8 +35,30 @@ _log = logging.getLogger(__name__)
 _LIBRARY_PORT_DEFAULT = 8767
 _PROJECTS_PORT_DEFAULT = 8769
 
-# Statischer Root: planer/ (Elternverzeichnis von server/)
-_STATIC_ROOT = Path(__file__).parent.parent
+
+def _resolve_static_root() -> Path:
+    """Ermittelt den statischen Root-Pfad für den Planer (Entwicklung und Frozen/PyInstaller)."""
+    default_root = Path(__file__).parent.parent
+    if (default_root / "index.html").is_file():
+        return default_root
+
+    # Frozen mode (PyInstaller onefile / onedir)
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        cand = Path(meipass) / "planer"
+        if (cand / "index.html").is_file():
+            return cand
+
+    exe_dir = Path(sys.executable).parent
+    for cand in [exe_dir / "planer", exe_dir / "_internal" / "planer"]:
+        if (cand / "index.html").is_file():
+            return cand
+
+    return default_root
+
+
+# Statischer Root: planer/
+_STATIC_ROOT = _resolve_static_root()
 
 # Erweiterungen, die NIEMALS ausgeliefert werden dürfen (Python-Quellcode / Bytecode)
 _BLOCKED_SUFFIXES = {".py", ".pyc", ".pyo", ".pyd"}

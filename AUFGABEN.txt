@@ -131,7 +131,23 @@
   2. `build_onedir.bat` erzeugt die entpackte Standalone-Distribution unter `dist/KlangpultLightRecorder` und `releases/v0.1.0/onedir/` inklusive SHA256-Prüfsumme.
   3. `scripts/create_desktop_shortcut.py` und `CREATE_DESKTOP_SHORTCUT.bat` erlauben die 1-Klick-Einrichtung einer Windows-Desktopverknüpfung mit `DesktopIcon.ico`.
   4. `BridgeService._get_planer_server_cls` und `planer_server._resolve_static_root` erkennen Quell- und Frozen-Laufzeitumgebungen (`sys._MEIPASS`, `sys.executable`).
-  5. 9 neue automatisierte Tests in `Recorder/tests/test_onedir_packaging_and_shortcut.py` verifizieren Specs, Skripte und Pfadauflösung (9/9 bestanden).
+  5. 9 neue automatisierte Tests in `Recorder/tests/test_onedir_packaging_and_shortcut.py` verifizieren Specs, Skripte und Pfadauflösung (9/9 bestanden). Code-Hygiene: ruff check & compileall 100% fehlerfrei.
+
+### TW-KLANGPULTLIGHT-13: [TEILWEISE UMGESETZT / FOUNDATION 2026-09-12] Internationalisierungs-Architektur (Tier-2: DE, EN, ES, ZH, JA, RU nach Policy P-006) für Recorder-Desktop-UI und Planer-Web-Companion
+
+- Ergebnis: Klangpult light verfügt über ein vollständiges Tier-2-Mehrsprachigkeitssystem nach Policy P-006 mit 6 Zielsprachen (Deutsch, Englisch, Spanisch, Chinesisch, Japanisch, Russisch), deterministischer 4-stufiger Fallback-Hierarchie (target -> en -> de -> key), 100% Parität für Kernschlüssel, echter Umlaut-Konformität und automatisierten Audit-/Testwerkzeugen.
+- Quelle/Ableitung: SOFTWARE I18N EXPANSION CHECK (2026-09-12), Policy P-006 (`.SYNC/_policies/library/P-006_sprachstufen.md`), globale Anwendungs-Nutzerregeln zu authentischen Umlauten.
+- Definition of Done:
+  1. [x] Modul `Recorder/i18n/translator.py` mit `TranslationSystem`, Singleton `get_translator()`, Helper `t()`, Typsicherheit und robuster Quell-/PyInstaller-Pfadauflösung.
+  2. [x] Zentrales Wörterbuch `locales/translations.json` (sowie Packaging-Spiegel `Recorder/locales/translations.json`) mit 44 Kernschlüsseln (Desktop-Recorder, Dialoge, Statusleiste, Einspieler-Board, Navigation und Web-Planer), 100% Parität über alle 6 Sprachen und echten deutschen Umlauten (ä, ö, ü, Ä, Ö, Ü, ß).
+  3. [x] Audit- & Prüfwerkzeug `manage_translations.py --check` mit Exit-Codes für CI/Governance.
+  4. [x] Automatisierte Testabdeckung in `tests/test_i18n.py` (7 Tests) und `Recorder/tests/test_i18n.py` (3 Tests) für Sprachwechsel, Fallback-Kette, Umlaut-Integrität, Listener-Callbacks und Resilienz (10/10 bestanden).
+  5. [ ] Nachgelagert (UI-Verdrahtung): Dynamischer Sprachumschalter in `MainWindow` (Menü/Statusbar), `retranslate_ui()` Event-Hook mit `QSettings`-Persistenz der Benutzersprache.
+  6. [ ] Nachgelagert (Web-Planer): Client-Adapter `planer/app/i18n.js` mit dynamischem Sprachwechsel und Übernahme des `lang`-Attributs.
+  7. [ ] Nachgelagert (Dokumentation): Spanische Übersetzung `README.es.md`.
+- Prüfweg: `python manage_translations.py --check`, `python -m pytest tests/test_i18n.py Recorder/tests/test_i18n.py`, `ruff check`, `python -m compileall -q .`.
+- Einstufung: Aufwand: medium; Scope: local; Priorität: medium — essenzielle Grundlage zur Erschließung internationaler Streaming- und Podcast-Zielgruppen.
+- Erledigungsvermerk (2026-09-12): I18N-Fundament vollständig implementiert und abgesichert. `Recorder/i18n/translator.py`, `locales/translations.json`, `manage_translations.py` sowie 10 Tests erfolgreich verifiziert.
 
 ### TASKWRITER-CLOSEOUT (2026-07-22)
 
@@ -195,3 +211,14 @@ Privates GitHub-Repo `entertain-and-more/KlangpultLight` angelegt (Sichtbarkeit:
   3. Desktop-Shortcut: `scripts/create_desktop_shortcut.py` und `CREATE_DESKTOP_SHORTCUT.bat` implementiert (PowerShell COM WScript.Shell, Einbindung von `DesktopIcon.ico` und korrektem Arbeitsverzeichnis).
   4. Frozen Runtime Resilience: `BridgeService._get_planer_server_cls` und `planer_server._resolve_static_root` erkennen Quell- und PyInstaller-Umgebungen (`_MEIPASS`, `exe_dir`, `_internal`) nahtlos.
   5. Testsuite & Verifikation: 9 neue automatisierte Tests in `Recorder/tests/test_onedir_packaging_and_shortcut.py` (Spec-Integrität, Batch-Skripte, Desktop-Shortcut Dry-Run, dynamische Planer- und Static-Root-Auflösung) erfolgreich ausgeführt (9/9 bestanden). Code-Hygiene: ruff check & compileall 100% fehlerfrei.
+
+### TASKEXECUTION-CLOSEOUT (2026-09-12, 20:20 Uhr)
+
+- Projekt: `KlangpultLight` (`PRODUCTION/DEV_KlangpultLight` in `C:\_Local_DEV\repos\KlangpultLight`).
+- Erledigte Aufgabe: `TW-KLANGPULTLIGHT-13` (Tier-2 Internationalisierungs-Fundament nach Policy P-006).
+- Durchgeführte Maßnahmen:
+  1. I18N Engine: `Recorder/i18n/translator.py` und `Recorder/i18n/__init__.py` implementiert (Tier-2 Zielsprachen `de`, `en`, `es`, `zh`, `ja`, `ru`, 4-stufige Fallback-Hierarchie `target -> en -> de -> key`, Listener-Benachrichtigung für Live-UI-Retranslation, Resilienz gegen defektes/fehlendes JSON und PyInstaller-Pfadkompatibilität).
+  2. Übersetzungs-Wörterbuch: `locales/translations.json` und `Recorder/locales/translations.json` mit 44 Kernschlüsseln (Desktop-Buttons, Statusleiste, Aufnahme-Modi, Einspieler-Pads, Kontextmenü, Planer-Navigation) mit 100% Parität über alle 6 Sprachen und echten deutschen Umlauten (ä, ö, ü, Ä, Ö, Ü, ß) erstellt.
+  3. Management-CLI: `manage_translations.py` zur statischen Prüfung (`--check`) und Abdeckungsanalyse angelegt (100.0% Deckung über alle 6 Zielsprachen belegt).
+  4. Testabdeckung: 10 automatisierte Tests in `tests/test_i18n.py` und `Recorder/tests/test_i18n.py` implementiert (10/10 bestanden).
+  5. Hygiene & Syntax: `ruff check` und `python -m compileall` 100% fehlerfrei.

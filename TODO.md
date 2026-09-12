@@ -153,6 +153,20 @@
 
 ---
 
+## Phase 10 — Internationalisierung (I18N Tier-2 nach Policy P-006)
+
+> Ziel: Vollständige 6-Sprachen-Unterstützung (DE, EN, ES, ZH, JA, RU) mit dynamischer Umschaltung und robuster Fallback-Hierarchie (target -> en -> de -> key).
+
+- [x] **I18N Engine (`Recorder/i18n/translator.py`):** Thread-sicheres `TranslationSystem`, Singleton `get_translator()`, `t()` mit Parameter-Substitution `{name}`, Listener-Callbacks bei Sprachwechsel ✔ (2026-09-12, TW-KLANGPULTLIGHT-13)
+- [x] **Zentrales Wörterbuch (`locales/translations.json`):** 44 Kernschlüssel mit 100% Parität über alle 6 Sprachen und echten deutschen Umlauten (ä, ö, ü, Ä, Ö, Ü, ß) ✔ (2026-09-12)
+- [x] **Audit-Werkzeug (`manage_translations.py`):** CLI zur statischen Validierung und Abdeckungsprüfung (`--check`) ✔ (2026-09-12)
+- [x] **Automatisierte Testabdeckung (`tests/test_i18n.py` & `Recorder/tests/test_i18n.py`):** 10 Vertragstests (Sprachwechsel, 4-stufige Fallback-Kette, Umlaut-Konformität, Parität, Listener, Resilienz) ✔ (2026-09-12, 10/10 bestanden)
+- [ ] UI-Integration: Dynamischer Sprachumschalter in `MainWindow` mit `retranslate_ui()` und `QSettings`-Persistenz
+- [ ] Web-Planer: Client-Adapter `planer/app/i18n.js` mit Umschaltung und `lang`-Attribut-Aktualisierung
+- [ ] Dokumentation: Spanische Fassung `README.es.md`
+
+---
+
 ## CASH-Strategie Querverweis (2026-06-27)
 
 > Strategische Entscheidung — Rebrand zu Klangpult light (2026-06-27).

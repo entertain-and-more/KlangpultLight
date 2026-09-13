@@ -147,6 +147,96 @@ def test_path_traversal_url_encoded_404(planer_server):
 # Proxy mit echtem Backend (Integration)
 # ---------------------------------------------------------------------------
 
+def test_bridge_status_liest_beide_recorder_dienste_aus(tmp_path):
+    """Der Planer meldet Library und Projekte über einen expliziten Status-Readback."""
+    from planer_server import PlanerServer
+    from bridge.library_api import LibraryApiServer
+    from bridge.projects_api import ProjectsApiServer
+    from recordings.library import RecordingLibrary
+
+    library_srv = LibraryApiServer(
+        library=RecordingLibrary(workspace_dir=str(tmp_path / "workspace"))
+    )
+    projects_srv = ProjectsApiServer(data_dir=str(tmp_path / "projects"))
+    library_srv.start(host="127.0.0.1", port=0)
+    projects_srv.start(host="127.0.0.1", port=0)
+    planer = PlanerServer(
+        library_port=library_srv.port,
+        projects_port=projects_srv.port,
+    )
+    planer.start(host="127.0.0.1", port=0)
+
+    try:
+        url = f"http://127.0.0.1:{planer.port}/api/status"
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            assert resp.status == 200
+            data = json.loads(resp.read().decode("utf-8"))
+        assert data == {
+            "status": "online",
+            "services": {
+                "library": {"ok": True},
+                "projects": {"ok": True},
+            },
+        }
+    finally:
+        planer.stop()
+        projects_srv.stop()
+        library_srv.stop()
+
+
+def test_bridge_status_zeigt_getrennte_dienstausfaelle_an():
+    """Ein fehlender Recorder liefert einen lesbaren Offline- statt eines 404-Status."""
+    from planer_server import PlanerServer
+
+    planer = PlanerServer(library_port=19999, projects_port=19998)
+    planer.start(host="127.0.0.1", port=0)
+
+    try:
+        url = f"http://127.0.0.1:{planer.port}/api/status"
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            assert resp.status == 200
+            data = json.loads(resp.read().decode("utf-8"))
+        assert data == {
+            "status": "offline",
+            "services": {
+                "library": {"ok": False},
+                "projects": {"ok": False},
+            },
+        }
+    finally:
+        planer.stop()
+
+
+def test_bridge_status_markiert_einen_teilausfall(tmp_path):
+    """Ein einzelner Dienst bleibt im Status sichtbar statt als volle Verbindung zu gelten."""
+    from planer_server import PlanerServer
+    from bridge.library_api import LibraryApiServer
+    from recordings.library import RecordingLibrary
+
+    library_srv = LibraryApiServer(
+        library=RecordingLibrary(workspace_dir=str(tmp_path / "workspace"))
+    )
+    library_srv.start(host="127.0.0.1", port=0)
+    planer = PlanerServer(library_port=library_srv.port, projects_port=19998)
+    planer.start(host="127.0.0.1", port=0)
+
+    try:
+        url = f"http://127.0.0.1:{planer.port}/api/status"
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            assert resp.status == 200
+            data = json.loads(resp.read().decode("utf-8"))
+        assert data == {
+            "status": "partial",
+            "services": {
+                "library": {"ok": True},
+                "projects": {"ok": False},
+            },
+        }
+    finally:
+        planer.stop()
+        library_srv.stop()
+
+
 def test_proxy_leitet_an_projects_api_weiter(tmp_path):
     """Voller Proxy-Test: PlanerServer leitet POST /api/projects an ProjectsApiServer weiter."""
     from planer_server import PlanerServer

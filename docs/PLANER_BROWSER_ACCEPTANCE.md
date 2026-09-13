@@ -19,7 +19,10 @@ Browser geöffnet.
 
 ## Abnahmeschritte
 
-1. Status zeigt `Recorder verbunden`.
+1. `GET /api/status` liefert den lokalen, datenfreien Readback `online` mit
+   beiden Diensten `library.ok=true` und `projects.ok=true`; die Kopfzeile zeigt
+   `Recorder verbunden`. Bei nur einem verfügbaren Dienst zeigt sie
+   `Recorder teilweise erreichbar`.
 2. Bibliothek listet `Browser-Abnahme Aufnahme` mit Branch-Readback und einem
    nativen Audio-Player.
 3. Im Tab `Projekte` ein Projekt anlegen, umbenennen und eine Episode anlegen.
@@ -35,7 +38,9 @@ Die Fixture wird durch Anlegen der angegebenen Stop-Datei sauber beendet.
 
 - Echter Chromium-Browser über Playwright CLI; isolierte Fixture mit den
   produktiven `LibraryApiServer`, `ProjectsApiServer` und `PlanerServer`.
-- Status: `Recorder verbunden`.
+- Status: `Recorder verbunden`; der explizite Readback `GET /api/status`
+  meldete `online` für Library- und Projects-Dienst. Ein Teilausfall wird
+  getrennt als `partial` statt als irreführend vollständige Verbindung angezeigt.
 - Bibliothek: eine Fixture-Aufnahme, zwei Branches und nativer Audio-Player
   sichtbar; Reload löste den Library-Readback erneut aus.
 - Projekte: anlegen, umbenennen, Episode anlegen, Aufnahme zuordnen, Episode

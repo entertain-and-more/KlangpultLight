@@ -39,14 +39,12 @@ async function _request(method, path, body = null) {
 // Health / Status
 // ---------------------------------------------------------------------------
 
-/** Prüft ob LibraryApiServer erreichbar ist. */
-export async function checkLibraryHealth() {
-  return _request("GET", "/api/library");
-}
-
-/** Prüft ob ProjectsApiServer erreichbar ist. */
-export async function checkProjectsHealth() {
-  return _request("GET", "/api/projects");
+/**
+ * Liest den separaten lokalen Bridge-Status ohne Bibliotheks- oder Projektdaten.
+ * @returns {Promise<{ok: boolean, data?: {status: string, services: object}, error?: string}>}
+ */
+export async function getBridgeStatus() {
+  return _request("GET", "/api/status");
 }
 
 // ---------------------------------------------------------------------------

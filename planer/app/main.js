@@ -5,7 +5,7 @@
  * Mounted die einzelnen Views (Bibliothek, Projekte) on demand.
  */
 
-import { checkLibraryHealth, checkProjectsHealth } from "./api.js";
+import { getBridgeStatus } from "./api.js";
 import { mount as mountBibliothek, unmount as unmountBibliothek, reload as reloadBibliothek } from "./bibliothek.js";
 import { mount as mountProjekte, unmount as unmountProjekte, reload as reloadProjekte } from "./projekte.js";
 import { mount as mountAssets, unmount as unmountAssets, reload as reloadAssets } from "./assets.js";
@@ -116,17 +116,15 @@ function switchTab(id) {
 // ---------------------------------------------------------------------------
 
 async function checkStatus() {
-  const [lib, proj] = await Promise.all([
-    checkLibraryHealth(),
-    checkProjectsHealth(),
-  ]);
-
-  const online = lib.ok || proj.ok;
-
-  statusDot.className = "status-dot " + (online ? "online" : "offline");
-  statusText.textContent = online
-    ? "Recorder verbunden"
-    : "Recorder nicht erreichbar";
+  const result = await getBridgeStatus();
+  const status = result.ok ? result.data.status : "offline";
+  const labels = {
+    online: "Recorder verbunden",
+    partial: "Recorder teilweise erreichbar",
+    offline: "Recorder nicht erreichbar",
+  };
+  statusDot.className = "status-dot " + (labels[status] ? status : "offline");
+  statusText.textContent = labels[status] || labels.offline;
 }
 
 // Alle 10 Sekunden Status prüfen

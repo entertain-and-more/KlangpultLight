@@ -104,6 +104,7 @@ p  { line-height: 1.6; }
   flex-shrink: 0;
 }
 #status-dot.online { background: var(--success); }
+#status-dot.partial { background: var(--warning); }
 #status-dot.offline { background: var(--danger); }
 
 #app-main {

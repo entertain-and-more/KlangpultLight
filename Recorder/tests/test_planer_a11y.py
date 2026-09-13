@@ -77,6 +77,24 @@ def test_planer_index_html_semantics():
     )
 
 
+def test_planer_bridge_status_ist_lokal_und_fuer_teilausfaelle_verstaendlich():
+    """Der sichtbare Verbindungsstatus basiert auf einem datenfreien lokalen Readback."""
+    api_path = os.path.join(PLANER_DIR, "app", "api.js")
+    main_path = os.path.join(PLANER_DIR, "app", "main.js")
+    css_path = os.path.join(PLANER_DIR, "styles", "main.css")
+
+    with open(api_path, "r", encoding="utf-8") as f:
+        api_content = f.read()
+    with open(main_path, "r", encoding="utf-8") as f:
+        main_content = f.read()
+    with open(css_path, "r", encoding="utf-8") as f:
+        css_content = f.read()
+
+    assert '"/api/status"' in api_content, "Der Planer braucht einen separaten Status-Readback"
+    assert "Recorder teilweise erreichbar" in main_content, "Teilausfälle müssen verständlich benannt sein"
+    assert "#status-dot.partial" in css_content, "Der Teilausfall braucht eine sichtbare Statusfarbe"
+
+
 def test_planer_assets_a11y_attributes():
     """Prüft, dass assets.js Tastatursemantik, Formular-Labels und ARIA-Attribute besitzt."""
     assets_path = os.path.join(PLANER_DIR, "app", "assets.js")

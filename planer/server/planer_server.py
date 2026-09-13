@@ -71,14 +71,17 @@ mimetypes.add_type("text/css", ".css")
 class PlanerHandler(BaseHTTPRequestHandler):
     """HTTP-Handler für den Planer-Server.
 
-    Proxy-Logik: /api/library* → library_port, /api/projects* → projects_port
+    Proxy-Logik: /api/library* → library_port, /api/projects* → projects_port.
+    ``/api/status`` prüft beide Recorder-Dienste ohne Nutzdaten abzurufen.
     Alles andere: statische Dateien aus _STATIC_ROOT.
     """
 
     def do_GET(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
 
-        if path.startswith("/api/library"):
+        if path == "/api/status":
+            self._bridge_status()
+        elif path.startswith("/api/library"):
             self._proxy(self.server.library_port)  # type: ignore[attr-defined]
         elif path.startswith("/api/projects"):
             self._proxy(self.server.projects_port)  # type: ignore[attr-defined]
@@ -107,8 +110,50 @@ class PlanerHandler(BaseHTTPRequestHandler):
             self._fehler(405, "Methode nicht erlaubt")
 
     # -------------------------------------------------------------------------
-    # Proxy
+    # Bridge-Status und Proxy
     # -------------------------------------------------------------------------
+
+    def _bridge_status(self) -> None:
+        """Liest den Health-Zustand beider Recorder-Dienste separat aus.
+
+        Der Planer braucht für seine Kopfzeile keinen vollständigen Bibliotheks-
+        oder Projektdatenabruf. Der Endpoint bleibt daher lokal, read-only und
+        liefert auch bei einem teilweisen Ausfall eine strukturierte Antwort.
+        """
+        library_ok = self._probe_health(self.server.library_port)  # type: ignore[attr-defined]
+        projects_ok = self._probe_health(self.server.projects_port)  # type: ignore[attr-defined]
+        if library_ok and projects_ok:
+            status = "online"
+        elif library_ok or projects_ok:
+            status = "partial"
+        else:
+            status = "offline"
+        self._json_response(
+            200,
+            {
+                "status": status,
+                "services": {
+                    "library": {"ok": library_ok},
+                    "projects": {"ok": projects_ok},
+                },
+            },
+        )
+
+    @staticmethod
+    def _probe_health(backend_port: int) -> bool:
+        """Prüft den lokalen Health-Endpunkt eines Recorder-Dienstes."""
+        conn: http.client.HTTPConnection | None = None
+        try:
+            conn = http.client.HTTPConnection("127.0.0.1", backend_port, timeout=2)
+            conn.request("GET", "/api/health")
+            response = conn.getresponse()
+            body = json.loads(response.read().decode("utf-8"))
+            return response.status == 200 and body == {"status": "ok"}
+        except (OSError, ValueError, json.JSONDecodeError):
+            return False
+        finally:
+            if conn is not None:
+                conn.close()
 
     def _proxy(self, backend_port: int) -> None:
         """Leitet die Anfrage an den Backend-Dienst weiter.
@@ -199,13 +244,17 @@ class PlanerHandler(BaseHTTPRequestHandler):
     # Hilfsmethoden
     # -------------------------------------------------------------------------
 
-    def _fehler(self, status: int, meldung: str) -> None:
-        body = json.dumps({"error": meldung}, ensure_ascii=False).encode("utf-8")
+    def _json_response(self, status: int, daten: dict) -> None:
+        """Sendet einen kleinen UTF-8-JSON-Body."""
+        body = json.dumps(daten, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def _fehler(self, status: int, meldung: str) -> None:
+        self._json_response(status, {"error": meldung})
 
     def log_message(self, fmt: str, *args) -> None:  # noqa: D102
         _log.debug("PlanerServer: " + fmt, *args)

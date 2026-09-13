@@ -89,6 +89,13 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 - Phase-7-Planer-Slice (`TW-KLANGPULTLIGHT-02`): End-to-End-Integration von Assets, Line-Ablaufsteuerung und Workspace-v1 JSON Export/Import.
 - Integrationstests in `Recorder/tests/test_projects_api.py`: 4 neue Testfunktionen mit 15+ Assertions für Assets-CRUD, automatisches Line-Cleanup beim Löschen von Assets, Line-Validierung und Persistenz nach Serverneustart.
 - Pytest-Vollsuite auf 417 bestandene Tests (417 passed, 1 skipped) erweitert.
+### Hinzugefügt / Added (Web-Bridge-Status 2026-08-20)
+- Der lokale Planer stellt mit `GET /api/status` einen datenfreien Readback für
+  Library- und Projects-Dienst bereit. Die Kopfzeile unterscheidet nun
+  vollständige Verbindung, Teilausfall und fehlende Recorder-Bridge, ohne dafür
+  Aufnahmen oder Projekte laden zu müssen.
+- Regressionen decken Online-, Teil- und Offline-Status des Proxy-Verbunds sowie
+  die verständliche sichtbare Teilausfallanzeige ab.
 
 ### Hinzugefügt / Added (SOFTWARE HIGH END 2026-08-03)
 - Reproduzierbare, isolierte Live-Fixture für die echte Planer-Browserabnahme:

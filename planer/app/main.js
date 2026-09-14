@@ -59,11 +59,15 @@ const detailPanel = document.getElementById("detail-panel");
 
 // Für jeden Tab ein View-Div + Nav-Button anlegen
 const viewEls = {};
+const tabIds = Object.keys(TABS);
+navTabs.setAttribute("role", "tablist");
 for (const [id, tab] of Object.entries(TABS)) {
   // View-Element
   const view = document.createElement("div");
   view.id = `view-${id}`;
   view.className = "view";
+  view.setAttribute("role", "tabpanel");
+  view.setAttribute("aria-labelledby", `tab-${id}`);
   mainEl.insertBefore(view, detailPanel);
   viewEls[id] = view;
 
@@ -73,8 +77,26 @@ for (const [id, tab] of Object.entries(TABS)) {
   btn.textContent = tab.label;
   btn.dataset.tab = id;
   btn.type = "button";
-  btn.setAttribute("aria-pressed", "false");
+  btn.id = `tab-${id}`;
+  btn.setAttribute("role", "tab");
+  btn.setAttribute("aria-controls", `view-${id}`);
+  btn.setAttribute("aria-selected", "false");
+  btn.tabIndex = -1;
   btn.addEventListener("click", () => switchTab(id));
+  btn.addEventListener("keydown", (event) => {
+    const currentIndex = tabIds.indexOf(id);
+    let targetIndex = null;
+    if (event.key === "ArrowRight") targetIndex = (currentIndex + 1) % tabIds.length;
+    if (event.key === "ArrowLeft") targetIndex = (currentIndex - 1 + tabIds.length) % tabIds.length;
+    if (event.key === "Home") targetIndex = 0;
+    if (event.key === "End") targetIndex = tabIds.length - 1;
+    if (targetIndex === null) return;
+
+    event.preventDefault();
+    const targetId = tabIds[targetIndex];
+    switchTab(targetId);
+    navTabs.querySelector(`[data-tab="${targetId}"]`)?.focus();
+  });
   navTabs.appendChild(btn);
 }
 
@@ -91,8 +113,8 @@ function switchTab(id) {
     viewEls[_currentTab].classList.remove("active");
     const previousButton = navTabs.querySelector(`[data-tab="${_currentTab}"]`);
     previousButton?.classList.remove("active");
-    previousButton?.setAttribute("aria-pressed", "false");
-    previousButton?.removeAttribute("aria-current");
+    previousButton?.setAttribute("aria-selected", "false");
+    if (previousButton) previousButton.tabIndex = -1;
   }
 
   // Detail-Panel leeren
@@ -103,8 +125,8 @@ function switchTab(id) {
   viewEls[id].classList.add("active");
   const activeButton = navTabs.querySelector(`[data-tab="${id}"]`);
   activeButton?.classList.add("active");
-  activeButton?.setAttribute("aria-pressed", "true");
-  activeButton?.setAttribute("aria-current", "page");
+  activeButton?.setAttribute("aria-selected", "true");
+  if (activeButton) activeButton.tabIndex = 0;
 
   // Neuen View mounten
   viewEls[id].innerHTML = "";

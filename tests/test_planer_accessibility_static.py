@@ -17,8 +17,11 @@ def test_planer_header_controls_expose_accessible_state():
     assert 'aria-live="polite"' in html
     assert 'aria-atomic="true"' in html
 
-    assert 'btn.setAttribute("aria-pressed", "false")' in main_js
-    assert 'previousButton?.setAttribute("aria-pressed", "false")' in main_js
-    assert 'previousButton?.removeAttribute("aria-current")' in main_js
-    assert 'activeButton?.setAttribute("aria-pressed", "true")' in main_js
-    assert 'activeButton?.setAttribute("aria-current", "page")' in main_js
+    assert 'navTabs.setAttribute("role", "tablist")' in main_js
+    assert 'btn.setAttribute("role", "tab")' in main_js
+    assert 'btn.setAttribute("aria-controls", `view-${id}`)' in main_js
+    assert 'view.setAttribute("role", "tabpanel")' in main_js
+    assert 'previousButton?.setAttribute("aria-selected", "false")' in main_js
+    assert 'activeButton?.setAttribute("aria-selected", "true")' in main_js
+    assert 'event.key === "ArrowRight"' in main_js
+    assert 'event.key === "ArrowLeft"' in main_js

@@ -23,6 +23,16 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 - Vollständige Code-Hygiene: 86 Ruff-Linter-Meldungen restlos bereinigt, 0 Fehler.
 - `llms.txt` auf Stand 2026-08-22 synchronisiert.
 
+## [0.1.5] - 2026-09-14
+
+### Discoverability, 17-Punkte-Navigation, Vergleichsmatrix & Drittanbieter-Lizenzaudit (Pfad B) [G 2026-09-14]
+- **17-Punkte Schnellnavigation & Bilinguale Ankerparität**: `README.md` und `README_de.md` um Zielgruppen & Auffindbarkeit, Vergleichsmatrix und Drittanbieter-Lizenzen auf 17 Schnellnavigationspunkte erweitert mit 100% mutualer Ankerparität.
+- **Zielgruppen & SEO-Auffindbarkeit**: 4 Kern-Personas (`[PERSONA-01]` bis `[PERSONA-04]`) sowie High-Intent Suchbegriffe auf Deutsch und Englisch für Podcaster, Streamer, Medienplaner und Multi-Agenten-Entwickler integriert.
+- **10-Dimensionale Vergleichsmatrix**: Umfassender technischer Vergleich von Klangpult light gegenüber Audacity, OBS Studio, Riverside.fm/Descript und Ad-Hoc OS-Tools über alle 10 Governance-Invarianten (`INV-LOCAL-01` bis `INV-SLA-10`).
+- **Drittanbieter-Lizenz- & Transparenz-Audit (`THIRD_PARTY_LICENSES.md`)**: Vollständiges SPDX-Lizenzaudit aller Laufzeit- und Entwicklungsbibliotheken (PySide6 LGPL-3.0 dynamische Bindung nach LGPLv3 § 4, sounddevice, soundfile, numpy, websockets, mss, opencv-python, faster-whisper, FFmpeg Subprozess-Isolation, Zero-Copyleft-Garantie auf Nutzermedien).
+- **PEP 621 Projekt-Metadaten**: `pyproject.toml` URLs um `Third-Party Licenses` und `Marketing Log` erweitert.
+- **Automatisierte Vertragstests**: `tests/test_metadata.py` um Prüfungen für die 17-Punkte-Navigation, 4 Personas, 10-dimensionale Vergleichsmatrix, Governance-Invarianten, Third-Party URLs und `THIRD_PARTY_LICENSES.md` erweitert.
+
 ## [0.1.4] - 2026-09-11
 
 ### Onedir-Packaging, Desktop-Integration & Standalone-Planer-Bundling (TW-KLANGPULTLIGHT-12) [G 2026-09-11]

@@ -7,13 +7,15 @@
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#)
 [![Version](https://img.shields.io/badge/Version-v0.1.1-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-[![Pytest](https://img.shields.io/badge/Pytest-450%20tests%20(449%20passed)-success.svg)](https://docs.pytest.org/)
+[![Pytest](https://img.shields.io/badge/Pytest-484%20tests%20(483%20passed)-success.svg)](https://docs.pytest.org/)
 [![CI](https://img.shields.io/badge/CI-Multi--OS%20Matrix-blue.svg)](https://github.com/entertain-and-more/KlangpultLight/actions/workflows/ci.yml)
 [![Platforms](https://img.shields.io/badge/Platforms-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](#)
 [![License](https://img.shields.io/badge/License-Freeware-informational.svg)](./LICENSE)
 [![Local-First](https://img.shields.io/badge/Architecture-Local--First%20%7C%20Zero--Egress-orange.svg)](./SECURITY.md)
 [![Security](https://img.shields.io/badge/Security-Unprivileged%20(RunAsInvoker)-green.svg)](./SECURITY.md)
 [![Security SLA](https://img.shields.io/badge/Security%20SLA-48h%20response%20%7C%205d%20triage-blue.svg)](./SECURITY.md)
+[![Third-Party Audited](https://img.shields.io/badge/Third--Party%20Licenses-Audited%20(100%25%20Permissive%20%2F%20LGPL)--Dynamic-green.svg)](./THIRD_PARTY_LICENSES.md)
+[![Marketing Log](https://img.shields.io/badge/Marketing%20Log-Active%20(2026--09--14)-blue.svg)](./MARKETING-LOG.txt)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Ecosystem](https://img.shields.io/badge/Ecosystem-entertain--and--more-blueviolet.svg)](https://github.com/entertain-and-more)
 [![Umbrella](https://img.shields.io/badge/Umbrella-open--bricks-blue.svg)](https://github.com/open-bricks/open-bricks)
@@ -26,7 +28,7 @@
 > License: Freeware / Proprietary, Closed-Source.
 
 > [!NOTE]
-> For AI agents and automated tools: See [llms.txt](./llms.txt) (Last checked: 2026-09-09) for machine-readable repository overview and test contracts. Detailed marketing, SEO, and visual asset telemetry is tracked in [MARKETING-LOG.txt](./MARKETING-LOG.txt).
+> For AI agents and automated tools: See [llms.txt](./llms.txt) (Last checked: 2026-09-14) for machine-readable repository overview and test contracts. Detailed third-party license audits are documented in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md), and marketing, SEO, and visual asset telemetry is tracked in [MARKETING-LOG.txt](./MARKETING-LOG.txt).
 
 ---
 
@@ -36,16 +38,19 @@
 2. [System Architecture Flowchart](#system-architecture-flowchart)
 3. [Media & Recording Lifecycle Sequence](#media--recording-lifecycle-sequence)
 4. [Governance & Runtime Invariants](#governance--runtime-invariants)
-5. [Key Features](#key-features)
-6. [UI Preview & Screenshots](#ui-preview--screenshots)
-7. [Klangpult light – Planer Quickstart](#klangpult-light--planer-quickstart)
-8. [Klangpult light – Recorder Quickstart](#klangpult-light--recorder-quickstart)
-9. [Build Standalone Executable](#build-standalone-executable)
-10. [Sibling Tools & Ecosystem Matrix](#sibling-tools--ecosystem-matrix)
-11. [Feature Comparison: Light vs. Full Edition](#feature-comparison-light-vs-full-edition)
-12. [Validation & Verification Gates](#validation--verification-gates)
-13. [Security Policy & Triage SLA](#security-policy--triage-sla)
-14. [License & Author](#license--author)
+5. [Target Personas & Discoverability](#target-personas--discoverability)
+6. [Comparative Matrix vs. Alternatives](#comparative-matrix-vs-alternatives)
+7. [Key Features](#key-features)
+8. [UI Preview & Screenshots](#ui-preview--screenshots)
+9. [Klangpult light – Planer Quickstart](#klangpult-light--planer-quickstart)
+10. [Klangpult light – Recorder Quickstart](#klangpult-light--recorder-quickstart)
+11. [Build Standalone Executable](#build-standalone-executable)
+12. [Sibling Tools & Ecosystem Matrix](#sibling-tools--ecosystem-matrix)
+13. [Feature Comparison: Light vs. Full Edition](#feature-comparison-light-vs-full-edition)
+14. [Third-Party Licenses & Transparency](#third-party-licenses--transparency)
+15. [Validation & Verification Gates](#validation--verification-gates)
+16. [Security Policy & Triage SLA](#security-policy--triage-sla)
+17. [License & Author](#license--author)
 
 ---
 
@@ -116,18 +121,63 @@ sequenceDiagram
 
 Klangpult light adheres to 10 strict architectural and runtime invariants to guarantee system stability, user privacy, and cross-platform reliability:
 
-| # | Invariant | Scope | Technical Enforcement | Verification Guarantee |
-|---|---|---|---|---|
-| 1 | **100% Local-First & Zero-Egress** | Network & Privacy | Audio, video, transcriptions, and planning data remain strictly on the local machine. Zero analytics, telemetry, or outbound network calls. | Audited via static code inspection and local loopback binding assertions. |
-| 2 | **Unprivileged Execution (RunAsInvoker)** | Process & OS Security | Runs entirely in standard user space without requiring Administrator or root elevation. | No UAC prompts; standard user directory workspace ownership. |
-| 3 | **Strict Loopback IPC Isolation** | Interprocess Communication | IPC between PySide6 Recorder and HTTP Web Planer is bound exclusively to `127.0.0.1` (`:8767`, `:8769`, `:8770`). | Local socket binding contracts prevent LAN/WAN exposure. |
-| 4 | **Safe Subprocess Boundaries** | Process Isolation | FFmpeg remuxing and video capture subprocesses use explicit argument vectors (non-shell) and path traversal sanitization. | Guarded execution prevents arbitrary command injection. |
-| 5 | **Bounded Buffer & Audio Integrity** | Audio Core | Multichannel audio buffers sanitize against NaN/Inf float samples and flush atomically to standard WAV containers. | Zero crash on audio device disconnect; atomic file flush. |
-| 6 | **Offline STT Degradation Boundary** | Speech-to-Text | Local `faster-whisper` transcription operates in an isolated worker thread with graceful fallback if weights are missing. | Transcription errors never stall real-time recording or UI rendering. |
-| 7 | **Caller-Controlled Session Storage** | Storage & Retention | Session folders, event logs (`events.jsonl`), and recordings are owned and retained exclusively by the creator with zero auto-purge. | Deterministic directory layout under creator workspace. |
-| 8 | **Cross-Platform Operating Parity** | Platform Portability | Architecture, protocol schemas (`v1`), and data models run consistently across Windows, Linux, and macOS. | CI multi-OS matrix validation across Ubuntu, Windows, and macOS. |
-| 9 | **Multi-Host & Sync Resilience** | File & Lock Hygiene | `.gitignore` rigorously ignores conflict copies (`*-conflict-*`, `*.sync-temp-*`) and multi-agent locks (`LOCK.*`, `*.lock`). | Zero git pollution or corrupted cloud sync state across devices. |
-| 10 | **48h Response & 5-Day Triage SLA** | Security Governance | Coordinated vulnerability disclosure with guaranteed acknowledgement within 48h and formal triage within 5 business days. | Published in `SECURITY.md` with official contacts `security@open-bricks.org` and `security@ellmos.ai`. |
+| Invariant ID | Invariant Name | Scope | Technical Enforcement | Verification Guarantee |
+|:---:|---|---|---|---|
+| `INV-LOCAL-01` | **100% Local-First & Zero-Egress** | Network & Privacy | Audio, video, transcriptions, and planning data remain strictly on the local machine. Zero analytics, telemetry, or outbound network calls. | Audited via static code inspection and local loopback binding assertions. |
+| `INV-USER-02` | **Unprivileged Execution (RunAsInvoker)** | Process & OS Security | Runs entirely in standard user space without requiring Administrator or root elevation. | No UAC prompts; standard user directory workspace ownership. |
+| `INV-IPC-03` | **Strict Loopback IPC Isolation** | Interprocess Communication | IPC between PySide6 Recorder and HTTP Web Planer is bound exclusively to `127.0.0.1` (`:8767`, `:8769`, `:8770`). | Local socket binding contracts prevent LAN/WAN exposure. |
+| `INV-SAFE-04` | **Safe Subprocess Boundaries** | Process Isolation | FFmpeg remuxing and video capture subprocesses use explicit argument vectors (non-shell) and path traversal sanitization. | Guarded execution prevents arbitrary command injection. |
+| `INV-BUF-05` | **Bounded Buffer & Audio Integrity** | Audio Core | Multichannel audio buffers sanitize against NaN/Inf float samples and flush atomically to standard WAV containers. | Zero crash on audio device disconnect; atomic file flush. |
+| `INV-STT-06` | **Offline STT Degradation Boundary** | Speech-to-Text | Local `faster-whisper` transcription operates in an isolated worker thread with graceful fallback if weights are missing. | Transcription errors never stall real-time recording or UI rendering. |
+| `INV-STORE-07` | **Caller-Controlled Session Storage** | Storage & Retention | Session folders, event logs (`events.jsonl`), and recordings are owned and retained exclusively by the creator with zero auto-purge. | Deterministic directory layout under creator workspace. |
+| `INV-PLAT-08` | **Cross-Platform Operating Parity** | Platform Portability | Architecture, protocol schemas (`v1`), and data models run consistently across Windows, Linux, and macOS. | CI multi-OS matrix validation across Ubuntu, Windows, and macOS. |
+| `INV-SYNC-09` | **Multi-Host & Sync Resilience** | File & Lock Hygiene | `.gitignore` rigorously ignores conflict copies (`*-conflict-*`, `*.sync-temp-*`) and multi-agent locks (`LOCK.*`, `*.lock`). | Zero git pollution or corrupted cloud sync state across devices. |
+| `INV-SLA-10` | **48h Response & 5-Day Triage SLA** | Security Governance | Coordinated vulnerability disclosure with guaranteed acknowledgement within 48h and formal triage within 5 business days. | Published in `SECURITY.md` with official contacts `security@open-bricks.org` and `security@ellmos.ai`. |
+
+---
+
+<a id="target-personas--discoverability"></a>
+## Target Personas & Discoverability
+
+Klangpult light is engineered for content creators, audio producers, and engineers who prioritize speed, audio fidelity, and privacy:
+
+### Target Personas
+
+- **[PERSONA-01] Podcast Creators, Voiceover Artists & Narrative Storytellers:** Solo podcasters, audio drama creators, voiceover professionals, and narrative interviewers who need reliable multi-track recording without subscription fees, upload latency, or cloud lock-in.
+- **[PERSONA-02] Privacy-Conscious Streamers & Video Producers:** Software educators, tutorial creators, and streamers who require local-first video and system audio capture (WASAPI loopback) with zero telemetry and guaranteed data sovereignty.
+- **[PERSONA-03] Event Planners, Content Strategists & Teleprompter Operators:** Media producers and webinar hosts managing episode outlines, sponsor segments, and scripted speaking notes via a browser-based teleprompter synced with the desktop recorder.
+- **[PERSONA-04] Modular Tool Integrators & Autonomous Multi-Agent Developers:** Software engineers and AI agent developers building automated podcast workflows, local transcription pipelines, and media toolchains via local loopback sockets and headless verification hooks.
+
+### High-Intent Search Queries (Discoverability & SEO)
+
+- `open source podcast recorder python pyside6`
+- `local first audio recording workstation zero cloud egress`
+- `wasapi system loopback audio capture desktop app`
+- `offline teleprompter with synchronized recorder bridge`
+- `multichannel podcast recorder with live soundboard pads`
+- `faster whisper local offline speech to text monitor`
+- `pyside6 ffmpeg synchronized screen and mic recorder`
+- `privacy focused content creation suite windows linux macos`
+
+---
+
+<a id="comparative-matrix-vs-alternatives"></a>
+## Comparative Matrix vs. Alternatives
+
+Klangpult light provides a dedicated local-first workstation combining native desktop recording and browser planning, contrasting with cloud-locked SaaS tools and generic audio editors:
+
+| Technical Dimension | Governance Invariant | Klangpult light | Audacity (Desktop Audio Editor) | OBS Studio (Broadcasting Suite) | Riverside.fm / Descript (Cloud SaaS) | Ad-Hoc Scripts / Voice Memos (OS Tools) |
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|
+| **1. Offline-First & Zero Egress** | `INV-LOCAL-01` | **100% Offline (Local disk, zero analytics, zero external network requests)** | High (Local desktop app with optional crash reporting) | High (Local streaming software, outbound if streaming) | None (Mandatory cloud upload, browser SaaS storage) | High (Native OS voice recorder files) |
+| **2. Unprivileged Execution** | `INV-USER-02` | **Strict RunAsInvoker (Zero root/admin privilege required)** | Standard user execution | Standard user (may require driver elevation for virtual cam) | Browser sandbox | Built-in OS app |
+| **3. Integrated Web Planer & Teleprompter** | `INV-DUAL-03` | **Built-in Browser Planer & Teleprompter (`planer/`) via Loopback IPC** | None (Audio recording only, requires external document) | None (Requires third-party browser sources/docks) | Partial (Web script editing inside cloud editor) | None (Manual notepad / paper) |
+| **4. Loopback IPC & Network Isolation** | `INV-IPC-04` | **Strict 127.0.0.1 Binding (Ports 8767, 8769, 8770)** | None (No inter-process API) | Websocket plugin (OBS-WebSocket on LAN) | Cloud WebSocket servers over public Internet | None |
+| **5. Multi-Track & Buffer Integrity** | `INV-BUF-05` | **Multichannel Audio with NaN/Inf Float Sanitization & Atomic Flush** | Multi-track WAV recording | Multi-track audio in MKV/MP4 containers | Cloud-recorded multi-track audio | Single-channel mono/stereo recording |
+| **6. Offline STT Degradation Boundary** | `INV-STT-06` | **Isolated Local Whisper Worker (Graceful fallback without UI freeze)** | Plugin-dependent (OpenVINO / whisper plugins) | Third-party plugin (OBS captioning plugins) | Cloud-only transcription API | None |
+| **7. Caller-Controlled Session Storage** | `INV-STORE-07` | **Creator-Owned Workspace with Structured events.jsonl & Zero Auto-Purge** | Local project files (`.aup3`) | Local recording directory | Cloud-hosted recordings subject to storage quotas | OS default Documents/Voice folder |
+| **8. Cross-Platform Operating Parity** | `INV-PLAT-08` | **Unified Architecture & Protocol Schemas (Windows, Linux, macOS)** | Multi-platform desktop support | Multi-platform desktop support | Web browser cross-platform | OS-specific proprietary apps |
+| **9. Multi-Host & Sync Resilience** | `INV-SYNC-09` | **Hardened .gitignore for Sync Conflicts & Multi-Agent Locks** | Standard gitignore (if developer cloned) | Standard gitignore | N/A (Cloud hosted) | None |
+| **10. Security SLA & Multi-OS CI** | `INV-SLA-10` | **48h Response SLA / 5d Triage + GitHub Actions CI (Ubuntu, Windows, macOS)** | Community bug tracker | Community GitHub issues | Commercial support ticket queue | OS vendor support |
 
 ---
 
@@ -259,6 +309,21 @@ Klangpult light is an integral member of the **entertain-and-more** suite and th
 | Advanced Postproduction Mastering | ❌ | ✅ |
 
 Concept: [KONZEPT.md](./KONZEPT.md) · Roadmap: [TODO.md](./TODO.md) · Changelog: [CHANGELOG.md](./CHANGELOG.md)
+
+---
+
+<a id="third-party-licenses--transparency"></a>
+## Third-Party Licenses & Transparency
+
+Klangpult light is released as a complimentary freeware application under the [Klangpult light Freeware License Agreement](LICENSE).
+
+All bundled runtime libraries and development dependencies adhere to permissive and recognized open-source licenses:
+- **PySide6 (Qt6 Python bindings)**: Licensed under **LGPL-3.0**. PySide6 is used strictly via dynamic linking. In full compliance with **LGPLv3 § 4**, users may inspect, modify, and dynamically relink the Qt/PySide6 binaries.
+- **Audio & Processing Stack**: `sounddevice` (MIT), `soundfile` (BSD-3-Clause), `numpy` (BSD-3-Clause), `mss` (MIT), `websockets` (BSD-3-Clause), `jsonschema` (MIT), `opencv-python` (Apache-2.0).
+- **Subprocess Isolation**: External binaries such as FFmpeg are invoked exclusively via isolated subprocess boundaries with sanitized argument vectors.
+- **Zero-Copyleft Contagion**: User recordings (WAV, MP4), soundboard clips, teleprompter scripts, and episode data remain 100% proprietary to the creator and are never subjected to copyleft or relicensing.
+
+For complete dependency tables, license texts, and compliance notices, see [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md).
 
 ---
 

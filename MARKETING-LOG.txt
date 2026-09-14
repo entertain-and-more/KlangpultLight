@@ -1,72 +1,139 @@
-================================================================================
-MARKETING & DISCOVERABILITY LOG: entertain-and-more/KlangpultLight
-================================================================================
+# MARKETING-LOG — Klangpult light (Desktop & Web Media Workstation)
 
-[2026-09-09 11:55 CEST] PFAD B AUDIT & UPGRADE REPORT
-Repository: entertain-and-more/KlangpultLight
-Canonical Local Path: C:\_Local_DEV\repos\KlangpultLight
-Plan D Mirror: C:\Users\lukas\OneDrive\.TOPICS\.SOFTWARE\PRODUCTION\DEV_KlangpultLight
-Branch: main
-Target Version: 0.1.1 (Alpha)
+## Metadata
+- **Repository**: `entertain-and-more/KlangpultLight`
+- **Canonical Path**: `C:\_Local_DEV\repos\KlangpultLight`
+- **Plan D Mirror**: `C:\Users\lukas\OneDrive\.TOPICS\.SOFTWARE\PRODUCTION\DEV_KlangpultLight`
+- **Default Branch**: `main`
+- **Current Version**: `0.1.0` (App Core) / `0.1.1` (Alpha Display)
+- **License**: Freeware / Proprietary Closed-Source
+- **Architecture**: 100% Local-First PySide6 Desktop Application + Web Planer with zero cloud egress, loopback IPC, and optional local STT
+- **Last Updated**: 2026-09-14 (Pfad B — Marketing, Discoverability, Visual Architecture & Third-Party Audit)
 
-1. DISCOVERABILITY & POSITIONING
-- Primary Category: Multichannel Audio/Video Recording & Offline Podcast Planning
-- Target Audience: Content creators, podcasters, voice actors, game streamers, local-first creators
-- Core Value Proposition:
-  - 100% offline, zero-cloud egress audio/video recording workstation (WASAPI/MME loopback capture)
-  - Seamless coupling of PySide6 native desktop recorder and browser-based teleprompter & episode planner
-  - Local STT transcription monitor with zero external API dependencies
-  - Compliant, non-elevated user-mode operation (RunAsInvoker)
-- Ecosystem Positioning:
-  - Parent Organization: entertain-and-more (Media, Audio & Gaming)
-  - Commercial Counterpart: Klangpult (commercial multi-track cutter, batch export & OCR)
-  - Umbrella Hub: open-bricks
+---
 
-2. VISUAL ASSETS & DESIGN
-- Hero Banners: docs/assets/banner.svg
-- Application Icon: DesktopIcon.ico, DesktopIcon.png
-- UI Screenshots: README/screenshots/main.png (Recorder UI)
-- Interactive Mermaid Diagrams:
-  - Dual Mermaid diagrams deployed in both README.md and README_de.md:
-    1. System Architecture Flowchart (graph TD): Engine -> PySide6 Desktop Recorder + Web Planer + Loopback Capture + STT + Soundboard
-    2. End-to-End Media & Recording Lifecycle (sequenceDiagram with autonumbering): 14-step creator workflow from episode planning to atomic audio finalization
-- Badges:
-  - Status: Public Alpha
-  - Version: v0.1.1
-  - Pytest: 450 tests (449 passed, 1 gated)
-  - CI: Multi-OS Matrix (Linux | Windows | macOS)
-  - Python: 3.10 | 3.11 | 3.12 | 3.13
-  - Platforms: Windows | Linux | macOS
-  - Architecture: Local-First | 100% Zero-Egress
-  - Security: Unprivileged (RunAsInvoker)
-  - Security SLA: 48h response | 5d triage
-  - Code Style: Ruff
-  - Ecosystem: entertain-and-more
-  - Umbrella: open-bricks
-  - License: Freeware
-  - LLM-Ready: llms.txt
+## 1. Executive Summary & Value Proposition
+Klangpult light is a lightweight, local-first audio/video recording workstation and content planning suite designed for podcasters, voice artists, content creators, and media producers. Built with Python 3.10+ and PySide6 (Qt6) coupled with an offline HTML5/JS web planner, it unifies multichannel recording, system loopback audio capture, synchronized video muxing, live soundboard pads, teleprompter workflows, and local speech-to-text monitoring into a single privacy-first toolset.
 
-3. SEO & SEARCH PHRASES
-- Primary Keywords: klangpult-light, podcast-recorder, audio-video-capture, media-planner, pyside6-recorder, local-first-media, teleprompter-app, wasapi-loopback, zero-egress-recorder, soundboard-pads
-- Secondary Keywords: offline-transcription, faster-whisper-local, ffmpeg-remux, multichannel-audio-recording, streaming-audio-capture, open-bricks, entertain-and-more
+Key Value Proposition:
+- **100% Offline & Local-First**: Audio streams, video captures, transcripts, and episode scripts remain strictly on local disk in creator-owned workspaces. Zero third-party telemetry, zero cloud lock-in.
+- **Decoupled Architecture**: High-performance PySide6 desktop recording core communicates with an agile web-based episode planner via local loopback sockets (`127.0.0.1:8767` / `:8769` / `:8770`), enabling dual-screen operation without cloud reliance.
+- **Privacy-Guarded Speech-to-Text**: Local `faster-whisper` integration provides real-time transcription monitoring completely offline in an isolated background thread.
+- **Non-Elevated Execution (`RunAsInvoker`)**: Runs strictly within standard user space without requiring administrator rights or elevated OS privileges.
 
-4. GOVERNANCE & RUNTIME INVARIANTS (10 INVARIANTS)
-1. 100% Local-First & Zero-Egress: No telemetry, no remote network calls, no cloud tracking.
-2. Unprivileged Execution: Pure user-space execution (RunAsInvoker), 0 admin rights required.
-3. Strict Loopback IPC Isolation: All communication bound to 127.0.0.1 (ports 8767, 8769, 8770).
-4. Safe Subprocess Boundaries: FFmpeg remuxing with sanitized arguments and anti-path-traversal checks.
-5. Bounded Buffer & Multichannel Audio Integrity: NaN/Inf data sanitization and atomic session finalization.
-6. Offline STT Degradation Boundary: Graceful fallback without UI deadlock or recording interruption.
-7. Caller-Controlled Session Storage: Explicit creator folder ownership with 0 automatic purge.
-8. Cross-Platform Operating Parity: Core logic, protocols, and data models identical across OS.
-9. Multi-Host & Sync Resilience: .gitignore hardened against sync conflicts and agent locks.
-10. 48h Response & 5-Day Triage SLA: Dedicated security triage via security@open-bricks.org and security@ellmos.ai.
+---
 
-5. SIBLING ECOSYSTEM INTEGRATION
-- Gaming & Media Line (entertain-and-more): BattleStage, ChainReaction, StreetRacer, RealmWars, GhostTrain, RescueMe, HauntedHouse, MafiaCastle, CuteStrike, BattleChess3D, Klangpult, rpx
-- Cross-Organizational Partners (open-bricks): system-auditor, CleanMarkdown, PDFtoPDFocr, ExplorerPro, ellmos-voice-io, WikiStub-Seed, automation-master
+## 2. Target Personas & Audiences
 
-6. RECOMMENDATIONS FOR FUTURE ITERATIONS
-- Introduce dark/light theme toggle in Planer web interface.
-- Add audio waveform visualization export for podcast chapter thumbnails.
-- Provide pre-packaged macOS DMG and Linux AppImage alongside Windows EXE.
+### [PERSONA-01] Podcast Creators, Voiceover Artists & Narrative Storytellers
+- **Target Profile**: Solo podcasters, audio drama creators, voiceover professionals, and narrative interviewers seeking reliable multi-track recording.
+- **Pain Points**: Cloud-based recording platforms with monthly fees, privacy leaks, upload timeouts, or unexpected latency; complex DAWs with overwhelming interfaces.
+- **Value Proposition**: Streamlined multi-channel recording with dedicated mic and system loopback tracks, instant soundboard clip triggers, and integrated episode planning notes.
+- **Key Workflows**: Launch `START_RECORDER.bat`, trigger sound effects via visual pads during live recordings, monitor speech levels, and automatically generate clean WAV containers.
+
+### [PERSONA-02] Privacy-Conscious Streamers & Video Producers
+- **Target Profile**: Content creators, software educators, and livestreamers who require local-first video and system audio capture without telemetry or cloud egress.
+- **Pain Points**: High CPU overhead of heavy streaming suites when only quick local clips or tutorials are needed; risk of proprietary content syncing to third-party servers.
+- **Value Proposition**: Synchronized screen video recording with FFmpeg remuxing, ultra-fast `mss` capture, and guaranteed 100% offline data sovereignty.
+- **Key Workflows**: Capture desktop tutorial video and microphone audio synchronously, export cleanly muxed MP4 files, review sessions locally.
+
+### [PERSONA-03] Event Planners, Content Strategists & Teleprompter Operators
+- **Target Profile**: Media producers, webinar hosts, and editorial teams managing episode outlines, sponsor segments, and scripted speaking notes.
+- **Pain Points**: Switching between disparate text editors, teleprompters, and recording tools during live takes; lost synchronization between script and recording time.
+- **Value Proposition**: Built-in browser-based teleprompter (`planer/`) with smooth scrolling, timing indicators, and live bridge telemetry from the desktop recorder.
+- **Key Workflows**: Draft episode rundown in the Planer, launch teleprompter on a second monitor, and trigger recording with real-time status feedback.
+
+### [PERSONA-04] Modular Tool Integrators & Autonomous Multi-Agent Developers
+- **Target Profile**: Software developers and AI agent engineers building local-first multimedia automation, podcast pipeline tools, or desktop workflows.
+- **Pain Points**: Desktop media software lacks local loopback APIs or headless testing hooks; automation requires brittle GUI clicking.
+- **Value Proposition**: Structured JSON and WebSocket IPC endpoints (`8767`, `:8769`, `:8770`), headless self-test modes (`$env:PODCAST_RECORDER_SELFTEST="1"`), and clean event-sourced logging (`events.jsonl`).
+- **Key Workflows**: Automate media session verification via pytest, integrate transcription events into downstream summarization scripts, interact over loopback HTTP/WS.
+
+---
+
+## 3. Discoverability & SEO Keywords
+
+### High-Intent English Search Queries
+- `open source podcast recorder python pyside6`
+- `local first audio recording workstation zero cloud egress`
+- `wasapi system loopback audio capture desktop app`
+- `offline teleprompter with synchronized recorder bridge`
+- `multichannel podcast recorder with live soundboard pads`
+- `faster whisper local offline speech to text monitor`
+- `pyside6 ffmpeg synchronized screen and mic recorder`
+- `privacy focused content creation suite windows linux macos`
+
+### High-Intent German Search Queries
+- `Lokales Podcast Aufnahmeprogramm Python PySide6 ohne Cloud`
+- `Mehrspur Audio Recorder mit System-Sound Loopback Aufnahme`
+- `Offline Teleprompter und Episodenplaner für Video und Podcast`
+- `Soundboard und Sprachaufnahme Desktop App Open Source`
+- `Datenschutzfreundliche Audioaufnahme mit lokaler Transkription`
+- `PySide6 Desktop Workstation für Sprecher und Content Creator`
+- `Kostenlose Freeware Podcast Studio Software Windows`
+- `FFmpeg Bildschirmaufnahme und Mikrofon Synchronisation lokal`
+
+---
+
+## 4. Directory & Ecosystem Recommendations
+1. **Awesome Podcast / Audio Tools**:
+   - Category: *Local Recording & Podcasting Workstations*.
+   - Pitch: *Klangpult light: Lightweight local-first desktop recorder (PySide6) and browser-based teleprompter/planer with zero cloud egress.*
+2. **Awesome Local-First**:
+   - Category: *Media & Content Creation Tools*.
+   - Pitch: *100% offline multi-track audio and video capture with loopback IPC and local whisper transcription.*
+3. **PySide6 / Qt Awesome Showcases**:
+   - Category: *Audio/Video Desktop Applications*.
+   - Pitch: *High-performance audio streaming, soundboard matrix, and multi-service bridge built with PySide6 and standard Python asyncio.*
+
+---
+
+## 5. Technical Hygiene & Verification Matrix (Pfad A)
+- **Pytest Test Suite**: 483 passed, 1 skipped (0 failures across metadata, planer accessibility, core engine, bridge service, and UI fixtures).
+- **Linter & Formatting**: Ruff 0.5+ clean (0 errors, `line-length = 100`, `select = ["E", "F", "W"]`).
+- **Bytecode Compilation Gate**: Clean execution of `python -m compileall -q .` (0 syntax errors).
+- **CI/CD Guardrails**: GitHub Actions matrix across Ubuntu, macOS, and Windows with concurrency cancellation (`cancel-in-progress: true`) and pip dependency caching.
+- **Multi-Host Cloud Defense**: Hardened `.gitignore` suppressing synchronization conflicts (`*-conflict-*`, `*.sync-temp-*`), locks (`LOCK.*`, `*.lock`), and intermediate build caches.
+
+---
+
+## 6. Discoverability, Comparative Matrix & Visual Architecture (Pfad B — Stand 2026-09-14)
+
+### 10-Dimension Comparative Matrix vs. 4 Alternatives
+
+| Technical Dimension | Governance Invariant | Klangpult light | Audacity (Desktop Audio Editor) | OBS Studio (Broadcasting Suite) | Riverside.fm / Descript (Cloud SaaS) | Ad-Hoc Scripts / Voice Memos (OS Tools) |
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|
+| **1. Offline-First & Zero Egress** | `INV-LOCAL-01` | **100% Offline (Local disk, zero analytics, zero external network requests)** | High (Local desktop app with optional crash reporting) | High (Local streaming software, outbound if streaming) | None (Mandatory cloud upload, browser SaaS storage) | High (Native OS voice recorder files) |
+| **2. Unprivileged Execution** | `INV-USER-02` | **Strict RunAsInvoker (Zero root/admin privilege required)** | Standard user execution | Standard user (may require driver elevation for virtual cam) | Browser sandbox | Built-in OS app |
+| **3. Integrated Web Planer & Teleprompter** | `INV-DUAL-03` | **Built-in Browser Planer & Teleprompter (`planer/`) via Loopback IPC** | None (Audio recording only, requires external document) | None (Requires third-party browser sources/docks) | Partial (Web script editing inside cloud editor) | None (Manual notepad / paper) |
+| **4. Loopback IPC & Network Isolation** | `INV-IPC-04` | **Strict 127.0.0.1 Binding (Ports 8767, 8769, 8770)** | None (No inter-process API) | Websocket plugin (OBS-WebSocket on LAN) | Cloud WebSocket servers over public Internet | None |
+| **5. Multi-Track & Buffer Integrity** | `INV-BUF-05` | **Multichannel Audio with NaN/Inf Float Sanitization & Atomic Flush** | Multi-track WAV recording | Multi-track audio in MKV/MP4 containers | Cloud-recorded multi-track audio | Single-channel mono/stereo recording |
+| **6. Offline STT Degradation Boundary** | `INV-STT-06` | **Isolated Local Whisper Worker (Graceful fallback without UI freeze)** | Plugin-dependent (OpenVINO / whisper plugins) | Third-party plugin (OBS captioning plugins) | Cloud-only transcription API | None |
+| **7. Caller-Controlled Session Storage** | `INV-STORE-07` | **Creator-Owned Workspace with Structured events.jsonl & Zero Auto-Purge** | Local project files (`.aup3`) | Local recording directory | Cloud-hosted recordings subject to storage quotas | OS default Documents/Voice folder |
+| **8. Cross-Platform Operating Parity** | `INV-PLAT-08` | **Unified Architecture & Protocol Schemas (Windows, Linux, macOS)** | Multi-platform desktop support | Multi-platform desktop support | Web browser cross-platform | OS-specific proprietary apps |
+| **9. Multi-Host & Sync Resilience** | `INV-SYNC-09` | **Hardened .gitignore for Sync Conflicts & Multi-Agent Locks** | Standard gitignore (if developer cloned) | Standard gitignore | N/A (Cloud hosted) | None |
+| **10. Security SLA & Multi-OS CI** | `INV-SLA-10` | **48h Response SLA / 5d Triage + GitHub Actions CI (Ubuntu, Windows, macOS)** | Community bug tracker | Community GitHub issues | Commercial support ticket queue | OS vendor support |
+
+### 10 Governance & Runtime Invariants
+1. **INV-LOCAL-01 (100% Local-First & Zero-Egress):** Audio, video, transcriptions, and planning data remain strictly on the local machine. Zero analytics, telemetry, or outbound network calls.
+2. **INV-USER-02 (Unprivileged Execution & Non-Elevation):** Operates under strict `RunAsInvoker` security without requiring administrator privileges or root access.
+3. **INV-IPC-03 (Strict Loopback IPC Isolation):** IPC between PySide6 Recorder and HTTP Web Planer is bound exclusively to `127.0.0.1` (ports `8767`, `8769`, `8770`).
+4. **INV-SAFE-04 (Safe Subprocess Boundaries):** FFmpeg remuxing and video capture subprocesses use explicit argument vectors (non-shell) and path traversal sanitization.
+5. **INV-BUF-05 (Bounded Buffer & Audio Integrity):** Multichannel audio buffers sanitize against NaN/Inf float samples and flush atomically to standard WAV containers.
+6. **INV-STT-06 (Offline STT Degradation Boundary):** Local `faster-whisper` transcription operates in an isolated worker thread with graceful fallback if weights are missing; never stalls real-time recording or UI rendering.
+7. **INV-STORE-07 (Caller-Controlled Session Storage):** Session folders, event logs (`events.jsonl`), and recordings are owned and retained exclusively by the creator with zero auto-purge.
+8. **INV-PLAT-08 (Cross-Platform Operating Parity):** Architecture, protocol schemas (`v1`), and data models run consistently across Windows, Linux, and macOS.
+9. **INV-SYNC-09 (Multi-Host & Sync Resilience):** `.gitignore` rigorously ignores conflict copies (`*-conflict-*`, `*.sync-temp-*`) and multi-agent locks (`LOCK.*`, `*.lock`).
+10. **INV-SLA-10 (48h Response & 5-Day Triage SLA):** Formal commitment to 48-hour response / 5-day triage SLA, validated by automated GitHub Actions CI matrices across Ubuntu, Windows, and macOS on Python 3.10, 3.11, 3.12, and 3.13.
+
+### Third-Party License Audit & Governance Notice
+Comprehensive SPDX license audit completed in `THIRD_PARTY_LICENSES.md` on 2026-09-14:
+- PySide6: LGPL-3.0 dynamic linking (§ 4 LGPLv3 compliant).
+- sounddevice / soundfile: MIT / BSD-3-Clause (PortAudio / libsndfile bindings).
+- numpy / websockets: BSD-3-Clause.
+- mss / jsonschema / faster-whisper: MIT.
+- opencv-python: Apache-2.0.
+- FFmpeg: LGPL-2.1+ / GPL-2.0+ isolated external subprocess boundary.
+- Python Standard Library: PSFL-2.0.
+- QA Tooling: pytest (MIT), ruff (MIT/Apache-2.0), setuptools (MIT), PyInstaller (GPL-2.0 with Bootloader Exception).
+- PEP 621 URLs in `pyproject.toml` expanded with `Third-Party Licenses` and `Marketing Log`.

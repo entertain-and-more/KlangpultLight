@@ -22,8 +22,8 @@ Erstellt wurden die Icons direkt im Projekt. Zum Neu-/Umgenerieren auf diesem
 Rechner den Task aus dem Projekt-Root starten:
 
 ```powershell
-codex task --write -C "$env:USERPROFILE\OneDrive\.TOPICS\.SOFTWARE\ENTERTAINMENT\DEV_KlangpultLight" `
-  "Erzeuge in assets/icons/ einen kohaerenten 24px-Line-Icon-Satz fuer Klangpult light
+codex task --write -C . `
+  "Erzeuge in assets/icons/ einen kohärenten 24px-Line-Icon-Satz für Klangpult light
    (stroke currentColor, 2px, runde Enden) fuer: mic, video, soundboard, record, stop, play,
    pause, delete, edit, add, project, episode, library, assign, collapse. Eine .svg pro Icon."
 ```

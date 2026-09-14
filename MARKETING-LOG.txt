@@ -2,8 +2,7 @@
 
 ## Metadata
 - **Repository**: `entertain-and-more/KlangpultLight`
-- **Canonical Path**: `C:\_Local_DEV\repos\KlangpultLight`
-- **Plan D Mirror**: `C:\Users\lukas\OneDrive\.TOPICS\.SOFTWARE\PRODUCTION\DEV_KlangpultLight`
+- **Workspace model**: Canonical development clone with a separate, untracked Plan-D mirror
 - **Default Branch**: `main`
 - **Current Version**: `0.1.0` (App Core) / `0.1.1` (Alpha Display)
 - **License**: Freeware / Proprietary Closed-Source

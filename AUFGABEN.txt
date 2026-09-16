@@ -133,21 +133,22 @@
   4. `BridgeService._get_planer_server_cls` und `planer_server._resolve_static_root` erkennen Quell- und Frozen-Laufzeitumgebungen (`sys._MEIPASS`, `sys.executable`).
   5. 9 neue automatisierte Tests in `Recorder/tests/test_onedir_packaging_and_shortcut.py` verifizieren Specs, Skripte und Pfadauflösung (9/9 bestanden). Code-Hygiene: ruff check & compileall 100% fehlerfrei.
 
-### TW-KLANGPULTLIGHT-13: [TEILWEISE UMGESETZT / FOUNDATION 2026-09-12] Internationalisierungs-Architektur (Tier-2: DE, EN, ES, ZH, JA, RU nach Policy P-006) für Recorder-Desktop-UI und Planer-Web-Companion
+### TW-KLANGPULTLIGHT-13: [VOLLSTÄNDIG UMGESETZT 2026-09-16] Internationalisierungs-Architektur (Tier-2: DE, EN, ES, ZH, JA, RU nach Policy P-006) für Recorder-Desktop-UI und Planer-Web-Companion
 
-- Ergebnis: Klangpult light verfügt über ein vollständiges Tier-2-Mehrsprachigkeitssystem nach Policy P-006 mit 6 Zielsprachen (Deutsch, Englisch, Spanisch, Chinesisch, Japanisch, Russisch), deterministischer 4-stufiger Fallback-Hierarchie (target -> en -> de -> key), 100% Parität für Kernschlüssel, echter Umlaut-Konformität und automatisierten Audit-/Testwerkzeugen.
+- Ergebnis: Klangpult light verfügt über ein vollständiges Tier-2-Mehrsprachigkeitssystem nach Policy P-006 mit 6 Zielsprachen (Deutsch, Englisch, Spanisch, Chinesisch, Japanisch, Russisch), deterministischer 4-stufiger Fallback-Hierarchie (target -> en -> de -> key), 100% Parität für alle 49 Übersetzungsschlüssel, echter Umlaut-Konformität, dynamischem Desktop-UI-Sprachwechsel mit QSettings-Persistenz, Planer-Web-Client-Adapter mit Dropdown-Umschaltung sowie spanischer Dokumentation README.es.md.
 - Quelle/Ableitung: SOFTWARE I18N EXPANSION CHECK (2026-09-12), Policy P-006 (`.SYNC/_policies/library/P-006_sprachstufen.md`), globale Anwendungs-Nutzerregeln zu authentischen Umlauten.
 - Definition of Done:
   1. [x] Modul `Recorder/i18n/translator.py` mit `TranslationSystem`, Singleton `get_translator()`, Helper `t()`, Typsicherheit und robuster Quell-/PyInstaller-Pfadauflösung.
-  2. [x] Zentrales Wörterbuch `locales/translations.json` (sowie Packaging-Spiegel `Recorder/locales/translations.json`) mit 44 Kernschlüsseln (Desktop-Recorder, Dialoge, Statusleiste, Einspieler-Board, Navigation und Web-Planer), 100% Parität über alle 6 Sprachen und echten deutschen Umlauten (ä, ö, ü, Ä, Ö, Ü, ß).
+  2. [x] Zentrales Wörterbuch `locales/translations.json` (sowie Packaging-Spiegel `Recorder/locales/translations.json` und `planer/locales/translations.json`) mit 49 Kernschlüsseln (Desktop-Recorder, Dialoge, Statusleiste, Einspieler-Board, Navigation und Web-Planer), 100% Parität über alle 6 Sprachen und echten deutschen Umlauten (ä, ö, ü, Ä, Ö, Ü, ß).
   3. [x] Audit- & Prüfwerkzeug `manage_translations.py --check` mit Exit-Codes für CI/Governance.
   4. [x] Automatisierte Testabdeckung in `tests/test_i18n.py` (7 Tests) und `Recorder/tests/test_i18n.py` (3 Tests) für Sprachwechsel, Fallback-Kette, Umlaut-Integrität, Listener-Callbacks und Resilienz (10/10 bestanden).
-  5. [ ] Nachgelagert (UI-Verdrahtung): Dynamischer Sprachumschalter in `MainWindow` (Menü/Statusbar), `retranslate_ui()` Event-Hook mit `QSettings`-Persistenz der Benutzersprache.
-  6. [ ] Nachgelagert (Web-Planer): Client-Adapter `planer/app/i18n.js` mit dynamischem Sprachwechsel und Übernahme des `lang`-Attributs.
-  7. [ ] Nachgelagert (Dokumentation): Spanische Übersetzung `README.es.md`.
-- Prüfweg: `python manage_translations.py --check`, `python -m pytest tests/test_i18n.py Recorder/tests/test_i18n.py`, `ruff check`, `python -m compileall -q .`.
+  5. [x] UI-Verdrahtung Desktop: Dynamischer Sprachumschalter in `MainWindow` (Menüleiste mit exklusiver QActionGroup für alle 6 Sprachen), `retranslate_ui()` Event-Hook mit `QSettings`-Persistenz der Benutzersprache unter `ui/language`, Live-Übersetzung aller Menüs, Labels, Buttons, Tooltips und Tree-Header. Abgesichert durch `Recorder/tests/test_ui_i18n.py` (4/4 Tests grün).
+  6. [x] Web-Planer: Client-Adapter `planer/app/i18n.js` mit dynamischem Sprachwechsel, Übernahme des `lang`-Attributs, DOM-Retranslation via `data-i18n`, integrierter Fallback-Tabelle und Server-Endpunkt `/api/translations` in `planer/server/planer_server.py`. Abgesichert durch `tests/test_planer_i18n.py` (5/5 Tests grün).
+  7. [x] Dokumentation: Spanische Übersetzung `README.es.md` mit 100% Strukturparität (17 Abschnitte, Mermaid-Diagramme, Invarianten- und Vergleichstabellen) sowie Querverlinkung in `README.md` und `README_de.md`.
+- Prüfweg: `python manage_translations.py --check`, `pytest Recorder/tests/test_ui_i18n.py tests/test_planer_i18n.py`, `ruff check .`, `python -m compileall -q .`, Gesamtsuite `pytest -q` (500+ Tests bestanden).
 - Einstufung: Aufwand: medium; Scope: local; Priorität: medium — essenzielle Grundlage zur Erschließung internationaler Streaming- und Podcast-Zielgruppen.
-- Erledigungsvermerk (2026-09-12): I18N-Fundament vollständig implementiert und abgesichert. `Recorder/i18n/translator.py`, `locales/translations.json`, `manage_translations.py` sowie 10 Tests erfolgreich verifiziert.
+- Erledigungsvermerk (2026-09-16): Vollständige Fertigstellung aller 7 Subtasks der Tier-2 I18N-Architektur. Desktop-UI dynamisch umschaltbar, Web-Planer mit Sprachauswahl und API, README.es.md erstellt, 49 Schlüssel zu 100% synchron über alle drei Wörterbücher, alle Tests und Linter 100% grün.
+
 
 ### TASKWRITER-CLOSEOUT (2026-07-22)
 

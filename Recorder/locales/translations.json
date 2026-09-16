@@ -350,5 +350,45 @@
     "zh": "重新加载当前视图",
     "ja": "現在の表示を再読み込み",
     "ru": "Перезагрузить текущий вид"
+  },
+  "header_title": {
+    "de": "Titel",
+    "en": "Title",
+    "es": "Título",
+    "zh": "标题",
+    "ja": "タイトル",
+    "ru": "Название"
+  },
+  "header_created": {
+    "de": "Erstellt",
+    "en": "Created",
+    "es": "Creado",
+    "zh": "创建时间",
+    "ja": "作成日時",
+    "ru": "Создано"
+  },
+  "title": {
+    "de": "Titel",
+    "en": "Title",
+    "es": "Título",
+    "zh": "标题",
+    "ja": "タイトル",
+    "ru": "Название"
+  },
+  "title_placeholder": {
+    "de": "Aufnahmetitel …",
+    "en": "Recording title …",
+    "es": "Título de la grabación …",
+    "zh": "录音标题 …",
+    "ja": "録音タイトル …",
+    "ru": "Название записи …"
+  },
+  "branch_create": {
+    "de": "Branch anlegen",
+    "en": "Create Branch",
+    "es": "Crear rama",
+    "zh": "创建分支",
+    "ja": "ブランチ作成",
+    "ru": "Создать ветку"
   }
 }

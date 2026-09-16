@@ -21,7 +21,7 @@
 [![Umbrella](https://img.shields.io/badge/Umbrella-open--bricks-blue.svg)](https://github.com/open-bricks/open-bricks)
 [![LLM-Ready](https://img.shields.io/badge/LLM--Ready-llms.txt-purple.svg)](./llms.txt)
 
-[🇬🇧 English Version](README.md) | [🇩🇪 Deutsche Version](README_de.md)
+[🇬🇧 English Version](README.md) | [🇩🇪 Deutsche Version](README_de.md) | [🇪🇸 Versión en español](README.es.md)
 
 > **Klangpult light** is the complimentary freeware edition (funnel).<br>
 > Full commercial counterpart: **Klangpult** (proprietary full edition with automated multichannel cutting, batch export, and OCR).<br>

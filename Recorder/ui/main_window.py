@@ -12,8 +12,8 @@ import os
 from typing import Optional
 
 import numpy as np
-from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QImage, QKeySequence, QPixmap, QShortcut
+from PySide6.QtCore import Qt, QTimer, QSettings
+from PySide6.QtGui import QAction, QActionGroup, QImage, QKeySequence, QPixmap, QShortcut
 from PySide6.QtWidgets import (
     QCheckBox,
     QGroupBox,
@@ -43,6 +43,7 @@ from core.config import AppConfig
 from recordings.library import RecordingLibrary
 from recordings.recording_session import RecordingSession
 from sources.source_config import SourcesConfig, save_sources_config
+from i18n.translator import get_translator, t
 from sources.loopback_detector import LoopbackRoute, LOOPBACK_HINT
 from ui.level_meter import LevelMeter
 from ui.styles import APP_QSS
@@ -134,6 +135,17 @@ class MainWindow(QMainWindow):
         # Vorschau-Capture-Loop (nur für UI-Preview, nicht für Aufnahme)
         self._vorschau_loop = None  # VideoCaptureLoop-Instanz oder None
 
+        # Multi-Language i18n Unterstützung nach Policy P-006
+        self._translator = get_translator()
+        settings = QSettings("Klangpult", "KlangpultLight")
+        gespeicherte_sprache = settings.value("ui/language", "")
+        if (
+            gespeicherte_sprache
+            and str(gespeicherte_sprache) in self._translator.get_supported_languages()
+        ):
+            self._translator.set_language(str(gespeicherte_sprache))
+        self._translator.register_listener(self.retranslate_ui)
+
         self._setup_ui()
         self._setup_timer()
         self._aktualisiere_status()
@@ -148,9 +160,12 @@ class MainWindow(QMainWindow):
     # -------------------------------------------------------------------------
 
     def _setup_ui(self) -> None:
-        self.setWindowTitle("Klangpult light – Recorder")
+        self.setWindowTitle(t("app_title"))
         self.setMinimumSize(900, 560)
         self.setStyleSheet(APP_QSS)
+
+        # Sprach-Menü in der Menüleiste
+        self._baue_sprachmenue()
 
         # Zentrales Widget
         zentral = QWidget()
@@ -166,24 +181,141 @@ class MainWindow(QMainWindow):
         # schrumpfen sie zu einem schmalen Streifen, der frei werdende Platz geht
         # an die Nachbar-Panels (stretch).
         # --- Linkes Panel: Audio-Quellen ---
-        haupt_layout.addWidget(self._einklappbar(self._baue_quellen_panel()), stretch=2)
+        self._quellen_box = self._baue_quellen_panel()
+        haupt_layout.addWidget(self._einklappbar(self._quellen_box), stretch=2)
 
         # --- Mittleres Panel: Aufnahme ---
-        haupt_layout.addWidget(self._einklappbar(self._baue_aufnahme_panel()), stretch=3)
+        self._aufnahme_box = self._baue_aufnahme_panel()
+        haupt_layout.addWidget(self._einklappbar(self._aufnahme_box), stretch=3)
 
         # --- Board-Panel (Einspieler) ---
-        self._board_panel = self._einklappbar(self._baue_board_panel())
+        self._board_panel_box = self._baue_board_panel()
+        self._board_panel = self._einklappbar(self._board_panel_box)
         haupt_layout.addWidget(self._board_panel, stretch=3)
 
         # --- Video-Panel ---
-        haupt_layout.addWidget(self._einklappbar(self._baue_video_panel()), stretch=3)
+        self._video_box = self._baue_video_panel()
+        haupt_layout.addWidget(self._einklappbar(self._video_box), stretch=3)
 
         # --- Rechtes Panel: Aufnahmeliste ---
-        haupt_layout.addWidget(self._einklappbar(self._baue_aufnahmeliste()), stretch=3)
+        self._aufnahmen_box = self._baue_aufnahmeliste()
+        haupt_layout.addWidget(self._einklappbar(self._aufnahmen_box), stretch=3)
 
         # Statusleiste
         self._statusleiste = QStatusBar()
         self.setStatusBar(self._statusleiste)
+
+
+    # -------------------------------------------------------------------------
+    # Multi-Language i18n Menü & Umschaltung (Policy P-006)
+    # -------------------------------------------------------------------------
+
+    def _baue_sprachmenue(self) -> None:
+        """Erstellt das 'Sprache' Menü mit Radio-Aktionen für alle 6 Sprachen."""
+        menu_bar = self.menuBar()
+        self._sprach_menu = menu_bar.addMenu(t("language"))
+        self._sprach_gruppe = QActionGroup(self)
+        self._sprach_gruppe.setExclusive(True)
+        self._sprach_aktionen: dict[str, QAction] = {}
+        display_names = self._translator.get_language_display_names()
+        current_lang = self._translator.get_language()
+        for code in self._translator.get_supported_languages():
+            name = display_names.get(code, code)
+            aktion = QAction(name, self)
+            aktion.setCheckable(True)
+            if code == current_lang:
+                aktion.setChecked(True)
+            aktion.setData(code)
+            aktion.triggered.connect(lambda _checked=False, c=code: self._sprache_wechseln(c))
+            self._sprach_gruppe.addAction(aktion)
+            self._sprach_menu.addAction(aktion)
+            self._sprach_aktionen[code] = aktion
+
+    def _sprache_wechseln(self, lang_code: str) -> None:
+        """Wechselt die aktive Sprache und speichert die Wahl in QSettings."""
+        if self._translator.set_language(lang_code):
+            settings = QSettings("Klangpult", "KlangpultLight")
+            settings.setValue("ui/language", lang_code)
+
+    def retranslate_ui(self, lang_code: Optional[str] = None) -> None:
+        """Aktualisiert alle UI-Texte dynamisch nach einem Sprachwechsel (Policy P-006)."""
+        current_lang = lang_code or self._translator.get_language()
+
+        # Fenstertitel
+        self.setWindowTitle(t("app_title"))
+
+        # Menü
+        if hasattr(self, "_sprach_menu") and self._sprach_menu:
+            self._sprach_menu.setTitle(t("language"))
+        if hasattr(self, "_sprach_aktionen"):
+            for code, aktion in self._sprach_aktionen.items():
+                aktion.setChecked(code == current_lang)
+
+        # GroupBox Titel
+        if hasattr(self, "_quellen_box") and self._quellen_box and isinstance(self._quellen_box, QGroupBox):
+            self._quellen_box.setTitle(t("sources"))
+        if hasattr(self, "_aufnahme_box") and self._aufnahme_box and isinstance(self._aufnahme_box, QGroupBox):
+            self._aufnahme_box.setTitle(t("recording_mode"))
+        if hasattr(self, "_board_panel_box") and self._board_panel_box and isinstance(self._board_panel_box, QGroupBox):
+            self._board_panel_box.setTitle(t("pads_title"))
+        if hasattr(self, "_board_panel") and self._board_panel and isinstance(self._board_panel, QGroupBox):
+            self._board_panel.setTitle(t("pads_title"))
+        if hasattr(self, "_video_box") and self._video_box and isinstance(self._video_box, QGroupBox):
+            self._video_box.setTitle("Video")
+        if hasattr(self, "_aufnahmen_box") and self._aufnahmen_box and isinstance(self._aufnahmen_box, QGroupBox):
+            self._aufnahmen_box.setTitle(t("recordings"))
+
+        # Labels & Widgets
+        if hasattr(self, "_capture_label") and self._capture_label:
+            self._capture_label.setText(t("capture_active"))
+        if hasattr(self, "_verfuegbare_eingaenge_label") and self._verfuegbare_eingaenge_label:
+            self._verfuegbare_eingaenge_label.setText(t("available_inputs"))
+        if hasattr(self, "_titel_label") and self._titel_label:
+            self._titel_label.setText(t("title"))
+        if hasattr(self, "_titel_eingabe") and self._titel_eingabe:
+            self._titel_eingabe.setPlaceholderText(t("title_placeholder"))
+        if hasattr(self, "_modus_label") and self._modus_label:
+            self._modus_label.setText(t("recording_mode"))
+        if hasattr(self, "_pegel_label") and self._pegel_label:
+            self._pegel_label.setText(t("levels"))
+        if hasattr(self, "_video_quellen_label") and self._video_quellen_label:
+            self._video_quellen_label.setText(t("video_sources"))
+        if hasattr(self, "_video_vorschau_label") and self._video_vorschau_label:
+            self._video_vorschau_label.setText(t("preview"))
+        if hasattr(self, "_add_pad_btn") and self._add_pad_btn:
+            self._add_pad_btn.setText(t("add_pad"))
+        if hasattr(self, "_no_board_label") and self._no_board_label:
+            self._no_board_label.setText(t("no_board_loaded"))
+
+        # Combobox Aufnahme-Modus
+        if hasattr(self, "_aufnahme_modus") and self._aufnahme_modus:
+            self._aufnahme_modus.setItemText(0, t("mode_audio_video"))
+            self._aufnahme_modus.setItemText(1, t("mode_audio_only"))
+            self._aufnahme_modus.setItemText(2, t("mode_video_only"))
+            self._aufnahme_modus.setToolTip(t("recording_mode_tooltip"))
+
+        # Aufnahme-Button
+        if hasattr(self, "_btn_aufnahme") and self._btn_aufnahme:
+            if self._aufnahme_läuft:
+                self._btn_aufnahme.setText(t("stop_recording"))
+            else:
+                self._btn_aufnahme.setText(t("start_recording"))
+
+        # Planer-Button
+        if hasattr(self, "_btn_planer") and self._btn_planer:
+            self._btn_planer.setText(t("open_planer"))
+            self._btn_planer.setToolTip(t("open_planer_tooltip"))
+
+        # Aufnahme-Tree Header
+        if hasattr(self, "_aufnahme_tree") and self._aufnahme_tree:
+            self._aufnahme_tree.setHeaderLabels([
+                t("header_title"),
+                t("header_duration"),
+                t("header_created"),
+            ])
+
+        # Statusleiste
+        self._aktualisiere_status()
 
     def _einklappbar(self, box: "QGroupBox") -> "QGroupBox":
         """Macht ein Panel ein-/ausklappbar: die GroupBox bekommt eine Checkbox im
@@ -260,7 +392,7 @@ class MainWindow(QMainWindow):
 
     def _baue_quellen_panel(self) -> QWidget:
         """Quellen-Panel: Capture-Umschalter je Quelle (SourcesConfig) + LOOPBACK_HINT."""
-        box = QGroupBox("Quellen")
+        box = QGroupBox(t("sources"))
         outer_layout = QVBoxLayout(box)
         outer_layout.setSpacing(8)
 
@@ -268,7 +400,8 @@ class MainWindow(QMainWindow):
 
         if self._sources_config is not None:
             # --- SourcesConfig-Checkboxen: pro Quelle ein Capture-Umschalter ---
-            capture_label = QLabel("Mitschneiden:")
+            capture_label = QLabel(t("capture_active"))
+            self._capture_label = capture_label
             capture_label.setProperty("role", "überschrift")
             outer_layout.addWidget(capture_label)
 
@@ -348,7 +481,8 @@ class MainWindow(QMainWindow):
             outer_layout.addSpacing(8)
 
         # --- Verfügbare Hardware-Eingänge (Info, immer sichtbar) ---
-        trenn = QLabel("Verfügbare Eingänge:")
+        trenn = QLabel(t("available_inputs"))
+        self._verfuegbare_eingaenge_label = trenn
         trenn.setProperty("role", "überschrift")
         outer_layout.addWidget(trenn)
 
@@ -359,7 +493,7 @@ class MainWindow(QMainWindow):
                 zeile_lbl = QLabel(f"{gerät.name}{mock_hint}{verifiziert}")
                 outer_layout.addWidget(zeile_lbl)
         else:
-            outer_layout.addWidget(QLabel("Keine Geräte gefunden"))
+            outer_layout.addWidget(QLabel(t("no_devices_found")))
 
         outer_layout.addStretch()
         return box
@@ -411,31 +545,33 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(8, 8, 8, 8)
 
         # Titel-Eingabe
-        titel_label = QLabel("Titel")
+        titel_label = QLabel(t("title"))
+        self._titel_label = titel_label
         titel_label.setProperty("role", "überschrift")
         layout.addWidget(titel_label)
         self._titel_eingabe = QLineEdit()
-        self._titel_eingabe.setPlaceholderText("Aufnahmetitel …")
+        self._titel_eingabe.setPlaceholderText(t("title_placeholder"))
         layout.addWidget(self._titel_eingabe)
 
         layout.addSpacing(12)
 
-        modus_label = QLabel("Aufnahme-Modus")
+        modus_label = QLabel(t("recording_mode"))
+        self._modus_label = modus_label
         modus_label.setProperty("role", "überschrift")
         layout.addWidget(modus_label)
         self._aufnahme_modus = QComboBox()
         self._aufnahme_modus.setObjectName("aufnahme_modus")
-        self._aufnahme_modus.addItem("Ton + Video", "audio_video")
-        self._aufnahme_modus.addItem("Nur Ton", "audio_only")
-        self._aufnahme_modus.addItem("Nur Video", "video_only")
-        self._aufnahme_modus.setToolTip("Wählt, ob Ton, Video oder beides aufgezeichnet wird.")
+        self._aufnahme_modus.addItem(t("mode_audio_video"), "audio_video")
+        self._aufnahme_modus.addItem(t("mode_audio_only"), "audio_only")
+        self._aufnahme_modus.addItem(t("mode_video_only"), "video_only")
+        self._aufnahme_modus.setToolTip(t("recording_mode_tooltip"))
         self._aufnahme_modus.currentIndexChanged.connect(lambda _idx: self._aktualisiere_status())
         layout.addWidget(self._aufnahme_modus)
 
         layout.addSpacing(12)
 
         # Aufnahme-Button
-        self._btn_aufnahme = QPushButton("Aufnahme starten")
+        self._btn_aufnahme = QPushButton(t("start_recording"))
         self._btn_aufnahme.setObjectName("btn_aufnahme")
         self._btn_aufnahme.setCheckable(False)
         self._btn_aufnahme.clicked.connect(self._aufnahme_umschalten)
@@ -444,7 +580,8 @@ class MainWindow(QMainWindow):
         layout.addSpacing(16)
 
         # Pegelanzeigen je Kanal
-        pegel_label = QLabel("Pegel")
+        pegel_label = QLabel(t("levels"))
+        self._pegel_label = pegel_label
         pegel_label.setProperty("role", "überschrift")
         layout.addWidget(pegel_label)
 
@@ -471,7 +608,8 @@ class MainWindow(QMainWindow):
         layout.setSpacing(8)
 
         # Quell-Liste
-        beschriftung = QLabel("Video-Quellen:")
+        beschriftung = QLabel(t("video_sources"))
+        self._video_quellen_label = beschriftung
         beschriftung.setProperty("role", "überschrift")
         layout.addWidget(beschriftung)
 
@@ -496,7 +634,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(self._video_quelle_liste)
 
         # Vorschau-Kacheln (bis zu 4 Quellen — einfaches Kachel-Layout)
-        vorschau_label = QLabel("Vorschau:")
+        vorschau_label = QLabel(t("preview"))
+        self._video_vorschau_label = vorschau_label
         vorschau_label.setProperty("role", "überschrift")
         layout.addWidget(vorschau_label)
 
@@ -529,19 +668,21 @@ class MainWindow(QMainWindow):
         QTimer pollt active_pad_ids() und setzt pad_aktiv-Property für Highlighting.
         Video/Bild-Pads rufen _on_visual_pad() auf (no-op im offscreen-Modus).
         """
-        box = QGroupBox("Einspieler")
+        box = QGroupBox(t("pads_title"))
         layout = QVBoxLayout(box)
         layout.setSpacing(8)
 
         if self._board_player is None:
-            hinweis = QLabel("Kein Board geladen.")
+            hinweis = QLabel(t("no_board_loaded"))
+            self._no_board_label = hinweis
             hinweis.setProperty("role", "sekundär")
             layout.addWidget(hinweis)
             layout.addStretch()
             return box
 
         # „+ Einspieler"-Button immer sichtbar (auch bei leerem Board).
-        add_btn = QPushButton("+ Einspieler hinzufügen")
+        add_btn = QPushButton(t("add_pad"))
+        self._add_pad_btn = add_btn
         add_btn.clicked.connect(self._neues_einspieler_pad)
         layout.addWidget(add_btn)
 
@@ -709,15 +850,13 @@ class MainWindow(QMainWindow):
 
     def _baue_aufnahmeliste(self) -> QWidget:
         """Rechtes Panel mit Aufnahme-TreeWidget und Planer-Schnellstart."""
-        box = QGroupBox("Aufnahmen")
+        box = QGroupBox(t("recordings"))
         layout = QVBoxLayout(box)
 
         # Schnelleinsprung / Ein-Klick-Verbund: Planer im Standard-Browser öffnen
-        self._btn_planer = QPushButton("🌐 Planer im Browser öffnen")
+        self._btn_planer = QPushButton(t("open_planer"))
         self._btn_planer.setObjectName("btn_planer_oeffnen")
-        self._btn_planer.setToolTip(
-            "Öffnet die Web-App zur Episoden- und Medienplanung (Standard: http://127.0.0.1:8770) im Browser"
-        )
+        self._btn_planer.setToolTip(t("open_planer_tooltip"))
         self._btn_planer.setAccessibleName("Planer im Browser öffnen")
         self._btn_planer.setAccessibleDescription(
             "Öffnet den Klangpult light Planer im Standard-Webbrowser zur Planung und Teleprompter-Nutzung."
@@ -726,7 +865,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self._btn_planer)
 
         self._aufnahme_tree = QTreeWidget()
-        self._aufnahme_tree.setHeaderLabels(["Titel", "Dauer", "Erstellt"])
+        self._aufnahme_tree.setHeaderLabels([t("header_title"), t("header_duration"), t("header_created")])
         self._aufnahme_tree.setColumnWidth(0, 180)
         self._aufnahme_tree.setColumnWidth(1, 70)
         self._aufnahme_tree.setAlternatingRowColors(True)
@@ -1012,7 +1151,7 @@ class MainWindow(QMainWindow):
 
         self._session = session
         self._aufnahme_läuft = True
-        self._btn_aufnahme.setText("Aufnahme stoppen")
+        self._btn_aufnahme.setText(t("stop_recording"))
         self._btn_aufnahme.setProperty("recording", "true")
         self._btn_aufnahme.style().unpolish(self._btn_aufnahme)
         self._btn_aufnahme.style().polish(self._btn_aufnahme)
@@ -1026,7 +1165,7 @@ class MainWindow(QMainWindow):
         self._session.stop()
         self._session = None
         self._aufnahme_läuft = False
-        self._btn_aufnahme.setText("Aufnahme starten")
+        self._btn_aufnahme.setText(t("start_recording"))
         self._btn_aufnahme.setProperty("recording", "false")
         self._btn_aufnahme.style().unpolish(self._btn_aufnahme)
         self._btn_aufnahme.style().polish(self._btn_aufnahme)
@@ -1287,5 +1426,11 @@ class MainWindow(QMainWindow):
         # Engine nur stoppen wenn sie läuft (Guard verhindert doppelten Aufruf)
         if self._engine.is_running():
             self._engine.stop()
+
+        if hasattr(self, "_translator") and self._translator:
+            try:
+                self._translator.unregister_listener(self.retranslate_ui)
+            except Exception:
+                pass
 
         super().closeEvent(event)

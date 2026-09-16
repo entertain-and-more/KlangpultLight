@@ -21,7 +21,7 @@
 [![Dachorganisation](https://img.shields.io/badge/Dachorganisation-open--bricks-blue.svg)](https://github.com/open-bricks/open-bricks)
 [![LLM-Ready](https://img.shields.io/badge/LLM--Bereit-llms.txt-purple.svg)](./llms.txt)
 
-[🇬🇧 English Version](README.md) | [🇩🇪 Deutsche Version](README_de.md)
+[🇬🇧 English Version](README.md) | [🇩🇪 Deutsche Version](README_de.md) | [🇪🇸 Versión en español](README.es.md)
 
 > **Klangpult light** ist die kostenlose Freeware-Version (Funnel).<br>
 > Gegenstück: **Klangpult** (proprietäre Vollversion mit automatischem Multichannel-Cutter, Batch-Export und OCR).<br>

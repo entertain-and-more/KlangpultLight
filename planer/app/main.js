@@ -1,7 +1,8 @@
 /**
  * main.js — Einstiegspunkt des Klangpult light – Planers.
  *
- * Verwaltet Tab-Navigation und Recorder-Verbindungsstatus.
+ * Verwaltet Tab-Navigation, Recorder-Verbindungsstatus und Tier-2
+ * Internationalisierung (Policy P-006: DE, EN, ES, ZH, JA, RU).
  * Mounted die einzelnen Views (Bibliothek, Projekte) on demand.
  */
 
@@ -12,6 +13,14 @@ import { mount as mountAssets, unmount as unmountAssets, reload as reloadAssets 
 import { mount as mountTeleprompter, unmount as unmountTeleprompter, reload as reloadTeleprompter } from "./teleprompter.js";
 import { mount as mountMonitor, unmount as unmountMonitor, reload as reloadMonitor } from "./monitor.js";
 import { remote } from "./remote.js";
+import {
+  initI18n,
+  t,
+  setLanguage,
+  getLanguage,
+  onLanguageChange,
+  applyTranslations,
+} from "./i18n.js";
 
 // ---------------------------------------------------------------------------
 // Tabs
@@ -19,26 +28,31 @@ import { remote } from "./remote.js";
 
 const TABS = {
   bibliothek: {
+    key: "nav_library",
     label: "Bibliothek",
     mount: (c, d) => mountBibliothek(c, d),
     unmount: unmountBibliothek,
   },
   projekte: {
+    key: "nav_projects",
     label: "Projekte",
     mount: (c, d) => mountProjekte(c, d),
     unmount: unmountProjekte,
   },
   assets: {
+    key: "nav_assets",
     label: "Assets & Line",
     mount: (c, d) => mountAssets(c, d),
     unmount: unmountAssets,
   },
   teleprompter: {
+    key: "nav_teleprompter",
     label: "Teleprompter",
     mount: (c, d) => mountTeleprompter(c, d),
     unmount: unmountTeleprompter,
   },
   monitor: {
+    key: "nav_monitor",
     label: "KI-Monitor",
     mount: (c, d) => mountMonitor(c, d),
     unmount: unmountMonitor,
@@ -56,6 +70,7 @@ const statusDot = document.getElementById("status-dot");
 const statusText = document.getElementById("status-text");
 const mainEl = document.getElementById("app-main");
 const detailPanel = document.getElementById("detail-panel");
+const langSelect = document.getElementById("lang-select");
 
 // Für jeden Tab ein View-Div + Nav-Button anlegen
 const viewEls = {};
@@ -101,6 +116,42 @@ for (const [id, tab] of Object.entries(TABS)) {
 }
 
 // ---------------------------------------------------------------------------
+// I18N / Lokalisierung der Oberfläche
+// ---------------------------------------------------------------------------
+
+function updateLocalizedTexts() {
+  document.title = t("planer_title");
+  const reloadBtn = document.getElementById("btn-reload");
+  if (reloadBtn) {
+    reloadBtn.title = t("reload_view");
+    reloadBtn.setAttribute("aria-label", t("reload_view"));
+  }
+
+  for (const [id, tab] of Object.entries(TABS)) {
+    const btn = navTabs.querySelector(`[data-tab="${id}"]`);
+    if (btn) {
+      btn.textContent = t(tab.key);
+    }
+  }
+
+  applyTranslations();
+  checkStatus();
+}
+
+if (langSelect) {
+  langSelect.addEventListener("change", () => {
+    setLanguage(langSelect.value);
+  });
+}
+
+onLanguageChange((lang) => {
+  if (langSelect && langSelect.value !== lang) {
+    langSelect.value = lang;
+  }
+  updateLocalizedTexts();
+});
+
+// ---------------------------------------------------------------------------
 // Tab-Wechsel
 // ---------------------------------------------------------------------------
 
@@ -141,12 +192,35 @@ async function checkStatus() {
   const result = await getBridgeStatus();
   const status = result.ok ? result.data.status : "offline";
   const labels = {
-    online: "Recorder verbunden",
-    partial: "Recorder teilweise erreichbar",
-    offline: "Recorder nicht erreichbar",
+    online: {
+      de: "Recorder verbunden",
+      en: "Recorder connected",
+      es: "Grabador conectado",
+      zh: "录音机已连接",
+      ja: "レコーダー接続済み",
+      ru: "Рекордер подключен",
+    },
+    partial: {
+      de: "Recorder teilweise erreichbar",
+      en: "Recorder partially reachable",
+      es: "Grabador parcialmente accesible",
+      zh: "录音机部分可达",
+      ja: "レコーダー一部応答",
+      ru: "Рекордер частично доступен",
+    },
+    offline: {
+      de: "Recorder nicht erreichbar",
+      en: "Recorder offline",
+      es: "Grabador desconectado",
+      zh: "录音机离线",
+      ja: "レコーダー未接続",
+      ru: "Рекордер недоступен",
+    },
   };
+  const lang = getLanguage();
+  const currentLabels = labels[status] || labels.offline;
   statusDot.className = "status-dot " + (labels[status] ? status : "offline");
-  statusText.textContent = labels[status] || labels.offline;
+  statusText.textContent = currentLabels[lang] || currentLabels.de || "Recorder";
 }
 
 // Alle 10 Sekunden Status prüfen
@@ -172,6 +246,11 @@ if (reloadBtn) {
 // ---------------------------------------------------------------------------
 // Start
 // ---------------------------------------------------------------------------
+
+initI18n().then(() => {
+  if (langSelect) langSelect.value = getLanguage();
+  updateLocalizedTexts();
+});
 
 remote.connect();
 switchTab("bibliothek");

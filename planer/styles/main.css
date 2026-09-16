@@ -107,6 +107,25 @@ p  { line-height: 1.6; }
 #status-dot.partial { background: var(--warning); }
 #status-dot.offline { background: var(--danger); }
 
+.lang-selector {
+  background: var(--bg-2);
+  color: var(--text-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.lang-selector:hover {
+  background: var(--bg-3);
+  border-color: var(--accent);
+}
+.lang-selector:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
 #app-main {
   flex: 1;
   display: flex;

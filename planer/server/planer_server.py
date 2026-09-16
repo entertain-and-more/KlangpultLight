@@ -85,6 +85,8 @@ class PlanerHandler(BaseHTTPRequestHandler):
             self._proxy(self.server.library_port)  # type: ignore[attr-defined]
         elif path.startswith("/api/projects"):
             self._proxy(self.server.projects_port)  # type: ignore[attr-defined]
+        elif path in ("/api/translations", "/api/i18n"):
+            self._serve_translations()
         else:
             self._serve_static(path)
 
@@ -191,6 +193,29 @@ class PlanerHandler(BaseHTTPRequestHandler):
                 f"Backend-Dienst nicht erreichbar (Port {backend_port}). "
                 "Bitte Klangpult light – Recorder starten.",
             )
+
+    def _serve_translations(self) -> None:
+        """Liefert das Wörterbuch translations.json für den Planer-Web-Companion."""
+        cand_paths = [
+            _STATIC_ROOT / "locales" / "translations.json",
+            _STATIC_ROOT.parent / "locales" / "translations.json",
+            _STATIC_ROOT.parent / "Recorder" / "locales" / "translations.json",
+        ]
+        meipass = getattr(sys, "_MEIPASS", None)
+        if meipass:
+            cand_paths.insert(0, Path(meipass) / "locales" / "translations.json")
+            cand_paths.insert(0, Path(meipass) / "planer" / "locales" / "translations.json")
+
+        for p in cand_paths:
+            if p.is_file():
+                try:
+                    with open(p, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    self._json_response(200, data)
+                    return
+                except Exception as exc:
+                    _log.warning("Fehler beim Lesen von %s: %s", p, exc)
+        self._fehler(404, "Translations not found")
 
     # -------------------------------------------------------------------------
     # Statische Dateien

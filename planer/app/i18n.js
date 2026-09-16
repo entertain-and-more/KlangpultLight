@@ -1,4 +1,29 @@
-{
+/**
+ * i18n.js — Client-Adapter für Internationalisierung im Klangpult light Planer.
+ *
+ * Implementiert Tier-2 Mehrsprachigkeit nach Policy P-006:
+ * - 6 Zielsprachen: de (Deutsch), en (English), es (Español), zh (简体中文), ja (日本語), ru (Русский)
+ * - Deterministische 4-stufige Fallback-Kette: target -> en -> de -> key
+ * - Persistenz via localStorage ('klangpult_planer_lang')
+ * - Aktualisierung des document.documentElement.lang Attributs
+ * - Dynamische Attribut- und Text-Aktualisierung (data-i18n, data-i18n-title, etc.)
+ */
+
+export const SUPPORTED_LANGUAGES = ["de", "en", "es", "zh", "ja", "ru"];
+export const DEFAULT_LANGUAGE = "de";
+export const FALLBACK_CHAIN = ["en", "de"];
+
+export const LANGUAGE_NAMES = {
+  de: "Deutsch",
+  en: "English",
+  es: "Español",
+  zh: "简体中文",
+  ja: "日本語",
+  ru: "Русский",
+};
+
+// Eingebettetes Kernwörterbuch als Offline-/Zero-Latency-Fallback
+let _translations = {
   "app_title": {
     "de": "Klangpult light – Recorder",
     "en": "Klangpult light – Recorder",
@@ -391,4 +416,217 @@
     "ja": "ブランチ作成",
     "ru": "Создать ветку"
   }
+};
+
+let _currentLang = DEFAULT_LANGUAGE;
+const _listeners = new Set();
+
+/**
+ * Ermittelt die bevorzugte Sprache (localStorage -> navigator.language -> DEFAULT_LANGUAGE).
+ */
+export function detectLanguage() {
+  try {
+    const saved = localStorage.getItem("klangpult_planer_lang");
+    if (saved && SUPPORTED_LANGUAGES.includes(saved)) {
+      return saved;
+    }
+  } catch (_) {
+    // localStorage nicht verfügbar
+  }
+
+  try {
+    const nav = (navigator.language || navigator.userLanguage || "").toLowerCase();
+    const code = nav.split("-")[0];
+    if (SUPPORTED_LANGUAGES.includes(code)) {
+      return code;
+    }
+  } catch (_) {
+    // navigator nicht verfügbar
+  }
+
+  return DEFAULT_LANGUAGE;
+}
+
+/**
+ * Übersetzt einen Schlüssel in die aktive Sprache mit robuster Fallback-Kette.
+ *
+ * @param {string} key - Übersetzungsschlüssel
+ * @param {Record<string, string|number>} [params] - Platzhalter-Parameter
+ * @returns {string} Übersetzter Text
+ */
+export function t(key, params = {}) {
+  if (!key) return "";
+
+  const entry = _translations[key];
+  let text = null;
+
+  if (entry && typeof entry === "object") {
+    // 1. Zielsprache
+    if (entry[_currentLang] && typeof entry[_currentLang] === "string" && entry[_currentLang].trim()) {
+      text = entry[_currentLang];
+    } else {
+      // 2. Fallback-Kette (en -> de)
+      for (const fb of FALLBACK_CHAIN) {
+        if (entry[fb] && typeof entry[fb] === "string" && entry[fb].trim()) {
+          text = entry[fb];
+          break;
+        }
+      }
+    }
+  }
+
+  if (text === null) {
+    text = key;
+  }
+
+  // Parameter ersetzen: {name}
+  if (params && typeof params === "object") {
+    for (const [pKey, pVal] of Object.entries(params)) {
+      text = text.replace(new RegExp("\\{" + pKey + "\\}", "g"), String(pVal));
+    }
+  }
+
+  return text;
+}
+
+/**
+ * Setzt die aktive Sprache, aktualisiert html[lang] und benachrichtigt Listener.
+ *
+ * @param {string} lang - Neuer Sprachcode
+ * @returns {boolean} true wenn erfolgreich gesetzt
+ */
+export function setLanguage(lang) {
+  if (!SUPPORTED_LANGUAGES.includes(lang)) {
+    return false;
+  }
+
+  const changed = _currentLang !== lang;
+  _currentLang = lang;
+
+  try {
+    localStorage.setItem("klangpult_planer_lang", lang);
+  } catch (_) {}
+
+  if (typeof document !== "undefined" && document.documentElement) {
+    document.documentElement.lang = lang;
+  }
+
+  applyTranslations();
+
+  if (changed) {
+    for (const cb of _listeners) {
+      try {
+        cb(lang);
+      } catch (err) {
+        console.error("[i18n] Fehler im Listener-Callback:", err);
+      }
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Liefert den aktuellen Sprachcode.
+ */
+export function getLanguage() {
+  return _currentLang;
+}
+
+/**
+ * Liefert alle unterstützten Sprachcodes.
+ */
+export function getSupportedLanguages() {
+  return [...SUPPORTED_LANGUAGES];
+}
+
+/**
+ * Registriert einen Listener für Sprachwechsel.
+ */
+export function onLanguageChange(callback) {
+  if (typeof callback === "function") {
+    _listeners.add(callback);
+  }
+}
+
+/**
+ * Entfernt einen registrierten Listener.
+ */
+export function offLanguageChange(callback) {
+  _listeners.delete(callback);
+}
+
+/**
+ * Durchsucht den DOM nach Elementen mit data-i18n-* Attributen und wendet Übersetzungen an.
+ *
+ * @param {HTMLElement|Document} [root=document]
+ */
+export function applyTranslations(root = (typeof document !== "undefined" ? document : null)) {
+  if (!root) return;
+
+  // Textinhalt: data-i18n="key"
+  const textElements = root.querySelectorAll("[data-i18n]");
+  for (const el of textElements) {
+    const key = el.getAttribute("data-i18n");
+    if (key) {
+      el.textContent = t(key);
+    }
+  }
+
+  // Title / Tooltip: data-i18n-title="key"
+  const titleElements = root.querySelectorAll("[data-i18n-title]");
+  for (const el of titleElements) {
+    const key = el.getAttribute("data-i18n-title");
+    if (key) {
+      el.title = t(key);
+    }
+  }
+
+  // ARIA-Label: data-i18n-aria-label="key"
+  const ariaElements = root.querySelectorAll("[data-i18n-aria-label]");
+  for (const el of ariaElements) {
+    const key = el.getAttribute("data-i18n-aria-label");
+    if (key) {
+      el.setAttribute("aria-label", t(key));
+    }
+  }
+
+  // Placeholder: data-i18n-placeholder="key"
+  const placeholderElements = root.querySelectorAll("[data-i18n-placeholder]");
+  for (const el of placeholderElements) {
+    const key = el.getAttribute("data-i18n-placeholder");
+    if (key) {
+      el.placeholder = t(key);
+    }
+  }
+}
+
+/**
+ * Initialisiert das I18N-System für den Planer.
+ */
+export async function initI18n() {
+  // 1. Gespeicherte / erkannte Sprache einstellen
+  const initialLang = detectLanguage();
+  _currentLang = initialLang;
+  if (typeof document !== "undefined" && document.documentElement) {
+    document.documentElement.lang = initialLang;
+  }
+
+  // 2. Übersetzungen asynchron vom Server nachladen (falls neue Keys existieren)
+  try {
+    const resp = await fetch("/api/translations");
+    if (resp.ok) {
+      const liveData = await resp.json();
+      if (liveData && typeof liveData === "object") {
+        _translations = { ..._translations, ...liveData };
+      }
+    }
+  } catch (_) {
+    // Offline oder Server antwortet nicht: eingebettetes Wörterbuch bleibt aktiv
+  }
+
+  // 3. UI übersetzen
+  applyTranslations();
+
+  return _currentLang;
 }

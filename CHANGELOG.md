@@ -23,6 +23,16 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 - Vollständige Code-Hygiene: 86 Ruff-Linter-Meldungen restlos bereinigt, 0 Fehler.
 - `llms.txt` auf Stand 2026-08-22 synchronisiert.
 
+## [0.1.6] - 2026-09-16
+
+### Tier-2 Internationalisierung, UI-Sprachwechsel, Web-Planer-Adapter & README.es.md (TW-KLANGPULTLIGHT-13) [G 2026-09-16]
+- **Tier-2 Mehrsprachigkeit (Policy P-006)**: Vollständige Unterstützung von 6 Zielsprachen (Deutsch `de`, Englisch `en`, Spanisch `es`, Chinesisch `zh`, Japanisch `ja`, Russisch `ru`) mit 100% Übersetzungsschlüssel-Parität (49 Schlüssel) über alle drei Wörterbücher (`locales/translations.json`, `Recorder/locales/translations.json`, `planer/locales/translations.json`).
+- **Dynamischer Desktop-UI-Sprachwechsel (`Recorder/ui/main_window.py`)**: Neues Sprachauswahlmenü in der Menüleiste mit exklusiver `QActionGroup`, sofortiger Live-Aktualisierung aller Fenstertitel, Labels, Buttons, Tooltips und Tree-Header über `retranslate_ui()` sowie persistenter Speicherung der Benutzerauswahl in `QSettings("Klangpult", "KlangpultLight")` unter `ui/language`.
+- **Web-Planer Client-Adapter (`planer/app/i18n.js`)**: Modulare i18n-Bibliothek für den Web-Planer mit Sprachauswahl-Dropdown im Kopfbereich, DOM-Retranslation via `data-i18n`, `lang`-Attribut-Aktualisierung, asynchronem Nachladen vom Server und autarkem Offline-Wörterbuch-Fallback.
+- **Planer-Server Translations-API (`planer/server/planer_server.py`)**: Neuer Endpunkt `/api/translations` (Alias `/api/i18n`) zur sicheren Bereitstellung des Wörterbuchs über den lokalen Loopback-HTTP-Server.
+- **Spanische Dokumentation (`README.es.md`)**: Vollständige spanische Übersetzung mit 100% Struktur- und Ankerparität zu `README.md` (17 Schnellnavigationspunkte, Invarianten- und Vergleichstabellen, Mermaid-Diagramme, Quickstarts).
+- **Automatisierte Testabdeckung & Audit**: 4 neue Desktop-UI-Tests in `Recorder/tests/test_ui_i18n.py` und 5 neue Planer/API/Doku-Tests in `tests/test_planer_i18n.py`; `manage_translations.py --check` meldet 100% Audit-Bestanden; Gesamtsuite mit 500+ Tests 100% grün.
+
 ## [0.1.5] - 2026-09-14
 
 ### Discoverability, 17-Punkte-Navigation, Vergleichsmatrix & Drittanbieter-Lizenzaudit (Pfad B) [G 2026-09-14]

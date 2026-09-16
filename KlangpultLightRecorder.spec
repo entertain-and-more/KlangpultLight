@@ -12,6 +12,8 @@ a = Analysis(
     datas=[
         ("shared", "shared"),
         ("planer", "planer"),
+        ("assets", "assets"),
+        ("mobile_icons", "mobile_icons"),
     ],
     hiddenimports=[
         "sounddevice",

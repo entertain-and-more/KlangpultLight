@@ -35,6 +35,55 @@ def _runtime_base_dir() -> str:
     return _source_root()
 
 
+def get_project_root() -> str:
+    """Liefert das Hauptverzeichnis des Projekts (eine Ebene über Recorder/)."""
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return sys._MEIPASS
+    rec_dir = _source_root()
+    parent = os.path.dirname(rec_dir)
+    if os.path.exists(os.path.join(parent, "DesktopIcon.ico")) or os.path.exists(os.path.join(parent, "assets")):
+        return parent
+    return rec_dir
+
+
+def load_app_icon():
+    """Lädt das Anwendungs-Icon mit Multi-Pfad-Fallback und gibt ein QIcon zurück."""
+    from PySide6.QtGui import QIcon
+
+    root = get_project_root()
+    meipass = getattr(sys, "_MEIPASS", None)
+    candidate_dirs = [root]
+    if meipass and meipass not in candidate_dirs:
+        candidate_dirs.insert(0, meipass)
+    base = _runtime_base_dir()
+    if base not in candidate_dirs:
+        candidate_dirs.append(base)
+
+    candidates = []
+    for cdir in candidate_dirs:
+        candidates.extend([
+            os.path.join(cdir, "assets", "app_icon.ico"),
+            os.path.join(cdir, "assets", "icon.ico"),
+            os.path.join(cdir, "assets", "DesktopIcon.ico"),
+            os.path.join(cdir, "DesktopIcon.ico"),
+            os.path.join(cdir, "KlangpultLight.ico"),
+            os.path.join(cdir, "icon.ico"),
+            os.path.join(cdir, "assets", "icon.png"),
+            os.path.join(cdir, "assets", "DesktopIcon.png"),
+            os.path.join(cdir, "DesktopIcon.png"),
+            os.path.join(cdir, "icon.png"),
+        ])
+
+    for path in candidates:
+        if os.path.isfile(path):
+            icon = QIcon(path)
+            if not icon.isNull():
+                return icon
+
+    return QIcon()
+
+
+
 def _setup_sys_path() -> None:
     """Stellt sicher, dass Recorder/ im sys.path liegt."""
     recorder_root = _source_root()
@@ -171,6 +220,9 @@ def main() -> int:
 
     # --- Qt-App ---
     app = QApplication.instance() or QApplication(sys.argv)
+    app_icon = load_app_icon()
+    if not app_icon.isNull():
+        app.setWindowIcon(app_icon)
 
     # --- Hauptfenster ---
     fenster = MainWindow(
@@ -184,6 +236,9 @@ def main() -> int:
         sources_config_path=sources_config_path,
         board_player=board_player,
     )
+    if not app_icon.isNull():
+        fenster.setWindowIcon(app_icon)
+
 
     # --- on_visual_pad verdrahten (4b-Fix) ---
     # BoardPlayer wurde ohne on_visual_pad-Callback erstellt (in _lade_board_und_player).

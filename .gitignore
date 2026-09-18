@@ -54,12 +54,37 @@ output/playwright/
 *.sync-conflict-*
 *.conflict
 *-CONFLIT-*
+*conflicted copy*
+* (Kopie)*
+* (Copy)*
+*-ASUS*
+*-ASUS-GEI*
+*-LAPTOP*
+*-WORKSTATION*
+*-WORKSTATION-LG*
+*-Mac Studio*
+*-MacBook*
 
 # Multi-Agent Locks & Schutzsperren
-LOCK.*
-*.lock
-LOCK*.txt
 LOCK
+LOCK.*
+LOCK*.txt
+LOCK.permissions.json
+LOCK.user.*
+LOCK.until.*
+LOCK.condition.*
+uv.lock
+!package-lock.json
+
+# Test & Coverage Caches
+.coverage*
+coverage/
+htmlcov/
+.hypothesis/
+.turbo/
+.nyc_output/
+.tox/
+.mypy_cache/
 
 # Interne Steuer-/Planungsdateien
 Plan.txt

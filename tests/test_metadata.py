@@ -108,9 +108,26 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         self.assertIn("windows-latest", text)
         self.assertIn("macos-latest", text)
         self.assertIn("cancel-in-progress: true", text)
+        self.assertIn("timeout-minutes: 15", text)
+        self.assertIn("permissions:\n  contents: read", text)
         self.assertIn("python -m compileall -q .", text)
         self.assertIn("ruff check .", text)
         self.assertIn("test_metadata.py", text)
+
+        # Stale & Welcome Workflows
+        stale_file = PROJECT_ROOT / ".github" / "workflows" / "stale.yml"
+        self.assertTrue(stale_file.is_file(), "stale.yml must exist")
+        stale_text = stale_file.read_text(encoding="utf-8")
+        self.assertIn("actions/stale@v9", stale_text)
+        self.assertIn("timeout-minutes: 10", stale_text)
+        self.assertIn("cancel-in-progress: true", stale_text)
+
+        welcome_file = PROJECT_ROOT / ".github" / "workflows" / "welcome.yml"
+        self.assertTrue(welcome_file.is_file(), "welcome.yml must exist")
+        welcome_text = welcome_file.read_text(encoding="utf-8")
+        self.assertIn("actions/first-interaction@v3", welcome_text)
+        self.assertIn("timeout-minutes: 5", welcome_text)
+        self.assertIn("cancel-in-progress: true", welcome_text)
 
     def test_gitignore_hygiene(self):
         """Verify .gitignore hardens against sync conflicts, agent locks, and caches."""
@@ -120,11 +137,15 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         self.assertIn("*-conflict-*", text)
         self.assertIn("*.sync-temp-*", text)
         self.assertIn("*.sync-conflict-*", text)
+        self.assertIn("*conflicted copy*", text)
+        self.assertIn("*-ASUS*", text)
+        self.assertIn("*-WORKSTATION*", text)
         self.assertIn("LOCK.*", text)
-        self.assertIn("*.lock", text)
+        self.assertIn("LOCK.permissions.json", text)
+        self.assertIn("uv.lock", text)
         self.assertIn(".pytest_cache/", text)
         self.assertIn(".ruff_cache/", text)
-        self.assertIn(".coverage", text)
+        self.assertIn(".coverage*", text)
 
     def test_llms_txt_integrity(self):
         """Verify llms.txt context index currency, timestamp, and ecosystem markers."""
@@ -134,8 +155,8 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         self.assertIn("entertain-and-more/KlangpultLight", text)
         self.assertIn("entertain-and-more", text)
         self.assertIn("open-bricks", text)
-        self.assertTrue("2026-09-14" in text or "2026-09-09" in text)
-        self.assertTrue("483" in text or "449" in text)
+        self.assertTrue("2026-09-18" in text or "2026-09-14" in text or "2026-09-09" in text)
+        self.assertTrue("502" in text or "483" in text or "449" in text)
         self.assertIn("MARKETING-LOG.txt", text)
         self.assertIn("THIRD_PARTY_LICENSES.md", text)
         self.assertIn("SECURITY.md", text)
@@ -154,7 +175,7 @@ class TestKlangpultLightMetadata(unittest.TestCase):
             self.assertIn("MARKETING-LOG.txt", text, f"{name} must reference MARKETING-LOG.txt")
             self.assertIn("THIRD_PARTY_LICENSES.md", text, f"{name} must reference THIRD_PARTY_LICENSES.md")
             self.assertIn("actions/workflows/ci.yml", text, f"{name} must have CI badge")
-            self.assertTrue("484%20" in text or "450%20" in text, f"{name} must have tests badge")
+            self.assertTrue("503%20" in text or "484%20" in text or "450%20" in text, f"{name} must have tests badge")
             self.assertIn("RunAsInvoker", text, f"{name} must have security badge")
             self.assertTrue("5d%20triage" in text or "5d%20Triage" in text, f"{name} must have 5d triage badge")
             self.assertIn("graph TD", text, f"{name} must have architecture graph")
@@ -343,6 +364,10 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         changelog_file = PROJECT_ROOT / "CHANGELOG.md"
         self.assertTrue(changelog_file.is_file(), "CHANGELOG.md must exist")
         text = changelog_file.read_text(encoding="utf-8")
+        self.assertIn("## [0.1.7] - 2026-09-18", text)
+        self.assertIn("Pfad A", text)
+        self.assertIn("## [0.1.6] - 2026-09-16", text)
+        self.assertIn("TW-KLANGPULTLIGHT-13", text)
         self.assertIn("## [0.1.5] - 2026-09-14", text)
         self.assertIn("17-Punkte Schnellnavigation", text)
         self.assertIn("## [0.1.4] - 2026-09-11", text)

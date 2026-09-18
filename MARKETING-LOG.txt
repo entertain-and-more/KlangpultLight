@@ -7,7 +7,7 @@
 - **Current Version**: `0.1.0` (App Core) / `0.1.1` (Alpha Display)
 - **License**: Freeware / Proprietary Closed-Source
 - **Architecture**: 100% Local-First PySide6 Desktop Application + Web Planer with zero cloud egress, loopback IPC, and optional local STT
-- **Last Updated**: 2026-09-14 (Pfad B — Marketing, Discoverability, Visual Architecture & Third-Party Audit)
+- **Last Updated**: 2026-09-18 (Pfad A — Technical Hygiene, CI Workflow Hardening, Multi-Host Sync & Lock Guardrails)
 
 ---
 
@@ -136,3 +136,10 @@ Comprehensive SPDX license audit completed in `THIRD_PARTY_LICENSES.md` on 2026-
 - Python Standard Library: PSFL-2.0.
 - QA Tooling: pytest (MIT), ruff (MIT/Apache-2.0), setuptools (MIT), PyInstaller (GPL-2.0 with Bootloader Exception).
 - PEP 621 URLs in `pyproject.toml` expanded with `Third-Party Licenses` and `Marketing Log`.
+
+### Technical Hygiene & CI Hardening Audit (Pfad A - 2026-09-18)
+- **CI Workflows**: Hardened `.github/workflows/ci.yml` (`timeout-minutes: 15`, `permissions: contents: read`), added automated `stale.yml` (`actions/stale@v9`, `timeout-minutes: 10`, daily cron `30 1 * * *`) and `welcome.yml` (`actions/first-interaction@v3`, `timeout-minutes: 5`) with concurrency control (`cancel-in-progress: true`).
+- **Multi-Host Sync & Lock Guardrails**: Expanded `.gitignore` with full multi-host conflict patterns (`*-ASUS*`, `*-WORKSTATION*`, `*conflicted copy*`), agent lock patterns (`LOCK`, `LOCK.*`, `uv.lock`), and test/coverage caches.
+- **Pytest Configuration**: Hardened `[tool.pytest.ini_options]` with `norecursedirs`.
+- **Test Suite Status**: 503 collected tests, 502 passed, 1 skipped (standalone external registry gate). Favicon declaration assertion resolved in `Recorder/tests/test_planer_a11y.py`.
+- **Governance Re-Affirmation**: Confirmed compliance with 10 runtime invariants (`INV-LOCAL-01` to `INV-SLA-10`), Zero-Egress, and unprivileged `RunAsInvoker` mode.

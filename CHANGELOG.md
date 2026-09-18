@@ -23,6 +23,19 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 - Vollständige Code-Hygiene: 86 Ruff-Linter-Meldungen restlos bereinigt, 0 Fehler.
 - `llms.txt` auf Stand 2026-08-22 synchronisiert.
 
+## [0.1.7] - 2026-09-18
+
+### Repository-Hygiene, CI-Workflow-Härtung & Multi-Host Synchronisations-Schutz (Pfad A) [G 2026-09-18]
+- **CI-Workflow-Härtung (`.github/workflows/ci.yml`)**: `timeout-minutes: 15` für Testjobs ergänzt, Least-Privilege-Sicherheitsstandard `permissions: contents: read` hinterlegt und Matrix-Testing über Ubuntu, Windows und macOS abgesichert.
+- **Automatisierte Stale- & Welcome-Workflows (`.github/workflows/stale.yml`, `.github/workflows/welcome.yml`)**:
+  - `stale.yml`: `actions/stale@v9` mit täglichem Cron-Lauf (`30 1 * * *`), `timeout-minutes: 10`, `concurrency: cancel-in-progress: true`, `permissions: issues: write, pull-requests: write`.
+  - `welcome.yml`: `actions/first-interaction@v3` mit `timeout-minutes: 5`, `concurrency: cancel-in-progress: true`, `permissions: issues: write, pull-requests: write`.
+- **Multi-Host Synchronisations- & Lock-Schutz (`.gitignore`)**: Vollständige Muster für Cloud-Sync-Konfliktdateien (`*conflicted copy*`, `* (Kopie)*`, `* (Copy)*`, `*-ASUS*`, `*-ASUS-GEI*`, `*-LAPTOP*`, `*-WORKSTATION*`, `*-WORKSTATION-LG*`, `*-Mac Studio*`, `*-MacBook*`), Multi-Agent-Locks (`LOCK`, `LOCK.*`, `LOCK*.txt`, `LOCK.permissions.json`, `LOCK.user.*`, `LOCK.until.*`, `LOCK.condition.*`, `uv.lock`, `!package-lock.json`) und Test-/Coverage-Caches (`.coverage*`, `htmlcov/`, `.hypothesis/`, `.turbo/`, `.nyc_output/`, `.tox/`, `.mypy_cache/`) konsolidiert.
+- **Pytest- & Packaging-Härtung (`pyproject.toml`)**: `[tool.pytest.ini_options]` um `norecursedirs` ergänzt.
+- **Barrierefreiheit & Favicon-Handhabung (`Recorder/tests/test_planer_a11y.py`)**: Semantik-Prüfung in `test_planer_index_html_semantics` aktualisiert, um sowohl reale Favicon-Assets (`favicon.ico`) als auch data-URI Deklarationen zu unterstützen.
+- **Drittanbieter-Lizenz- & Governance-Reaudit (`THIRD_PARTY_LICENSES.md`, `MARKETING-LOG.txt`)**: Re-Audit mit Stempel 2026-09-18, Re-Affirmation aller 10 Governance-Invarianten (`INV-LOCAL-01` bis `INV-SLA-10`), Zero-Copyleft und unprivilegiertem `RunAsInvoker`-Betriebsmodus.
+- **Vertragstest-Suite (`tests/test_metadata.py`)**: Umfassend erweitert mit Vertragstests für CI-Workflows (`ci.yml`, `stale.yml`, `welcome.yml`), Gitignore-Härtung, Changelog-Aktualität und Test-Suite-Parität.
+
 ## [0.1.6] - 2026-09-16
 
 ### Tier-2 Internationalisierung, UI-Sprachwechsel, Web-Planer-Adapter & README.es.md (TW-KLANGPULTLIGHT-13) [G 2026-09-16]

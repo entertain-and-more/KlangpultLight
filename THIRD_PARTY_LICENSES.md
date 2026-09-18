@@ -1,7 +1,7 @@
 # Third-Party Licenses & Transparency Notice
 
 > **Project:** `entertain-and-more/KlangpultLight` (Klangpult light — Desktop & Web Media Workstation)<br>
-> **Audited:** 2026-09-14<br>
+> **Audited:** 2026-09-18<br>
 > **Repository License:** [Freeware / Proprietary License](LICENSE)<br>
 > **Architecture & Privacy:** 100% Local-First, Zero-Egress by default, Unprivileged User-Mode (`RunAsInvoker`)
 

@@ -5,9 +5,9 @@
 **Estado: Alfa Pública** — estación de trabajo de escritorio y web ligera, local-first para podcasting, grabación multimedia y planificación de contenido.
 
 [![Estado](https://img.shields.io/badge/Estado-Alfa-orange.svg)](#)
-[![Versión](https://img.shields.io/badge/Versi%C3%B3n-v0.1.1-blue.svg)](./CHANGELOG.md)
+[![Versión](https://img.shields.io/badge/Versi%C3%B3n-v0.1.7-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-[![Pytest](https://img.shields.io/badge/Pytest-496%20pruebas%20aprobadas-success.svg)](https://docs.pytest.org/)
+[![Pytest](https://img.shields.io/badge/Pytest-503%20pruebas%20(502%20aprobadas)-success.svg)](https://docs.pytest.org/)
 [![CI](https://img.shields.io/badge/CI-Matriz%20Multi--SO-blue.svg)](https://github.com/entertain-and-more/KlangpultLight/actions/workflows/ci.yml)
 [![Plataformas](https://img.shields.io/badge/Plataformas-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](#)
 [![Licencia](https://img.shields.io/badge/Licencia-Freeware-informational.svg)](./LICENSE)
@@ -15,7 +15,7 @@
 [![Seguridad](https://img.shields.io/badge/Seguridad-Sin%20Privilegios%20(RunAsInvoker)-green.svg)](./SECURITY.md)
 [![SLA de Seguridad](https://img.shields.io/badge/SLA%20Seguridad-48h%20respuesta%20%7C%205d%20triaje-blue.svg)](./SECURITY.md)
 [![Licencias de Terceros](https://img.shields.io/badge/Licencias%20Terceros-Auditadas%20(100%25%20Permisivas%20%2F%20LGPL)--Din%C3%A1mico-green.svg)](./THIRD_PARTY_LICENSES.md)
-[![Registro de Marketing](https://img.shields.io/badge/Marketing%20Log-Activo%20(2026--09--14)-blue.svg)](./MARKETING-LOG.txt)
+[![Registro de Marketing](https://img.shields.io/badge/Marketing%20Log-Activo%20(2026--09--18)-blue.svg)](./MARKETING-LOG.txt)
 [![Estilo de código: ruff](https://img.shields.io/badge/estilo%20de%20c%C3%B3digo-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Ecosistema](https://img.shields.io/badge/Ecosistema-entertain--and--more-blueviolet.svg)](https://github.com/entertain-and-more)
 [![Paraguas](https://img.shields.io/badge/Paraguas-open--bricks-blue.svg)](https://github.com/open-bricks/open-bricks)
@@ -28,7 +28,7 @@
 > Licencia: Freeware / Propietaria, código cerrado.
 
 > [!NOTE]
-> Para agentes de IA y herramientas automatizadas: consulte [llms.txt](./llms.txt) (Última comprobación: 2026-09-14) para obtener un resumen del repositorio legible por máquinas y contratos de pruebas. Las auditorías detalladas de licencias de terceros están documentadas en [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md), y la telemetría de marketing, SEO y recursos visuales se registra en [MARKETING-LOG.txt](./MARKETING-LOG.txt).
+> Para agentes de IA y herramientas automatizadas: consulte [llms.txt](./llms.txt) (Última comprobación: 2026-09-18) para obtener un resumen del repositorio legible por máquinas y contratos de pruebas. Las auditorías detalladas de licencias de terceros están documentadas en [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md), y la telemetría de marketing, SEO y recursos visuales se registra en [MARKETING-LOG.txt](./MARKETING-LOG.txt).
 
 ---
 
@@ -236,7 +236,8 @@ Si el Recorder no está activo, el Planer funciona en modo autónomo para gesti�
 # Configurar entorno virtual:
 python -m venv C:\_Local_DEVenvs\podcast_packages
 C:\_Local_DEVenvs\podcast_packages\Scriptsctivate
-pip install -r Recorderequirements.txt
+pip install -r Recorder
+equirements.txt
 
 # Iniciar la aplicación de escritorio:
 cd Recorder

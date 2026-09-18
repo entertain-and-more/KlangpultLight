@@ -5,9 +5,9 @@
 **Status: Öffentliche Alpha** — Schlanke, lokale Desktop- und Web-Workstation für Podcasts, Multimedia-Aufnahmen und Medienplanung.
 
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#)
-[![Version](https://img.shields.io/badge/Version-v0.1.1-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-v0.1.7-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-[![Pytest](https://img.shields.io/badge/Pytest-484%20Tests%20(483%20bestanden)-success.svg)](https://docs.pytest.org/)
+[![Pytest](https://img.shields.io/badge/Pytest-503%20Tests%20(502%20bestanden)-success.svg)](https://docs.pytest.org/)
 [![CI](https://img.shields.io/badge/CI-Multi--OS%20Matrix-blue.svg)](https://github.com/entertain-and-more/KlangpultLight/actions/workflows/ci.yml)
 [![Plattformen](https://img.shields.io/badge/Plattformen-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](#)
 [![Lizenz](https://img.shields.io/badge/Lizenz-Freeware-informational.svg)](./LICENSE)
@@ -15,7 +15,7 @@
 [![Sicherheit](https://img.shields.io/badge/Sicherheit-Unprivilegiert%20(RunAsInvoker)-green.svg)](./SECURITY.md)
 [![Sicherheits-SLA](https://img.shields.io/badge/Sicherheits--SLA-48h%20Antwort%20%7C%205d%20Triage-blue.svg)](./SECURITY.md)
 [![Drittanbieter-Audit](https://img.shields.io/badge/Drittanbieter--Lizenzen-Gepr%C3%BCft%20(100%25%20Frei%20%2F%20LGPL)--Dynamisch-green.svg)](./THIRD_PARTY_LICENSES.md)
-[![Marketing-Log](https://img.shields.io/badge/Marketing--Log-Aktiv%20(2026--09--14)-blue.svg)](./MARKETING-LOG.txt)
+[![Marketing-Log](https://img.shields.io/badge/Marketing--Log-Aktiv%20(2026--09--18)-blue.svg)](./MARKETING-LOG.txt)
 [![Code-Stil: ruff](https://img.shields.io/badge/Code--Stil-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Ökosystem](https://img.shields.io/badge/%C3%96kosystem-entertain--and--more-blueviolet.svg)](https://github.com/entertain-and-more)
 [![Dachorganisation](https://img.shields.io/badge/Dachorganisation-open--bricks-blue.svg)](https://github.com/open-bricks/open-bricks)
@@ -28,7 +28,7 @@
 > Lizenz: Freeware / Proprietär, Closed-Source.
 
 > [!NOTE]
-> Für KI-Agenten und automatisierte Tools: Siehe [llms.txt](./llms.txt) (Stand: 2026-09-14) für eine maschinenlesbare Repository-Übersicht und Testverträge. Vollständige Drittanbieter-Lizenzaudits sind in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md) dokumentiert, und Marketing-, SEO- und Asset-Dokumentation wird in [MARKETING-LOG.txt](./MARKETING-LOG.txt) geführt.
+> Für KI-Agenten und automatisierte Tools: Siehe [llms.txt](./llms.txt) (Stand: 2026-09-18) für eine maschinenlesbare Repository-Übersicht und Testverträge. Vollständige Drittanbieter-Lizenzaudits sind in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md) dokumentiert, und Marketing-, SEO- und Asset-Dokumentation wird in [MARKETING-LOG.txt](./MARKETING-LOG.txt) geführt.
 
 ---
 

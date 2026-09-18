@@ -60,6 +60,7 @@ minversion = "7.0"
 addopts = "-ra -q"
 testpaths = ["Recorder/tests", "tests"]
 pythonpath = ["."]
+norecursedirs = [".git", ".github", "workspace", "_archive", "releases", "dist", "build", "node_modules", ".playwright-cli"]
 
 [tool.ruff]
 line-length = 100

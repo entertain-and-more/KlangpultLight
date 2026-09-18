@@ -72,8 +72,8 @@ def test_planer_index_html_semantics():
     assert "<html lang=\"de\">" in content.lower() or "lang=\"de\"" in content, "index.html muss lang='de' Attribut haben"
     assert "<title>" in content and "</title>" in content, "index.html muss title-Tag haben"
     assert "main" in content or "role=\"main\"" in content, "index.html muss eine Haupt-Landmarke (main) besitzen"
-    assert 'rel="icon"' in content and 'href="data:,"' in content, (
-        "index.html muss den impliziten /favicon.ico-404 im lokalen Browser verhindern"
+    assert 'rel="icon"' in content and ('href="data:,"' in content or 'href="favicon.ico"' in content), (
+        "index.html muss ein Favicon deklarieren oder den impliziten /favicon.ico-404 im lokalen Browser verhindern"
     )
 
 

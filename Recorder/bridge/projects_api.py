@@ -78,6 +78,32 @@ def _json_schreiben(pfad: Path, daten) -> None:
     os.replace(tmp_pfad, pfad)  # auf POSIX/Windows atomar genug für Einzelprozess
 
 
+def _safe_volume(val: object, default: float = 1.0) -> float:
+    """Konvertiert val robust in einen Float-Lautstärkewert im Bereich [0.0, 4.0].
+
+    Bei None, leerem String oder nicht numerischen Werten wird der Defaultwert genutzt.
+    """
+    if val is None:
+        return default
+    try:
+        v = float(val)  # type: ignore[arg-type]
+        if v != v:  # NaN-Prüfung
+            return default
+        return max(0.0, min(4.0, v))
+    except (ValueError, TypeError):
+        return default
+
+
+def _validate_id(ident: str, name: str = "ID") -> str:
+    """Validiert einen Bezeichner gegen Pfadtrennzeichen und Directory Traversal."""
+    if not isinstance(ident, str) or not ident.strip():
+        raise ValueError(f"Ungültige {name}: darf nicht leer sein.")
+    sauber = ident.strip()
+    if any(sep in sauber for sep in ("/", "\\")) or ".." in sauber:
+        raise ValueError(f"Ungültige {name} mit Pfadtrennzeichen oder Traversal: '{ident}'")
+    return sauber
+
+
 # ---------------------------------------------------------------------------
 # Projektverwaltung (threadsicherer Zugriff über Lock)
 # ---------------------------------------------------------------------------
@@ -176,7 +202,8 @@ class _ProjektStore:
     # -- Episoden --
 
     def _episoden_pfad(self, project_id: str) -> Path:
-        return self._dir / f"episodes_{project_id}.json"
+        pid = _validate_id(project_id, "project_id")
+        return self._dir / f"episodes_{pid}.json"
 
     def _episoden_lesen(self, project_id: str) -> list[dict]:
         daten = _json_lesen(self._episoden_pfad(project_id))
@@ -273,6 +300,7 @@ class _ProjektStore:
                     p["recording_ids"] = [
                         r for r in (p.get("recording_ids") or []) if r != recording_id
                     ]
+                    p["updated_at"] = datetime.now(timezone.utc).isoformat()
                     self._projekte_schreiben(projekte)
                     return p
             return None
@@ -280,7 +308,8 @@ class _ProjektStore:
     # -- Assets (Board-Pads) --
 
     def _assets_pfad(self, project_id: str) -> Path:
-        return self._dir / f"assets_{project_id}.json"
+        pid = _validate_id(project_id, "project_id")
+        return self._dir / f"assets_{pid}.json"
 
     def _assets_lesen(self, project_id: str) -> list[dict]:
         daten = _json_lesen(self._assets_pfad(project_id))
@@ -323,7 +352,7 @@ class _ProjektStore:
             "color": color or "#3b82f6",
             "mode": mode,
             "hotkey": hotkey or "",
-            "volume": float(volume),
+            "volume": _safe_volume(volume, 1.0),
             "created_at": jetzt,
             "updated_at": jetzt,
         }
@@ -372,7 +401,7 @@ class _ProjektStore:
                     a["color"] = color or "#3b82f6"
                     a["mode"] = mode
                     a["hotkey"] = hotkey or ""
-                    a["volume"] = float(volume)
+                    a["volume"] = _safe_volume(volume, 1.0)
                     a["updated_at"] = datetime.now(timezone.utc).isoformat()
                     _json_schreiben(self._assets_pfad(project_id), assets)
                     return dict(a)
@@ -398,7 +427,8 @@ class _ProjektStore:
     # -- Line (Einspieler-Reihenfolge) --
 
     def _line_pfad(self, project_id: str) -> Path:
-        return self._dir / f"line_{project_id}.json"
+        pid = _validate_id(project_id, "project_id")
+        return self._dir / f"line_{pid}.json"
 
     def _line_lesen(self, project_id: str) -> list[str]:
         daten = _json_lesen(self._line_pfad(project_id))
@@ -425,7 +455,8 @@ class _ProjektStore:
     # -- Teleprompter --
 
     def _teleprompter_pfad(self, project_id: str) -> Path:
-        return self._dir / f"teleprompter_{project_id}.json"
+        pid = _validate_id(project_id, "project_id")
+        return self._dir / f"teleprompter_{pid}.json"
 
     def _teleprompter_lesen(self, project_id: str) -> dict:
         daten = _json_lesen(self._teleprompter_pfad(project_id))
@@ -489,7 +520,8 @@ class _ProjektStore:
     # -- KI-Monitor --
 
     def _monitor_pfad(self, project_id: str) -> Path:
-        return self._dir / f"monitor_{project_id}.json"
+        pid = _validate_id(project_id, "project_id")
+        return self._dir / f"monitor_{pid}.json"
 
     def _monitor_lesen(self, project_id: str) -> dict:
         daten = _json_lesen(self._monitor_pfad(project_id))
@@ -700,7 +732,7 @@ class _ProjektStore:
                     "color": str(p.get("color", "#3b82f6")),
                     "mode": mode,
                     "hotkey": str(p.get("hotkey", "")),
-                    "volume": float(p.get("volume", 1.0)),
+                    "volume": _safe_volume(p.get("volume", 1.0), 1.0),
                     "created_at": jetzt,
                     "updated_at": jetzt,
                 })
@@ -977,7 +1009,7 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
             color=body.get("color", "#3b82f6"),
             mode=body.get("mode", "play_stop"),
             hotkey=body.get("hotkey", ""),
-            volume=float(body.get("volume", 1.0)),
+            volume=_safe_volume(body.get("volume", 1.0), 1.0),
             asset_id=body.get("id"),
         )
         if asset is None:
@@ -992,7 +1024,7 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
         store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
         try:
             res = store.workspace_importieren(project_id, body)
-        except ValueError as exc:
+        except (ValueError, TypeError) as exc:
             self._json(400, {"error": str(exc)})
             return
         if res is None:
@@ -1039,7 +1071,7 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
             color=body.get("color", "#3b82f6"),
             mode=body.get("mode", "play_stop"),
             hotkey=body.get("hotkey", ""),
-            volume=float(body.get("volume", 1.0)),
+            volume=_safe_volume(body.get("volume", 1.0), 1.0),
         )
         if asset is None:
             self._json(404, {"error": "Projekt oder Asset nicht gefunden"})
@@ -1132,7 +1164,13 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
         try:
             laenge = int(self.headers.get("Content-Length", 0))
             raw = self.rfile.read(laenge) if laenge > 0 else b"{}"
-            return json.loads(raw.decode("utf-8"))
+            if not raw or not raw.strip():
+                return {}
+            daten = json.loads(raw.decode("utf-8"))
+            if not isinstance(daten, dict):
+                self._json(400, {"error": "Ungültiger JSON-Body: Root muss ein JSON-Objekt sein"})
+                return None
+            return daten
         except (ValueError, json.JSONDecodeError) as exc:
             self._json(400, {"error": f"Ungültiger JSON-Body: {exc}"})
             return None

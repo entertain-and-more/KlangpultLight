@@ -60,6 +60,22 @@ Angelegt: 2026-06-22.
   `TestRecordingDirValidation::test_recording_dir_absoluter_pfad_und_traversal_schutz`,
   `TestAddBranchValidation::test_add_branch_leerer_name_wirft`.
 
+- **[FIXED] Payload-Robustheit, Volume-Normalisierung und Traversal-Schutz in ProjectsApiServer (2026-09-19):**
+  `Recorder/bridge/projects_api.py` führte beim Verarbeiten von Assets (`_handle_asset_post`, `_handle_asset_put`)
+  sowie beim Workspace-Import (`workspace_importieren`) ungeschützte Casts mit `float(body.get("volume", 1.0))` aus.
+  Wurden Payloads mit `volume: null` oder nicht-numerischen Strings übermittelt, stürzte der Server-Thread
+  mit ungehandhabten `TypeError` bzw. `ValueError` ab und brach die HTTP-Verbindung ohne Antwort ab (`RemoteDisconnected`).
+  Zudem akzeptierte `_lese_body()` beliebige JSON-Roots; bei Arrays (`[]`), Strings oder `null` kam es zu
+  `AttributeError: 'list' object has no attribute 'get'` bzw. Socket-Hängern. `_ProjektStore.aufnahme_entfernen()`
+  vergaß zudem die Aktualisierung des Zeitstempels `updated_at`.
+  Fix: Hilfsfunktion `_safe_volume()` mit Clamping `[0.0, 4.0]` und Fallback auf Defaultwert, Typ-Validierung
+  in `_lese_body()` mit sauberem `HTTP 400 Bad Request` bei Nicht-Objekt-Bodies, Zeitstempel-Update in
+  `aufnahme_entfernen()` sowie Traversal-Prüfung `_validate_id()` in den internen Pfad-Generatoren.
+  Regressionstests: `Recorder/tests/test_projects_api.py::test_asset_post_and_put_volume_robustness`,
+  `test_workspace_import_with_null_and_invalid_volume`,
+  `test_non_dict_json_body_returns_400_instead_of_crashing`,
+  `test_aufnahme_entfernen_aktualisiert_updated_at`.
+
 ---
 
 ## Offen

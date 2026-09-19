@@ -943,3 +943,141 @@ def test_workspace_teleprompter_roundtrip(tmp_path):
     finally:
         server.stop()
 
+
+def test_asset_post_and_put_volume_robustness(tmp_path):
+    """Prüft, dass null oder ungültige volume-Werte bei Assets nicht zum Server-Absturz führen."""
+    server = _starte_server(tmp_path)
+    port = server.port
+    try:
+        _, proj = _post(port, "/api/projects", {"title": "Asset Robustness Projekt"})
+        pid = proj["project_id"]
+
+        # POST mit volume=None
+        s_post1, asset1 = _post(port, f"/api/projects/{pid}/assets", {
+            "label": "Pad Null Volume",
+            "volume": None,
+        })
+        assert s_post1 == 201
+        assert isinstance(asset1["volume"], float)
+        assert asset1["volume"] == 1.0
+
+        # POST mit volume="laut"
+        s_post2, asset2 = _post(port, f"/api/projects/{pid}/assets", {
+            "label": "Pad String Volume",
+            "volume": "laut",
+        })
+        assert s_post2 == 201
+        assert isinstance(asset2["volume"], float)
+        assert asset2["volume"] == 1.0
+
+        aid = asset1["id"]
+        # PUT mit volume=None
+        s_put1, put_res1 = _put(port, f"/api/projects/{pid}/assets/{aid}", {
+            "label": "Pad Updated Null",
+            "volume": None,
+        })
+        assert s_put1 == 200
+        assert put_res1["volume"] == 1.0
+
+        # PUT mit volume="ungültig"
+        s_put2, put_res2 = _put(port, f"/api/projects/{pid}/assets/{aid}", {
+            "label": "Pad Updated Invalid",
+            "volume": "ungültig",
+        })
+        assert s_put2 == 200
+        assert put_res2["volume"] == 1.0
+    finally:
+        server.stop()
+
+
+def test_workspace_import_with_null_and_invalid_volume(tmp_path):
+    """Prüft, dass Workspace-Import auch bei Pads mit null oder ungültigem volume nicht abstürzt."""
+    server = _starte_server(tmp_path)
+    port = server.port
+    try:
+        _, proj = _post(port, "/api/projects", {"title": "WS Import Test"})
+        pid = proj["project_id"]
+
+        ws_payload = {
+            "format": "klangpultlight-workspace-v1",
+            "version": 1,
+            "board": {
+                "pads": [
+                    {
+                        "id": "pad-1",
+                        "label": "Pad 1",
+                        "volume": None,
+                    },
+                    {
+                        "id": "pad-2",
+                        "label": "Pad 2",
+                        "volume": "leise",
+                    },
+                ]
+            },
+            "line": ["pad-1", "pad-2"],
+        }
+        s_imp, imp_res = _post(port, f"/api/projects/{pid}/workspace/import", ws_payload)
+        assert s_imp == 200
+        assert imp_res["status"] == "ok"
+        assert imp_res["assets_count"] == 2
+
+        s_assets, assets_res = _get(port, f"/api/projects/{pid}/assets")
+        assert s_assets == 200
+        for pad in assets_res["assets"]:
+            assert isinstance(pad["volume"], float)
+            assert pad["volume"] == 1.0
+    finally:
+        server.stop()
+
+
+def test_non_dict_json_body_returns_400_instead_of_crashing(tmp_path):
+    """Prüft, dass JSON-Bodies, die kein Dict sind ([] oder null oder String), sauber 400 liefern."""
+    server = _starte_server(tmp_path)
+    port = server.port
+    try:
+        for payload in (b"[]", b"null", b'"nur-ein-string"', b"123"):
+            req = urllib.request.Request(
+                f"http://127.0.0.1:{port}/api/projects",
+                data=payload,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with pytest.raises(urllib.error.HTTPError) as exc_info:
+                urllib.request.urlopen(req, timeout=5)
+            assert exc_info.value.code == 400
+            err_data = json.loads(exc_info.value.read().decode("utf-8"))
+            assert "error" in err_data
+    finally:
+        server.stop()
+
+
+def test_aufnahme_entfernen_aktualisiert_updated_at(tmp_path):
+    """Prüft, dass aufnahme_entfernen updated_at ebenso wie aufnahme_zuordnen aktualisiert."""
+    server = _starte_server(tmp_path)
+    port = server.port
+    try:
+        _, proj = _post(port, "/api/projects", {"title": "Timestamp Test"})
+        pid = proj["project_id"]
+        t0 = proj["updated_at"]
+
+        import time
+        time.sleep(0.01)
+
+        # Zuordnen
+        s_assign, p_assigned = _post(port, f"/api/projects/{pid}/recordings/rec_123", {})
+        assert s_assign == 200
+        t1 = p_assigned["updated_at"]
+        assert t1 >= t0
+
+        time.sleep(0.01)
+
+        # Entfernen
+        s_del = _delete(port, f"/api/projects/{pid}/recordings/rec_123")
+        assert s_del == 200
+
+        _, p_after = _get(port, f"/api/projects/{pid}")
+        t2 = p_after["updated_at"]
+        assert t2 > t1, "updated_at muss beim Entfernen der Aufnahme aktualisiert werden"
+    finally:
+        server.stop()

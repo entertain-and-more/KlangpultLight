@@ -9,7 +9,18 @@ description = "Lightweight desktop & web application (Recorder + Planer) for aud
 readme = "README.md"
 license = {text = "Freeware / Proprietary"}
 requires-python = ">=3.10"
-authors = [{name = "Lukas Geiger"}]
+authors = [{name = "Lukas Geiger", email = "support@lukasgeiger.com"}]
+dependencies = [
+    "PySide6>=6.6",
+    "sounddevice>=0.4.6",
+    "numpy>=1.26",
+    "soundfile>=0.12",
+    "opencv-python>=4.9",
+    "mss>=9.0",
+    "websockets>=12.0",
+    "jsonschema>=4.21",
+]
+
 keywords = [
     "audio",
     "video",
@@ -42,6 +53,15 @@ classifiers = [
     "Topic :: Multimedia :: Video :: Capture"
 ]
 
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0",
+    "ruff>=0.9.0",
+]
+stt = [
+    "faster-whisper>=1.0.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/entertain-and-more/KlangpultLight"
 Repository = "https://github.com/entertain-and-more/KlangpultLight.git"
@@ -50,6 +70,7 @@ Issues = "https://github.com/entertain-and-more/KlangpultLight/issues"
 Changelog = "https://github.com/entertain-and-more/KlangpultLight/blob/main/CHANGELOG.md"
 Security = "https://github.com/entertain-and-more/KlangpultLight/blob/main/SECURITY.md"
 "Third-Party Licenses" = "https://github.com/entertain-and-more/KlangpultLight/blob/main/THIRD_PARTY_LICENSES.md"
+"Third-Party Licenses (Text)" = "https://github.com/entertain-and-more/KlangpultLight/blob/main/THIRD_PARTY_LICENSES.txt"
 "Marketing Log" = "https://github.com/entertain-and-more/KlangpultLight/blob/main/MARKETING-LOG.txt"
 "Parent Organization" = "https://github.com/entertain-and-more"
 Ecosystem = "https://github.com/entertain-and-more"

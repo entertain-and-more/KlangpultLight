@@ -1,0 +1,14 @@
+# Klangpult light – Root-Abhängigkeiten mit CVE-gehärteten Mindestversionen
+PySide6>=6.6
+sounddevice>=0.4.6
+numpy>=1.26
+soundfile>=0.12
+opencv-python>=4.9
+mss>=9.0
+websockets>=12.0
+jsonschema>=4.21
+
+# Entwicklung & Qualitätssicherung
+pytest>=8.0
+ruff>=0.9.0
+setuptools>=61.0

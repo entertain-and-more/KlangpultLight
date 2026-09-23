@@ -1,0 +1,89 @@
+PySide6
+License: GNU Lesser General Public License v3 (LGPL-3.0)
+SPDX: LGPL-3.0-only
+URL: https://code.qt.io/cgit/pyside/pyside-setup.git/
+Notice: Offizielle Qt6-Python-Bindings für Recorder-Desktop-GUI, Audio-/Videogerätesteuerung und Multi-Monitor-Darstellung. Dynamische Einbindung nach LGPLv3 §4.
+
+sounddevice
+License: MIT License
+SPDX: MIT
+URL: https://github.com/spatialaudio/python-sounddevice
+Notice: Low-Latency-Audio-Ein- und Ausgabe über PortAudio, WASAPI-Loopback-Audiostreaming für Live-Aufnahmen (>=0.4.6).
+
+numpy
+License: BSD 3-Clause License
+SPDX: BSD-3-Clause
+URL: https://numpy.org/
+Notice: Schnelle numerische Vektorpuffer, Pegel- und Audiopegel-Berechnung, Audio-Signal-Sanitization (>=1.26).
+
+soundfile
+License: BSD 3-Clause License
+SPDX: BSD-3-Clause
+URL: https://github.com/bastibe/python-soundfile
+Notice: Audio-Datei-Dekodierung und -Enkodierung via libsndfile (>=0.12).
+
+opencv-python
+License: Apache License 2.0
+SPDX: Apache-2.0
+URL: https://github.com/opencv/opencv-python
+Notice: Optionale Kamera-Frame-Erfassung und Videobild-Verarbeitung (>=4.9).
+
+mss
+License: MIT License
+SPDX: MIT
+URL: https://github.com/BoboTiG/python-mss
+Notice: Hochperformante Multi-Monitor-Bildschirmaufnahme für Videoaufzeichnungen (>=9.0).
+
+websockets
+License: BSD 3-Clause License
+SPDX: BSD-3-Clause
+URL: https://github.com/python-websockets/websockets
+Notice: Lokale Loopback-WebSocket-Kommunikation zwischen Recorder und Web-Planer (>=12.0).
+
+jsonschema
+License: MIT License
+SPDX: MIT
+URL: https://github.com/python-jsonschema/jsonschema
+Notice: JSON-Schema-Validierung für Ereignis- und Konfigurationsdateien (>=4.21).
+
+faster-whisper
+License: MIT License
+SPDX: MIT
+URL: https://github.com/SYSTRAN/faster-whisper
+Notice: Optionale lokale Speech-to-Text Transkription mit CTranslate2 (Offline-Transkription).
+
+pytest
+License: MIT License
+SPDX: MIT
+URL: https://github.com/pytest-dev/pytest
+Notice: Test-Framework zur automatisierten Vertrags- und Regressionsprüfung (>=8.0).
+
+ruff
+License: MIT OR Apache-2.0
+SPDX: MIT OR Apache-2.0
+URL: https://github.com/astral-sh/ruff
+Notice: High-Performance-Linter und Code-Qualitätsprüfung (>=0.9.0).
+
+setuptools
+License: MIT License
+SPDX: MIT
+URL: https://github.com/pypa/setuptools
+Notice: Standardisiertes Build-Backend nach PEP 517 und PEP 621 (>=61.0).
+
+PyInstaller
+License: GPL-2.0-or-later WITH Bootloader-exception
+SPDX: GPL-2.0-or-later WITH Bootloader-exception
+URL: https://pyinstaller.org/
+Notice: Erstellung eigenständiger Windows-Binärdateien unter PyInstaller Bootloader Special Exception.
+
+FFmpeg
+License: LGPL-2.1-or-later / GPL-2.0-or-later
+SPDX: LGPL-2.1-or-later
+URL: https://ffmpeg.org/
+Notice: Externes Medien-Muxing-Werkzeug, strikt als isolierter Kommandozeilen-Subprozess ohne dynamische/statische Bindung eingebunden.
+
+Python Standard Library
+License: Python Software Foundation License Version 2
+SPDX: Python-2.0
+URL: https://docs.python.org/3/license.html
+Notice: Standardbibliothek für Basisfunktionalitäten (Dataclasses, SQLite, JSON, Loopback-HTTP).

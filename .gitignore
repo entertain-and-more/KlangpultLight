@@ -23,10 +23,18 @@ env/
 
 # venv liegt NIE in OneDrive — sondern in C:\_Local_DEV\venvs\podcast_packages\
 
-# Secrets
+# Secrets, Zertifikate & Credentials
 .env
 *.key
 *.token
+*.pem
+*.pfx
+*.p12
+credentials.json
+secrets.*
+keyring/
+*.sqlite
+*.sqlite3
 
 # Build
 build/

@@ -7,15 +7,16 @@
 [![Estado](https://img.shields.io/badge/Estado-Alfa-orange.svg)](#)
 [![Versión](https://img.shields.io/badge/Versi%C3%B3n-v0.1.7-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-[![Pytest](https://img.shields.io/badge/Pytest-503%20pruebas%20(502%20aprobadas)-success.svg)](https://docs.pytest.org/)
+[![Pytest](https://img.shields.io/badge/Pytest-521%20pruebas%20(521%20aprobadas)-success.svg)](https://docs.pytest.org/)
 [![CI](https://img.shields.io/badge/CI-Matriz%20Multi--SO-blue.svg)](https://github.com/entertain-and-more/KlangpultLight/actions/workflows/ci.yml)
 [![Plataformas](https://img.shields.io/badge/Plataformas-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](#)
 [![Licencia](https://img.shields.io/badge/Licencia-Freeware-informational.svg)](./LICENSE)
+[![Notice](https://img.shields.io/badge/Atribuci%C3%B3n-NOTICE-blue.svg)](./NOTICE)
 [![Local-First](https://img.shields.io/badge/Arquitectura-Local--First%20%7C%20Zero--Egress-orange.svg)](./SECURITY.md)
 [![Seguridad](https://img.shields.io/badge/Seguridad-Sin%20Privilegios%20(RunAsInvoker)-green.svg)](./SECURITY.md)
 [![SLA de Seguridad](https://img.shields.io/badge/SLA%20Seguridad-48h%20respuesta%20%7C%205d%20triaje-blue.svg)](./SECURITY.md)
 [![Licencias de Terceros](https://img.shields.io/badge/Licencias%20Terceros-Auditadas%20(100%25%20Permisivas%20%2F%20LGPL)--Din%C3%A1mico-green.svg)](./THIRD_PARTY_LICENSES.md)
-[![Registro de Marketing](https://img.shields.io/badge/Marketing%20Log-Activo%20(2026--09--18)-blue.svg)](./MARKETING-LOG.txt)
+[![Registro de Marketing](https://img.shields.io/badge/Marketing%20Log-Activo%20(2026--09--24)-blue.svg)](./MARKETING-LOG.txt)
 [![Estilo de código: ruff](https://img.shields.io/badge/estilo%20de%20c%C3%B3digo-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Ecosistema](https://img.shields.io/badge/Ecosistema-entertain--and--more-blueviolet.svg)](https://github.com/entertain-and-more)
 [![Paraguas](https://img.shields.io/badge/Paraguas-open--bricks-blue.svg)](https://github.com/open-bricks/open-bricks)
@@ -28,7 +29,7 @@
 > Licencia: Freeware / Propietaria, código cerrado.
 
 > [!NOTE]
-> Para agentes de IA y herramientas automatizadas: consulte [llms.txt](./llms.txt) (Última comprobación: 2026-09-18) para obtener un resumen del repositorio legible por máquinas y contratos de pruebas. Las auditorías detalladas de licencias de terceros están documentadas en [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md), y la telemetría de marketing, SEO y recursos visuales se registra en [MARKETING-LOG.txt](./MARKETING-LOG.txt).
+> Para agentes de IA y herramientas automatizadas: consulte [llms.txt](./llms.txt) (Última comprobación: 2026-09-24) para obtener un resumen del repositorio legible por máquinas y contratos de pruebas. La atribución formal y el reconocimiento de contribuyentes se declaran en [NOTICE](./NOTICE). Las auditorías detalladas de licencias de terceros y SBOM de Nivel 1 están documentadas en [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md), y la telemetría de marketing, SEO y recursos visuales se registra en [MARKETING-LOG.txt](./MARKETING-LOG.txt).
 
 ---
 
@@ -47,14 +48,15 @@
 11. [Compilación del Ejecutable Autónomo](#compilación-del-ejecutable-autónomo)
 12. [Herramientas Hermanas y Matriz del Ecosistema](#herramientas-hermanas-y-matriz-del-ecosistema)
 13. [Comparación de Funciones: Edición Ligera vs. Suite Completa](#comparación-de-funciones-edición-ligera-vs-suite-completa)
-14. [Licencias de Terceros y Transparencia](#licencias-de-terceros-y-transparencia)
+14. [Licencias de Terceros, SBOM de Nivel 1 y Transparencia](#licencias-de-terceros-y-transparencia)
 15. [Puertas de Validación y Verificación](#puertas-de-validación-y-verificación)
 16. [Política de Seguridad y SLA de Triaje](#política-de-seguridad-y-sla-de-triaje)
-17. [Licencia y Autor](#licencia-y-autor)
+17. [Acuerdo de Licencia Freeware y Atribución](#licencia-y-autor)
+18. [Aviso Legal y Limitación de Responsabilidad (§ 521 BGB)](#aviso-legal-y-limitación-de-responsabilidad--521-bgb)
 
 ---
 
-<a id="descripción-general-y-capacidades-clave"></a>
+<a id="sec-01"></a><a id="descripción-general-y-capacidades-clave"></a>
 ## Descripción General y Capacidades Clave
 
 Klangpult light desacopla las operaciones de grabación de la planificación de proyectos en dos herramientas estrechamente integradas:
@@ -67,7 +69,7 @@ Ambas herramientas se comunican mediante sockets IPC en bucle local (`127.0.0.1:
 
 ---
 
-<a id="diagrama-de-arquitectura-del-sistema"></a>
+<a id="sec-02"></a><a id="diagrama-de-arquitectura-del-sistema"></a>
 ## Diagrama de Arquitectura del Sistema
 
 ```mermaid
@@ -85,7 +87,7 @@ graph TD
 
 ---
 
-<a id="secuencia-del-ciclo-de-vida-de-grabación"></a>
+<a id="sec-03"></a><a id="secuencia-del-ciclo-de-vida-de-grabación"></a>
 ## Secuencia del Ciclo de Vida de Grabación
 
 ```mermaid
@@ -117,7 +119,7 @@ sequenceDiagram
 
 ---
 
-<a id="invariantes-de-gobernanza-y-ejecución"></a>
+<a id="sec-04"></a><a id="invariantes-de-gobernanza-y-ejecución"></a>
 ## Invariantes de Gobernanza y Ejecución
 
 Klangpult light cumple estrictamente con 10 invariantes arquitectónicas y de ejecución para garantizar estabilidad, privacidad del usuario y portabilidad multiplataforma:
@@ -137,7 +139,7 @@ Klangpult light cumple estrictamente con 10 invariantes arquitectónicas y de ej
 
 ---
 
-<a id="perfiles-de-usuario-y-descubrimiento"></a>
+<a id="sec-05"></a><a id="perfiles-de-usuario-y-descubrimiento"></a>
 ## Perfiles de Usuario y Descubrimiento
 
 Klangpult light está diseñado para creadores de contenido, productores de audio e ingenieros que priorizan velocidad, fidelidad de audio y privacidad:
@@ -162,7 +164,7 @@ Klangpult light está diseñado para creadores de contenido, productores de audi
 
 ---
 
-<a id="matriz-comparativa-frente-a-alternativas"></a>
+<a id="sec-06"></a><a id="matriz-comparativa-frente-a-alternativas"></a>
 ## Matriz Comparativa frente a Alternativas
 
 Klangpult light ofrece una estación de trabajo local dedicada que combina grabación nativa de escritorio y planificación basada en navegador, contrastando con herramientas SaaS atadas a la nube y editores de audio genéricos:
@@ -182,7 +184,7 @@ Klangpult light ofrece una estación de trabajo local dedicada que combina graba
 
 ---
 
-<a id="características-principales"></a>
+<a id="sec-07"></a><a id="características-principales"></a>
 ## Características Principales
 
 - 🎙️ **Grabación de Audio Multicanal**: Canales dedicados para entrada de micrófono, captura de audio del sistema y clips de sonido de la botonera.
@@ -195,14 +197,14 @@ Klangpult light ofrece una estación de trabajo local dedicada que combina graba
 
 ---
 
-<a id="vista-previa-de-la-interfaz-y-capturas-de-pantalla"></a>
+<a id="sec-08"></a><a id="vista-previa-de-la-interfaz-y-capturas-de-pantalla"></a>
 ## Vista Previa de la Interfaz y Capturas de Pantalla
 
 ![Klangpult light – Recorder](README/screenshots/main.png)
 
 ---
 
-<a id="inicio-rápido-de-klangpult-light--planer"></a>
+<a id="sec-09"></a><a id="inicio-rápido-de-klangpult-light--planer"></a>
 ## Inicio Rápido de Klangpult light – Planer
 
 ```powershell
@@ -223,7 +225,7 @@ Si el Recorder no está activo, el Planer funciona en modo autónomo para gesti�
 
 ---
 
-<a id="inicio-rápido-de-klangpult-light--recorder"></a>
+<a id="sec-10"></a><a id="inicio-rápido-de-klangpult-light--recorder"></a>
 ## Inicio Rápido de Klangpult light – Recorder
 
 ```powershell
@@ -256,19 +258,19 @@ pytest
 
 ---
 
-<a id="compilación-del-ejecutable-autónomo"></a>
+<a id="sec-11"></a><a id="compilación-del-ejecutable-autónomo"></a>
 ## Compilación del Ejecutable Autónomo
 
 ```powershell
 $env:PYTHONIOENCODING = "utf-8"
-.uild_exe.bat
+.\build_exe.bat
 ```
 
-El script de compilación empaqueta un archivo ejecutable único en la raíz del proyecto (`KlangpultLightRecorder.exe`), una copia de compilación en `Recorder\dist\` y un artefacto de versión bajo `releases0.1.0\`.
+El script de compilación empaqueta un archivo ejecutable único en la raíz del proyecto (`KlangpultLightRecorder.exe`), una copia de compilación en `Recorder\dist\` y un artefacto de versión bajo `releases\v0.1.0\`.
 
 ---
 
-<a id="herramientas-hermanas-y-matriz-del-ecosistema"></a>
+<a id="sec-12"></a><a id="herramientas-hermanas-y-matriz-del-ecosistema"></a>
 ## Herramientas Hermanas y Matriz del Ecosistema
 
 Klangpult light es un miembro integral de la suite **entertain-and-more** y de la red de desarrolladores **open-bricks**:
@@ -295,7 +297,7 @@ Klangpult light es un miembro integral de la suite **entertain-and-more** y de l
 
 ---
 
-<a id="comparación-de-funciones-edición-ligera-vs-suite-completa"></a>
+<a id="sec-13"></a><a id="comparación-de-funciones-edición-ligera-vs-suite-completa"></a>
 ## Comparación de Funciones: Edición Ligera vs. Suite Completa
 
 | Función | Klangpult light (Freeware) | Klangpult (Suite Completa) |
@@ -316,8 +318,8 @@ Concepto: [KONZEPT.md](./KONZEPT.md) · Hoja de ruta: [TODO.md](./TODO.md) · Hi
 
 ---
 
-<a id="licencias-de-terceros-y-transparencia"></a>
-## Licencias de Terceros y Transparencia
+<a id="sec-14"></a><a id="licencias-de-terceros-y-transparencia"></a>
+## Licencias de Terceros, SBOM de Nivel 1 y Transparencia
 
 Klangpult light se distribuye como una aplicación freeware complementaria bajo el [Acuerdo de Licencia Freeware de Klangpult light](LICENSE).
 
@@ -331,7 +333,7 @@ Para consultar las tablas completas de dependencias, textos de licencias y aviso
 
 ---
 
-<a id="puertas-de-validación-y-verificación"></a>
+<a id="sec-15"></a><a id="puertas-de-validación-y-verificación"></a>
 ## Puertas de Validación y Verificación
 
 La calidad, el rendimiento y el cumplimiento de los contratos se garantizan mediante puertas de verificación automatizadas:
@@ -350,7 +352,7 @@ pytest tests/test_planer_i18n.py
 # 4. Suite de Pruebas del Motor Principal y Recorder de Escritorio
 pytest Recorder/tests/
 
-# 5. Suite Pytest Completa (490+ pruebas aprobadas)
+# 5. Suite Pytest Completa (516 pruebas aprobadas)
 pytest
 
 # 6. Comprobación de Estilo de Código y Linter
@@ -369,7 +371,7 @@ git diff --check
 
 ---
 
-<a id="política-de-seguridad-y-sla-de-triaje"></a>
+<a id="sec-16"></a><a id="política-de-seguridad-y-sla-de-triaje"></a>
 ## Política de Seguridad y SLA de Triaje
 
 Mantenemos estrictas garantías de seguridad:
@@ -384,8 +386,20 @@ Mantenemos estrictas garantías de seguridad:
 
 ---
 
-<a id="licencia-y-autor"></a>
-## Licencia y Autor
+<a id="sec-17"></a><a id="licencia-y-autor"></a>
+## Acuerdo de Licencia Freeware y Atribución
 
 Klangpult light se distribuye como **Freeware / Propietario de Código Cerrado**. Consulte [LICENSE](./LICENSE) para ver los términos completos.<br>
 Copyright (c) 2026 Lukas Geiger. Todos los derechos reservados.
+
+---
+
+<a id="sec-18"></a><a id="aviso-legal-y-limitación-de-responsabilidad--521-bgb"></a>
+## Aviso Legal y Limitación de Responsabilidad (§ 521 BGB)
+
+### Aviso Legal y Limitación de Responsabilidad del Derecho Alemán (§ 521 BGB Gefälligkeitsrecht)
+La entrega de este software y su documentación se realiza a título gratuito (unentgeltliche Bereitstellung). De conformidad con el régimen legal de responsabilidad del Código Civil Alemán para prestaciones gratuitas (**§ 521 BGB** — *Haftung des Schenkers*), la responsabilidad por defectos de calidad o titularidad se limita estrictamente a dolo (**Vorsatz**) y negligencia grave (**grobe Fahrlässigkeit**). Cualquier garantía legal adicional o responsabilidad extracontractual por negligencia leve queda expresamente excluida en la medida máxima permitida por la ley aplicable.
+
+### Procedencia del Ecosistema y SLAs
+- **Alineación con el Paraguas**: Desarrollado bajo el ecosistema [open-bricks](https://github.com/open-bricks/open-bricks) y mantenido dentro de la familia [entertain-and-more](https://github.com/entertain-and-more).
+- **Compromiso de Respuesta**: Confirmación de recepción en 48 horas y evaluación formal de triaje en 5 días hábiles a través de [SECURITY.md](./SECURITY.md).

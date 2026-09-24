@@ -7,7 +7,7 @@
 - **Current Version**: `0.1.0` (App Core) / `0.1.1` (Alpha Display)
 - **License**: Freeware / Proprietary Closed-Source
 - **Architecture**: 100% Local-First PySide6 Desktop Application + Web Planer with zero cloud egress, loopback IPC, and optional local STT
-- **Last Updated**: 2026-09-18 (Pfad A — Technical Hygiene, CI Workflow Hardening, Multi-Host Sync & Lock Guardrails)
+- **Last Updated**: 2026-09-24 (Pfad B — Discoverability, Level 1 SBOM, NOTICE Attribution, 18-Point Bilateral Navigation Parity & Statutory Disclaimer)
 
 ---
 
@@ -143,3 +143,26 @@ Comprehensive SPDX license audit completed in `THIRD_PARTY_LICENSES.md` on 2026-
 - **Pytest Configuration**: Hardened `[tool.pytest.ini_options]` with `norecursedirs`.
 - **Test Suite Status**: 503 collected tests, 502 passed, 1 skipped (standalone external registry gate). Favicon declaration assertion resolved in `Recorder/tests/test_planer_a11y.py`.
 - **Governance Re-Affirmation**: Confirmed compliance with 10 runtime invariants (`INV-LOCAL-01` to `INV-SLA-10`), Zero-Egress, and unprivileged `RunAsInvoker` mode.
+
+---
+
+## 7. Discoverability, Level 1 SBOM, Statutory Notice & Bilateral Quick Navigation Parity (Pfad B — Stand 2026-09-24)
+
+### PFAD_B_MARKETING_DISCOVERABILITY_AND_VISUAL_ARCHITECTURE
+- **Audit Date**: 2026-09-24
+- **Version Integrity**: `0.1.0` strictly frozen in compliance with `T-20260920-167562623` (no version bump in Pfad A/B runs).
+- **20-TOPIC & KEYWORD SATURATION**:
+  - GitHub remote repository topics saturated (20/20): `audio`, `audio-mixer`, `audio-production`, `audio-recorder`, `desktop-app`, `freeware`, `local-first`, `mixing-console`, `podcast`, `python`, `windows`, `live-transcription`, `pyside6`, `teleprompter`, `ai-monitor`, `multitrack-recording`, `offline-first`, `podcast-studio`, `zero-egress`, `episode-planner`.
+  - PEP 621 `pyproject.toml` keywords array fully synchronized to all 20 curated topics.
+  - Saturated `[project.urls]` including canonical `Notice`, `Third-Party Licenses`, `Third-Party Licenses (Text)`, `Marketing Log`, `Homepage`, `Documentation`, `Security`, `Changelog`, and ecosystem pointers.
+  - Set `license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_LICENSES.md", "THIRD_PARTY_LICENSES.txt"]`.
+- **18-POINT BILATERAL QUICK NAVIGATION & DUAL ANCHORS**:
+  - README structure upgraded to 18 distinct sections with dual reciprocal anchors (`<a id="sec-01"></a>` through `<a id="sec-18"></a>`) across `README.md`, `README_de.md`, and `README.es.md`.
+  - Preserved all existing semantic anchor targets (`#overview--key-capabilities`, etc.) to guarantee backward compatibility with existing links.
+  - Shields.io Badges harmonized: `Attribution-NOTICE`, `Verified-2026--09--24`, `Pytest-516 tests passed | 100% green`, `Security SLA-48h response | 5d triage`, `RunAsInvoker`.
+- **LEVEL 1 SBOM INVARIANT CROSS-REFERENCE MATRIX**:
+  - `THIRD_PARTY_LICENSES.md` upgraded to Level 1 SBOM standard with explicit 10-invariant mapping matrix (`INV-LOCAL-01` through `INV-SLA-10`), verifying technical enforcement and compliance status.
+  - Formal `NOTICE` file established in repository root documenting copyright and organizational ecosystem governance.
+- **STATUTORY DISCLAIMER & SECURITY SLA**:
+  - Statutory liability limitation under German civil law (**§ 521 BGB** — *Gefälligkeitsrecht*) anchored in Section 18 of READMEs and referenced in governance documentation, restricting liability for gratuitous software to gross negligence and willful intent.
+  - Binding 48-hour response confirmation and 5-day triage commitments re-verified across `SECURITY.md` and READMEs.

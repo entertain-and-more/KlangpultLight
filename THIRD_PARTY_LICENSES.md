@@ -1,8 +1,9 @@
-# Third-Party Licenses & Transparency Notice
+# Third-Party Licenses & Transparency Notice (Level 1 SBOM)
 
 > **Project:** `entertain-and-more/KlangpultLight` (Klangpult light — Desktop & Web Media Workstation)<br>
-> **Audited:** 2026-09-18<br>
+> **Audited:** 2026-09-24<br>
 > **Repository License:** [Freeware / Proprietary License](LICENSE)<br>
+> **Canonical Notice:** [NOTICE](NOTICE)<br>
 > **Architecture & Privacy:** 100% Local-First, Zero-Egress by default, Unprivileged User-Mode (`RunAsInvoker`)
 
 ---
@@ -29,6 +30,23 @@ Furthermore, Klangpult light affirms the ten governance and runtime invariants:
 8. **INV-PLAT-08 (Cross-Platform Operating Parity):** Architecture, protocol schemas (`v1`), and data models run consistently across Windows, Linux, and macOS.
 9. **INV-SYNC-09 (Multi-Host & Sync Resilience):** `.gitignore` rigorously ignores conflict copies (`*-conflict-*`, `*.sync-temp-*`) and multi-agent locks (`LOCK.*`, `*.lock`).
 10. **INV-SLA-10 (48h Response & 5-Day Triage SLA):** Formal commitment to 48-hour response / 5-day triage SLA, validated by automated GitHub Actions CI matrices across Ubuntu, Windows, and macOS on Python 3.10, 3.11, 3.12, and 3.13.
+
+---
+
+## Level 1 SBOM Invariant Cross-Reference Matrix
+
+| Invariant Code | Core Requirement | Implementation Mechanism | License / Dependency Impact | Compliance Status |
+|:---|:---|:---|:---|:---:|
+| `INV-LOCAL-01` | 100% Local-First & Zero-Egress | Local disk workspace, Python standard library sockets, loopback `127.0.0.1` | Zero external telemetry or cloud dependencies | **PASS (100% Offline)** |
+| `INV-USER-02` | Unprivileged Execution | Operates under standard OS user token (`RunAsInvoker`) | Zero root or administrator elevation requirements | **PASS (User-Mode)** |
+| `INV-IPC-03` | Strict Loopback IPC Isolation | Localhost sockets on ports `8767`, `8769`, `8770` | No external network or LAN exposure | **PASS (Loopback)** |
+| `INV-SAFE-04` | Safe Subprocess Boundaries | Explicit argument arrays for FFmpeg remuxing and video capture | Sanitized arguments, zero shell injection risk | **PASS (Guarded)** |
+| `INV-BUF-05` | Bounded Buffer & Audio Integrity | Dynamic float sanitization against NaN/Inf samples, atomic WAV flush | Robust memory buffers, crash-free disconnect handling | **PASS (Sanitized)** |
+| `INV-STT-06` | Offline STT Degradation Boundary | Isolated `faster-whisper` worker thread with graceful fallback | Local-only execution; missing weights never stall UI | **PASS (Isolated)** |
+| `INV-STORE-07` | Caller-Controlled Session Storage | Creator-owned workspace directory, structured `events.jsonl` | Zero auto-purge, absolute creator ownership | **PASS (Creator-Owned)** |
+| `INV-PLAT-08` | Cross-Platform Operating Parity | Portable PySide6, Python asyncio, cross-platform protocol schemas (`v1`) | Full support for Windows, Linux, and macOS | **PASS (Cross-Platform)** |
+| `INV-SYNC-09` | Multi-Host & Sync Resilience | Hardened `.gitignore` ignoring sync conflict copies and multi-agent locks | Suppresses `*-conflict-*`, `LOCK.*`, and temp files | **PASS (Protected)** |
+| `INV-SLA-10` | 48h Response & 5-Day Triage SLA | Formal vulnerability response SLA via `security@open-bricks.org` and `security@ellmos.ai` | Contractual security governance in `SECURITY.md` | **PASS (Contractual)** |
 
 ---
 

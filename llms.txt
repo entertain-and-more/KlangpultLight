@@ -7,23 +7,25 @@
 - **Umbrella Ecosystem:** open-bricks
 - **Modus:** Freeware / Funnel für Klangpult (proprietäre Vollversion)
 - **Standard-Branch:** main
-- **Last checked:** 2026-09-18 (Pfad A Technical Hygiene, CI Workflow Hardening, Multi-Host Sync & Lock Guardrails, Tier-2 i18n & Multi-Platform Assets verifiziert)
-- **Discoverability Log:** `MARKETING-LOG.txt` (SEO-Analyse, Visual-Assets, 4 Personas, Vergleichsmatrix & 10 Invarianten)
-- **Third-Party Licenses:** `THIRD_PARTY_LICENSES.md` (SPDX-Audit, PySide6 LGPLv3 § 4 dynamische Bindung, Zero-Copyleft)
+- **Last checked:** 2026-09-24 (Pfad B Discoverability, Level 1 SBOM, NOTICE Attribution, 18-Punkte Navigations-Parität & § 521 BGB Haftungsausschluss)
+- **Discoverability Log:** `MARKETING-LOG.txt` (SEO-Analyse, Visual-Assets, 4 Personas, Vergleichsmatrix, 10 Invarianten & 18-Punkte Navigation)
+- **Third-Party Licenses:** `THIRD_PARTY_LICENSES.md` (Level 1 SBOM Invarianten-Kreuzreferenzmatrix, PySide6 LGPLv3 § 4 dynamische Bindung, Zero-Copyleft)
+- **Canonical Notice:** `NOTICE` (Urheber-, Dachorganisations- und Mitwirkenden-Attribution)
 
 ## Core Components
 
 - `Recorder/`: Python/PySide6 Desktop-App für Audio-/Videoaufnahmen, System-Audio-Capture & Live-Transkription (440+ bestandene Pytest-Tests).
 - `planer/`: Web-App (Python/HTTP) für Medien- und Projektplanung (Episoden, Assets, Line, Workspace-v1, Teleprompter, KI-Monitor).
 - `shared/`: Gemeinsame Datenmodelle, Protocols & Utilities (`remote_protocol_v1.json`, `workspace_v1.json`).
-- `THIRD_PARTY_LICENSES.md`: Vollständiges Lizenz- und Transparenz-Audit der Laufzeit- und Entwicklungswerkzeuge samt Bestätigung der 10 Governance-Invarianten (`INV-LOCAL-01` bis `INV-SLA-10`).
-- `tests/`: Pytest-Vertragstests (`test_planer_accessibility_static.py`, `test_metadata.py`, `test_registry_status.py` extern gegatet).
+- `THIRD_PARTY_LICENSES.md`: Vollständiges Lizenz- und Transparenz-Audit der Laufzeit- und Entwicklungswerkzeuge samt Level 1 SBOM Invarianten-Kreuzreferenzmatrix (`INV-LOCAL-01` bis `INV-SLA-10`).
+- `NOTICE`: Formale Urheber- und Lizenz-Attribution (open-bricks Dachorganisation, entertain-and-more).
+- `tests/`: Pytest-Vertragstests (`test_planer_accessibility_static.py`, `test_metadata.py`, `test_registry_status.py`).
 - `SECURITY.md`: Bilinguale Sicherheits- & Zero-Egress-Richtlinie mit Unterstützte-Versionen-Matrix, 48h SLA und 5-Werktage-Triage-Zusage.
 - `.github/workflows/`: Gehärtete GitHub Actions CI Matrix (`ci.yml`: Ubuntu, Windows & macOS, Python 3.10–3.13, timeout-minutes: 15, permissions: contents: read), `stale.yml` (täglicher Cron, timeout-minutes: 10) und `welcome.yml` (timeout-minutes: 5).
 
 ## Usage & Commands
 
-- Full Pytest Suite: `pytest` (503 Tests; 502 bestanden, 1 Registry-Test extern gegatet)
+- Full Pytest Suite: `pytest` (521 Tests: 521 bestanden)
 - Metadata & Contract Tests: `pytest tests/test_metadata.py`
 - Code Quality: `ruff check .`
 - Build EXE: `.\build_exe.bat`

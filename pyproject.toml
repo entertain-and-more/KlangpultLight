@@ -23,17 +23,27 @@ dependencies = [
 
 keywords = [
     "audio",
-    "video",
-    "recorder",
-    "podcast",
-    "media-planning",
-    "teleprompter",
-    "pyside6",
+    "audio-mixer",
+    "audio-production",
+    "audio-recorder",
+    "desktop-app",
     "freeware",
     "local-first",
+    "mixing-console",
+    "podcast",
+    "python",
+    "windows",
+    "live-transcription",
+    "pyside6",
+    "teleprompter",
+    "ai-monitor",
+    "multitrack-recording",
+    "offline-first",
+    "podcast-studio",
     "zero-egress",
-    "entertain-and-more"
+    "episode-planner",
 ]
+license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_LICENSES.md", "THIRD_PARTY_LICENSES.txt"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Win32 (MS Windows)",
@@ -69,6 +79,7 @@ Documentation = "https://github.com/entertain-and-more/KlangpultLight#readme"
 Issues = "https://github.com/entertain-and-more/KlangpultLight/issues"
 Changelog = "https://github.com/entertain-and-more/KlangpultLight/blob/main/CHANGELOG.md"
 Security = "https://github.com/entertain-and-more/KlangpultLight/blob/main/SECURITY.md"
+Notice = "https://github.com/entertain-and-more/KlangpultLight/blob/main/NOTICE"
 "Third-Party Licenses" = "https://github.com/entertain-and-more/KlangpultLight/blob/main/THIRD_PARTY_LICENSES.md"
 "Third-Party Licenses (Text)" = "https://github.com/entertain-and-more/KlangpultLight/blob/main/THIRD_PARTY_LICENSES.txt"
 "Marketing Log" = "https://github.com/entertain-and-more/KlangpultLight/blob/main/MARKETING-LOG.txt"

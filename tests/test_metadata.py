@@ -48,6 +48,10 @@ class TestKlangpultLightMetadata(unittest.TestCase):
             self.assertIn("Umbrella", urls)
             self.assertIn("Security", urls)
             self.assertIn("Changelog", urls)
+            self.assertIn("Notice", urls)
+            self.assertIn("Third-Party Licenses", urls)
+            self.assertEqual(len(project.get("keywords", [])), 20)
+            self.assertIn("license-files", project)
             classifiers = project.get("classifiers", [])
             self.assertTrue(any("OS Independent" in c for c in classifiers))
 
@@ -58,6 +62,7 @@ class TestKlangpultLightMetadata(unittest.TestCase):
             "README_de.md",
             "SECURITY.md",
             "LICENSE",
+            "NOTICE",
             "CHANGELOG.md",
             "KONZEPT.md",
             "TODO.md",
@@ -155,15 +160,16 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         self.assertIn("entertain-and-more/KlangpultLight", text)
         self.assertIn("entertain-and-more", text)
         self.assertIn("open-bricks", text)
-        self.assertTrue("2026-09-18" in text or "2026-09-14" in text or "2026-09-09" in text)
-        self.assertTrue("502" in text or "483" in text or "449" in text)
+        self.assertTrue("2026-09-24" in text or "2026-09-18" in text or "2026-09-14" in text or "2026-09-09" in text)
+        self.assertTrue("521" in text or "516" in text or "502" in text or "483" in text or "449" in text)
+        self.assertIn("NOTICE", text)
         self.assertIn("MARKETING-LOG.txt", text)
         self.assertIn("THIRD_PARTY_LICENSES.md", text)
         self.assertIn("SECURITY.md", text)
         self.assertIn("ci.yml", text)
 
     def test_bilingual_readme_parity_and_diagrams(self):
-        """Verify README.md and README_de.md badges, 17-point quick nav, and dual Mermaid diagrams."""
+        """Verify README.md and README_de.md badges, 18-point quick nav, and dual Mermaid diagrams."""
         readme_en = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
         readme_de = (PROJECT_ROOT / "README_de.md").read_text(encoding="utf-8")
 
@@ -172,27 +178,28 @@ class TestKlangpultLightMetadata(unittest.TestCase):
             self.assertIn("open--bricks", text, f"{name} must have umbrella badge")
             self.assertIn("SECURITY.md", text, f"{name} must reference SECURITY.md")
             self.assertIn("llms.txt", text, f"{name} must reference llms.txt")
+            self.assertIn("NOTICE", text, f"{name} must have NOTICE attribution badge")
             self.assertIn("MARKETING-LOG.txt", text, f"{name} must reference MARKETING-LOG.txt")
             self.assertIn("THIRD_PARTY_LICENSES.md", text, f"{name} must reference THIRD_PARTY_LICENSES.md")
             self.assertIn("actions/workflows/ci.yml", text, f"{name} must have CI badge")
-            self.assertTrue("503%20" in text or "484%20" in text or "450%20" in text, f"{name} must have tests badge")
+            self.assertTrue("521%20" in text or "516%20" in text or "503%20" in text or "484%20" in text or "450%20" in text, f"{name} must have tests badge")
             self.assertIn("RunAsInvoker", text, f"{name} must have security badge")
             self.assertTrue("5d%20triage" in text or "5d%20Triage" in text, f"{name} must have 5d triage badge")
             self.assertIn("graph TD", text, f"{name} must have architecture graph")
             self.assertIn("sequenceDiagram", text, f"{name} must have lifecycle sequence diagram")
             self.assertIn("autonumber", text, f"{name} must use autonumber in sequence diagram")
 
-            # Verify 17-point quick navigation presence
+            # Verify 18-point quick navigation presence
             self.assertIn("1. [", text, f"{name} must have numbered quick nav item 1")
-            self.assertIn("17. [", text, f"{name} must have numbered quick nav item 17")
+            self.assertIn("18. [", text, f"{name} must have numbered quick nav item 18")
 
             # Verify 10 Governance Invariants table
             self.assertIn("Governance", text, f"{name} must have Governance Invariants section")
             self.assertIn("Zero-Egress", text, f"{name} must have Zero-Egress invariant")
             self.assertIn("RunAsInvoker", text, f"{name} must have RunAsInvoker invariant")
 
-    def test_readme_17_point_navigation_parity(self):
-        """Verify mutual 17-point quick navigation and anchor parity in README.md and README_de.md."""
+    def test_readme_18_point_navigation_parity(self):
+        """Verify mutual 18-point quick navigation and dual anchor parity in README.md and README_de.md."""
         readme_en = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
         readme_de = (PROJECT_ROOT / "README_de.md").read_text(encoding="utf-8")
 
@@ -214,6 +221,7 @@ class TestKlangpultLightMetadata(unittest.TestCase):
             "#validation--verification-gates",
             "#security-policy--triage-sla",
             "#license--author",
+            "#statutory-notice-liability-limitation--license--521-bgb",
         ]
         de_anchors = [
             "#übersicht--kernfähigkeiten",
@@ -233,10 +241,11 @@ class TestKlangpultLightMetadata(unittest.TestCase):
             "#validierungs---verifikations-gates",
             "#sicherheitsrichtlinie--triage-sla",
             "#lizenz--autor",
+            "#gesetzlicher-haftungsausschluss--521-bgb--haftungsbeschraenkung",
         ]
 
-        self.assertEqual(len(en_anchors), 17)
-        self.assertEqual(len(de_anchors), 17)
+        self.assertEqual(len(en_anchors), 18)
+        self.assertEqual(len(de_anchors), 18)
 
         for anchor in en_anchors:
             self.assertIn(anchor, readme_en, f"README.md must contain nav anchor {anchor}")
@@ -247,6 +256,15 @@ class TestKlangpultLightMetadata(unittest.TestCase):
             self.assertIn(anchor, readme_de, f"README_de.md must contain nav anchor {anchor}")
             target_id = anchor.lstrip("#")
             self.assertIn(f'id="{target_id}"', readme_de, f"README_de.md must have target id {target_id}")
+
+        readme_es = (PROJECT_ROOT / "README.es.md").read_text(encoding="utf-8")
+
+        # Verify dual reciprocal anchors sec-01 through sec-18
+        for i in range(1, 19):
+            anchor = f'<a id="sec-{i:02d}"></a>'
+            self.assertIn(anchor, readme_en, f"Dual anchor {anchor} missing from README.md")
+            self.assertIn(anchor, readme_de, f"Dual anchor {anchor} missing from README_de.md")
+            self.assertIn(anchor, readme_es, f"Dual anchor {anchor} missing from README.es.md")
 
     def test_target_personas_and_seo_discoverability(self):
         """Verify 4 target personas and high-intent SEO queries in READMEs and MARKETING-LOG.txt."""
@@ -364,6 +382,8 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         changelog_file = PROJECT_ROOT / "CHANGELOG.md"
         self.assertTrue(changelog_file.is_file(), "CHANGELOG.md must exist")
         text = changelog_file.read_text(encoding="utf-8")
+        self.assertIn("## [Unreleased]", text)
+        self.assertIn("Pfad B", text)
         self.assertIn("## [0.1.7] - 2026-09-18", text)
         self.assertIn("Pfad A", text)
         self.assertIn("## [0.1.6] - 2026-09-16", text)
@@ -374,6 +394,76 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         self.assertIn("TW-KLANGPULTLIGHT-12", text)
         self.assertIn("## [0.1.2] - 2026-09-09", text)
         self.assertIn("Pfad B", text)
+
+    def test_notice_file_exists_and_contract(self):
+        """Verify NOTICE file exists, references Lukas Geiger, open-bricks, and THIRD_PARTY_LICENSES.md."""
+        notice_file = PROJECT_ROOT / "NOTICE"
+        self.assertTrue(notice_file.is_file(), "NOTICE file must exist")
+        text = notice_file.read_text(encoding="utf-8")
+        self.assertIn("Klangpult light", text)
+        self.assertIn("Lukas Geiger", text)
+        self.assertIn("entertain-and-more", text)
+        self.assertIn("open-bricks", text)
+        self.assertIn("THIRD_PARTY_LICENSES.md", text)
+
+    def test_level_1_sbom_cross_reference_matrix(self):
+        """Verify THIRD_PARTY_LICENSES.md contains Level 1 SBOM Invariant Cross-Reference Matrix."""
+        tpl_file = PROJECT_ROOT / "THIRD_PARTY_LICENSES.md"
+        self.assertTrue(tpl_file.is_file(), "THIRD_PARTY_LICENSES.md must exist")
+        text = tpl_file.read_text(encoding="utf-8")
+        self.assertIn("Level 1 SBOM Invariant Cross-Reference Matrix", text, "Must have Level 1 SBOM matrix")
+        self.assertIn("2026-09-24", text, "Audit date must be 2026-09-24")
+        self.assertIn("NOTICE", text, "Must reference NOTICE")
+        for inv in [
+            "INV-LOCAL-01",
+            "INV-USER-02",
+            "INV-IPC-03",
+            "INV-SAFE-04",
+            "INV-BUF-05",
+            "INV-STT-06",
+            "INV-STORE-07",
+            "INV-PLAT-08",
+            "INV-SYNC-09",
+            "INV-SLA-10",
+        ]:
+            self.assertIn(inv, text, f"Invariant {inv} must exist in Level 1 SBOM")
+
+    def test_statutory_disclaimer_521_bgb_and_48h_sla(self):
+        """Verify statutory disclaimer (§ 521 BGB Gefälligkeitsrecht) and 48h SLA in all three READMEs."""
+        readme_en = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+        readme_de = (PROJECT_ROOT / "README_de.md").read_text(encoding="utf-8")
+        readme_es = (PROJECT_ROOT / "README.es.md").read_text(encoding="utf-8")
+        for text, name in [
+            (readme_en, "README.md"),
+            (readme_de, "README_de.md"),
+            (readme_es, "README.es.md"),
+        ]:
+            self.assertIn("521 BGB", text, f"§ 521 BGB must be in {name}")
+            self.assertIn("Gefälligkeitsrecht", text, f"Gefälligkeitsrecht must be in {name}")
+            self.assertTrue(
+                "48h" in text or "48-Hour" in text or "48-Stunden" in text or "48 horas" in text or "48 Horas" in text,
+                f"48h SLA in {name}",
+            )
+
+    def test_marketing_log_pfad_b_20260924_audit(self):
+        """Verify MARKETING-LOG.txt documents the Pfad B milestone from 2026-09-24."""
+        log_file = PROJECT_ROOT / "MARKETING-LOG.txt"
+        self.assertTrue(log_file.is_file(), "MARKETING-LOG.txt must exist")
+        text = log_file.read_text(encoding="utf-8")
+        self.assertIn("PFAD_B_MARKETING_DISCOVERABILITY_AND_VISUAL_ARCHITECTURE", text)
+        self.assertIn("2026-09-24", text)
+        self.assertIn("20-TOPIC & KEYWORD SATURATION", text)
+        self.assertIn("18-POINT BILATERAL QUICK NAVIGATION", text)
+
+    def test_changelog_unreleased_pfad_b_entry(self):
+        """Verify CHANGELOG.md contains Pfad B notes under [Unreleased]."""
+        changelog_file = PROJECT_ROOT / "CHANGELOG.md"
+        self.assertTrue(changelog_file.is_file(), "CHANGELOG.md must exist")
+        text = changelog_file.read_text(encoding="utf-8")
+        self.assertIn("## [Unreleased]", text)
+        self.assertIn("Pfad B", text)
+        self.assertIn("T-20260920-167562623", text)
+        self.assertIn("NOTICE", text)
 
 
 if __name__ == "__main__":

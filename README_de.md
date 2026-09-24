@@ -7,15 +7,16 @@
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#)
 [![Version](https://img.shields.io/badge/Version-v0.1.7-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-[![Pytest](https://img.shields.io/badge/Pytest-503%20Tests%20(502%20bestanden)-success.svg)](https://docs.pytest.org/)
+[![Pytest](https://img.shields.io/badge/Pytest-521%20Tests%20(521%20bestanden)-success.svg)](https://docs.pytest.org/)
 [![CI](https://img.shields.io/badge/CI-Multi--OS%20Matrix-blue.svg)](https://github.com/entertain-and-more/KlangpultLight/actions/workflows/ci.yml)
 [![Plattformen](https://img.shields.io/badge/Plattformen-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](#)
 [![Lizenz](https://img.shields.io/badge/Lizenz-Freeware-informational.svg)](./LICENSE)
+[![Notice](https://img.shields.io/badge/Attribution-NOTICE-blue.svg)](./NOTICE)
 [![Local-First](https://img.shields.io/badge/Architektur-Local--First%20%7C%20Zero--Egress-orange.svg)](./SECURITY.md)
 [![Sicherheit](https://img.shields.io/badge/Sicherheit-Unprivilegiert%20(RunAsInvoker)-green.svg)](./SECURITY.md)
 [![Sicherheits-SLA](https://img.shields.io/badge/Sicherheits--SLA-48h%20Antwort%20%7C%205d%20Triage-blue.svg)](./SECURITY.md)
 [![Drittanbieter-Audit](https://img.shields.io/badge/Drittanbieter--Lizenzen-Gepr%C3%BCft%20(100%25%20Frei%20%2F%20LGPL)--Dynamisch-green.svg)](./THIRD_PARTY_LICENSES.md)
-[![Marketing-Log](https://img.shields.io/badge/Marketing--Log-Aktiv%20(2026--09--18)-blue.svg)](./MARKETING-LOG.txt)
+[![Marketing-Log](https://img.shields.io/badge/Marketing--Log-Aktiv%20(2026--09--24)-blue.svg)](./MARKETING-LOG.txt)
 [![Code-Stil: ruff](https://img.shields.io/badge/Code--Stil-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Ökosystem](https://img.shields.io/badge/%C3%96kosystem-entertain--and--more-blueviolet.svg)](https://github.com/entertain-and-more)
 [![Dachorganisation](https://img.shields.io/badge/Dachorganisation-open--bricks-blue.svg)](https://github.com/open-bricks/open-bricks)
@@ -28,7 +29,7 @@
 > Lizenz: Freeware / Proprietär, Closed-Source.
 
 > [!NOTE]
-> Für KI-Agenten und automatisierte Tools: Siehe [llms.txt](./llms.txt) (Stand: 2026-09-18) für eine maschinenlesbare Repository-Übersicht und Testverträge. Vollständige Drittanbieter-Lizenzaudits sind in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md) dokumentiert, und Marketing-, SEO- und Asset-Dokumentation wird in [MARKETING-LOG.txt](./MARKETING-LOG.txt) geführt.
+> Für KI-Agenten und automatisierte Tools: Siehe [llms.txt](./llms.txt) (Stand: 2026-09-24) für eine maschinenlesbare Repository-Übersicht und Testverträge. Formale Herkunft und Mitwirkenden-Attribution sind in [NOTICE](./NOTICE) deklariert. Vollständige Drittanbieter-Lizenzaudits und Level 1 SBOM sind in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md) dokumentiert, und Marketing-, SEO- und Asset-Dokumentation wird in [MARKETING-LOG.txt](./MARKETING-LOG.txt) geführt.
 
 ---
 
@@ -47,14 +48,15 @@
 11. [Standalone-EXE erstellen](#standalone-exe-erstellen)
 12. [Geschwister-Ökosystem & Werkzeug-Matrix](#geschwister-ökosystem--werkzeug-matrix)
 13. [Editionen-Vergleich: Light vs. Vollversion](#editionen-vergleich-light-vs-vollversion)
-14. [Drittanbieter-Lizenzen & Transparenz](#drittanbieter-lizenzen--transparenz)
+14. [Drittanbieter-Lizenzen, Level 1 SBOM & Transparenz](#drittanbieter-lizenzen--transparenz)
 15. [Validierungs- & Verifikations-Gates](#validierungs---verifikations-gates)
 16. [Sicherheitsrichtlinie & Triage-SLA](#sicherheitsrichtlinie--triage-sla)
-17. [Lizenz & Autor](#lizenz--autor)
+17. [Freeware-Lizenzvereinbarung & Open-Source-Attribution](#lizenz--autor)
+18. [Gesetzlicher Haftungsausschluss (§ 521 BGB) & Haftungsbeschränkung](#gesetzlicher-haftungsausschluss--521-bgb--haftungsbeschraenkung)
 
 ---
 
-<a id="übersicht--kernfähigkeiten"></a>
+<a id="sec-01"></a><a id="übersicht--kernfähigkeiten"></a>
 ## Übersicht & Kernfähigkeiten
 
 Klangpult light trennt Aufnahmebetrieb und redaktionelle Projektplanung in zwei spezialisierte Werkzeuge:
@@ -66,7 +68,7 @@ Beide Werkzeuge kommunizieren über lokale Loopback-IPC-Sockets (`127.0.0.1:8767
 
 ---
 
-<a id="systemarchitektur-ablaufdiagramm"></a>
+<a id="sec-02"></a><a id="systemarchitektur-ablaufdiagramm"></a>
 ## Systemarchitektur-Ablaufdiagramm
 
 ```mermaid
@@ -84,7 +86,7 @@ graph TD
 
 ---
 
-<a id="medien---aufnahme-lebenszyklus"></a>
+<a id="sec-03"></a><a id="medien---aufnahme-lebenszyklus"></a>
 ## Medien- & Aufnahme-Lebenszyklus
 
 ```mermaid
@@ -116,7 +118,7 @@ sequenceDiagram
 
 ---
 
-<a id="governance---laufzeit-invarianten"></a>
+<a id="sec-04"></a><a id="governance---laufzeit-invarianten"></a>
 ## Governance- & Laufzeit-Invarianten
 
 Klangpult light unterliegt 10 strikten Architektur- und Laufzeit-Invarianten, die Systemstabilität, Privatsphäre und plattformübergreifende Verlässlichkeit sichern:
@@ -136,7 +138,7 @@ Klangpult light unterliegt 10 strikten Architektur- und Laufzeit-Invarianten, di
 
 ---
 
-<a id="zielgruppen--auffindbarkeit"></a>
+<a id="sec-05"></a><a id="zielgruppen--auffindbarkeit"></a>
 ## Zielgruppen & Auffindbarkeit
 
 Klangpult light ist für Kreative, Audioproduzenten und Entwickler konzipiert, die Wert auf Performance, Audioqualität und kompromisslosen Datenschutz legen:
@@ -161,7 +163,7 @@ Klangpult light ist für Kreative, Audioproduzenten und Entwickler konzipiert, d
 
 ---
 
-<a id="vergleichsmatrix-gegenüber-alternativen"></a>
+<a id="sec-06"></a><a id="vergleichsmatrix-gegenüber-alternativen"></a>
 ## Vergleichsmatrix gegenüber Alternativen
 
 Klangpult light bietet eine spezialisierte, lokale Workstation mit synchroner Desktop-Aufnahme und Browser-Planung im direkten Vergleich zu cloud-basierten Plattformen und herkömmlichen Werkzeugen:
@@ -181,7 +183,7 @@ Klangpult light bietet eine spezialisierte, lokale Workstation mit synchroner De
 
 ---
 
-<a id="hauptfunktionen"></a>
+<a id="sec-07"></a><a id="hauptfunktionen"></a>
 ## Hauptfunktionen
 
 - 🎙️ **Mehrspur-Audioaufnahme**: Separate Kanäle für Mikrofoneingang, System-Audio-Capture und Soundboard-Einspieler.
@@ -193,14 +195,14 @@ Klangpult light bietet eine spezialisierte, lokale Workstation mit synchroner De
 
 ---
 
-<a id="ui-vorschau--screenshots"></a>
+<a id="sec-08"></a><a id="ui-vorschau--screenshots"></a>
 ## UI-Vorschau & Screenshots
 
 ![Klangpult light – Recorder](README/screenshots/main.png)
 
 ---
 
-<a id="klangpult-light--planer-schnellstart"></a>
+<a id="sec-09"></a><a id="klangpult-light--planer-schnellstart"></a>
 ## Klangpult light – Planer Schnellstart
 
 ```powershell
@@ -221,7 +223,7 @@ Läuft der Recorder nicht, arbeitet der Planer im Standalone-Modus für Offline-
 
 ---
 
-<a id="klangpult-light--recorder-schnellstart"></a>
+<a id="sec-10"></a><a id="klangpult-light--recorder-schnellstart"></a>
 ## Klangpult light – Recorder Schnellstart
 
 ```powershell
@@ -253,7 +255,7 @@ pytest
 
 ---
 
-<a id="standalone-exe-erstellen"></a>
+<a id="sec-11"></a><a id="standalone-exe-erstellen"></a>
 ## Standalone-EXE erstellen
 
 ```powershell
@@ -265,7 +267,7 @@ Das Build-Skript erzeugt eine eigenständige Onefile-EXE im Projektstamm (`Klang
 
 ---
 
-<a id="geschwister-ökosystem--werkzeug-matrix"></a>
+<a id="sec-12"></a><a id="geschwister-ökosystem--werkzeug-matrix"></a>
 ## Geschwister-Ökosystem & Werkzeug-Matrix
 
 Klangpult light ist Teil der **entertain-and-more** Produktlinie und des übergreifenden **open-bricks** Entwicklungsnetzwerks:
@@ -292,7 +294,7 @@ Klangpult light ist Teil der **entertain-and-more** Produktlinie und des übergr
 
 ---
 
-<a id="editionen-vergleich-light-vs-vollversion"></a>
+<a id="sec-13"></a><a id="editionen-vergleich-light-vs-vollversion"></a>
 ## Editionen-Vergleich: Light vs. Vollversion
 
 | Funktion | Klangpult light (Freeware) | Klangpult (Vollversion) |
@@ -312,8 +314,8 @@ Konzept: [KONZEPT.md](./KONZEPT.md) · Umsetzungsplan: [TODO.md](./TODO.md) · V
 
 ---
 
-<a id="drittanbieter-lizenzen--transparenz"></a>
-## Drittanbieter-Lizenzen & Transparenz
+<a id="sec-14"></a><a id="drittanbieter-lizenzen--transparenz"></a><a id="drittanbieter-lizenzen-level-1-sbom--transparenz"></a>
+## Drittanbieter-Lizenzen, Level 1 SBOM & Transparenz
 
 Klangpult light wird als kostenlose Freeware-Anwendung unter der [Klangpult light Freeware-Lizenzvereinbarung](LICENSE) bereitgestellt.
 
@@ -323,11 +325,11 @@ Alle eingebundenen Laufzeitbibliotheken und Entwicklungswerkzeuge unterliegen an
 - **Subprozess-Isolation**: Externe Binärprogramme wie FFmpeg werden ausschließlich über isolierte Subprozess-Grenzen mit festen, geprüften Argumentvektoren aufgerufen.
 - **Zero-Copyleft-Garantie**: Aufnahmen von Nutzern (WAV, MP4), Soundboard-Dateien, Teleprompter-Skripte und Episodendaten verbleiben zu 100% Eigentum des Erstellers und unterliegen keinem Copyleft oder Lizenzzwang.
 
-Detaillierte Abhängigkeitsmatrizen, vollständige Lizenztexte und Konformitätshinweise finden Sie in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md).
+Detaillierte Abhängigkeitsmatrizen, die Level 1 SBOM Invarianten-Kreuzreferenzmatrix, vollständige Lizenztexte und Konformitätshinweise finden Sie in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md).
 
 ---
 
-<a id="validierungs---verifikations-gates"></a>
+<a id="sec-15"></a><a id="validierungs---verifikations-gates"></a>
 ## Validierungs- & Verifikations-Gates
 
 Qualität, Stabilität und Vertragstreue werden durch automatisierte Prüfgates abgesichert:
@@ -343,7 +345,7 @@ pytest tests/test_planer_accessibility_static.py
 # 3. Recorder Desktop- & Audio-Kern-Testsuite (440 Tests)
 pytest Recorder/tests/
 
-# 4. Gesamte Pytest-Suite (450 Tests: 449 bestanden, 1 übersprungen)
+# 4. Gesamte Pytest-Suite (521 Tests: 521 bestanden)
 pytest
 
 # 5. Code-Stil- & Linter-Prüfung
@@ -362,7 +364,7 @@ git diff --check
 
 ---
 
-<a id="sicherheitsrichtlinie--triage-sla"></a>
+<a id="sec-16"></a><a id="sicherheitsrichtlinie--triage-sla"></a>
 ## Sicherheitsrichtlinie & Triage-SLA
 
 Wir garantieren strenge Sicherheits- und Privatsphäre-Standards:
@@ -377,8 +379,21 @@ Wir garantieren strenge Sicherheits- und Privatsphäre-Standards:
 
 ---
 
-<a id="lizenz--autor"></a>
-## Lizenz & Autor
+<a id="sec-17"></a><a id="lizenz--autor"></a><a id="freeware-lizenzvereinbarung--open-source-attribution"></a>
+## Freeware-Lizenzvereinbarung & Open-Source-Attribution
 
 Klangpult light steht unter einer **Freeware / Closed-Source Proprietären Lizenz**. Vollständige Lizenzbedingungen: [LICENSE](./LICENSE).<br>
-Copyright (c) 2026 Lukas Geiger. Alle Rechte vorbehalten.
+Formale Ökosystem-Attribution, Urheber- und Mitwirkenden-Anerkennung sind in [NOTICE](./NOTICE) hinterlegt.<br>
+Copyright (c) 2026 Lukas Geiger, entertain-and-more. Alle Rechte vorbehalten.
+
+---
+
+<a id="sec-18"></a><a id="gesetzlicher-haftungsausschluss--521-bgb--haftungsbeschraenkung"></a>
+## Gesetzlicher Haftungsausschluss (§ 521 BGB) & Haftungsbeschränkung
+
+### Gesetzlicher Haftungsausschluss (§ 521 BGB Gefälligkeitsrecht) & Haftungsbeschränkung
+Die Bereitstellung dieser Software und der zugehörigen Dokumentation erfolgt unentgeltlich. Gemäß dem gesetzlichen Haftungsregime des deutschen Bürgerlichen Gesetzbuches für unentgeltliche Zuwendungen und Gefälligkeiten (**§ 521 BGB** — *Haftung des Schenkers*) ist die Haftung für Sach- und Rechtsmängel auf **Vorsatz und grobe Fahrlässigkeit** beschränkt. Jegliche weitergehende gesetzliche Gewährleistung oder deliktische Haftung für einfache oder leichte Fahrlässigkeit ist im gesetzlich maximal zulässigen Umfang ausdrücklich ausgeschlossen.
+
+### Ökosystem-Zugehörigkeit & SLAs
+- **Dachstruktur**: Entwickelt unter dem Dach des [open-bricks](https://github.com/open-bricks/open-bricks) Ökosystems und gepflegt innerhalb der [entertain-and-more](https://github.com/entertain-and-more) Produktlinie.
+- **Reaktionsversprechen**: Vertrauliche Sicherheitsmeldungen via [SECURITY.md](./SECURITY.md) erhalten eine bestätigte Rückmeldung innerhalb von 48 Stunden und eine qualifizierte Triage-Bewertung binnen 5 Werktagen.

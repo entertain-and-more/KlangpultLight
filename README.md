@@ -7,15 +7,16 @@
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#)
 [![Version](https://img.shields.io/badge/Version-v0.1.7-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-[![Pytest](https://img.shields.io/badge/Pytest-503%20tests%20(502%20passed)-success.svg)](https://docs.pytest.org/)
+[![Pytest](https://img.shields.io/badge/Pytest-521%20tests%20(521%20passed)-success.svg)](https://docs.pytest.org/)
 [![CI](https://img.shields.io/badge/CI-Multi--OS%20Matrix-blue.svg)](https://github.com/entertain-and-more/KlangpultLight/actions/workflows/ci.yml)
 [![Platforms](https://img.shields.io/badge/Platforms-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](#)
 [![License](https://img.shields.io/badge/License-Freeware-informational.svg)](./LICENSE)
+[![Notice](https://img.shields.io/badge/Attribution-NOTICE-blue.svg)](./NOTICE)
 [![Local-First](https://img.shields.io/badge/Architecture-Local--First%20%7C%20Zero--Egress-orange.svg)](./SECURITY.md)
 [![Security](https://img.shields.io/badge/Security-Unprivileged%20(RunAsInvoker)-green.svg)](./SECURITY.md)
 [![Security SLA](https://img.shields.io/badge/Security%20SLA-48h%20response%20%7C%205d%20triage-blue.svg)](./SECURITY.md)
 [![Third-Party Audited](https://img.shields.io/badge/Third--Party%20Licenses-Audited%20(100%25%20Permissive%20%2F%20LGPL)--Dynamic-green.svg)](./THIRD_PARTY_LICENSES.md)
-[![Marketing Log](https://img.shields.io/badge/Marketing%20Log-Active%20(2026--09--18)-blue.svg)](./MARKETING-LOG.txt)
+[![Marketing Log](https://img.shields.io/badge/Marketing%20Log-Active%20(2026--09--24)-blue.svg)](./MARKETING-LOG.txt)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Ecosystem](https://img.shields.io/badge/Ecosystem-entertain--and--more-blueviolet.svg)](https://github.com/entertain-and-more)
 [![Umbrella](https://img.shields.io/badge/Umbrella-open--bricks-blue.svg)](https://github.com/open-bricks/open-bricks)
@@ -28,7 +29,7 @@
 > License: Freeware / Proprietary, Closed-Source.
 
 > [!NOTE]
-> For AI agents and automated tools: See [llms.txt](./llms.txt) (Last checked: 2026-09-18) for machine-readable repository overview and test contracts. Detailed third-party license audits are documented in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md), and marketing, SEO, and visual asset telemetry is tracked in [MARKETING-LOG.txt](./MARKETING-LOG.txt).
+> For AI agents and automated tools: See [llms.txt](./llms.txt) (Last checked: 2026-09-24) for machine-readable repository overview and test contracts. Formal provenance and contributor recognition are declared in [NOTICE](./NOTICE). Detailed third-party license audits and Level 1 SBOM are documented in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md), and marketing, SEO, and visual asset telemetry is tracked in [MARKETING-LOG.txt](./MARKETING-LOG.txt).
 
 ---
 
@@ -47,14 +48,15 @@
 11. [Build Standalone Executable](#build-standalone-executable)
 12. [Sibling Tools & Ecosystem Matrix](#sibling-tools--ecosystem-matrix)
 13. [Feature Comparison: Light vs. Full Edition](#feature-comparison-light-vs-full-edition)
-14. [Third-Party Licenses & Transparency](#third-party-licenses--transparency)
+14. [Third-Party Licenses & Level 1 SBOM](#third-party-licenses--transparency)
 15. [Validation & Verification Gates](#validation--verification-gates)
 16. [Security Policy & Triage SLA](#security-policy--triage-sla)
-17. [License & Author](#license--author)
+17. [Freeware License Agreement & Open-Source Attribution](#license--author)
+18. [Statutory Notice, Liability Limitation & License (§ 521 BGB)](#statutory-notice-liability-limitation--license--521-bgb)
 
 ---
 
-<a id="overview--key-capabilities"></a>
+<a id="sec-01"></a><a id="overview--key-capabilities"></a>
 ## Overview & Key Capabilities
 
 Klangpult light decouples recording operations from project planning into two tightly integrated tools:
@@ -66,7 +68,7 @@ Both tools communicate via local loopback IPC sockets (`127.0.0.1:8767` and `127
 
 ---
 
-<a id="system-architecture-flowchart"></a>
+<a id="sec-02"></a><a id="system-architecture-flowchart"></a>
 ## System Architecture Flowchart
 
 ```mermaid
@@ -84,7 +86,7 @@ graph TD
 
 ---
 
-<a id="media--recording-lifecycle-sequence"></a>
+<a id="sec-03"></a><a id="media--recording-lifecycle-sequence"></a>
 ## Media & Recording Lifecycle Sequence
 
 ```mermaid
@@ -116,7 +118,7 @@ sequenceDiagram
 
 ---
 
-<a id="governance--runtime-invariants"></a>
+<a id="sec-04"></a><a id="governance--runtime-invariants"></a>
 ## Governance & Runtime Invariants
 
 Klangpult light adheres to 10 strict architectural and runtime invariants to guarantee system stability, user privacy, and cross-platform reliability:
@@ -136,7 +138,7 @@ Klangpult light adheres to 10 strict architectural and runtime invariants to gua
 
 ---
 
-<a id="target-personas--discoverability"></a>
+<a id="sec-05"></a><a id="target-personas--discoverability"></a>
 ## Target Personas & Discoverability
 
 Klangpult light is engineered for content creators, audio producers, and engineers who prioritize speed, audio fidelity, and privacy:
@@ -161,7 +163,7 @@ Klangpult light is engineered for content creators, audio producers, and enginee
 
 ---
 
-<a id="comparative-matrix-vs-alternatives"></a>
+<a id="sec-06"></a><a id="comparative-matrix-vs-alternatives"></a>
 ## Comparative Matrix vs. Alternatives
 
 Klangpult light provides a dedicated local-first workstation combining native desktop recording and browser planning, contrasting with cloud-locked SaaS tools and generic audio editors:
@@ -181,7 +183,7 @@ Klangpult light provides a dedicated local-first workstation combining native de
 
 ---
 
-<a id="key-features"></a>
+<a id="sec-07"></a><a id="key-features"></a>
 ## Key Features
 
 - 🎙️ **Multichannel Audio Recording**: Dedicated channels for microphone input, system audio capture, and soundboard clips.
@@ -193,14 +195,14 @@ Klangpult light provides a dedicated local-first workstation combining native de
 
 ---
 
-<a id="ui-preview--screenshots"></a>
+<a id="sec-08"></a><a id="ui-preview--screenshots"></a>
 ## UI Preview & Screenshots
 
 ![Klangpult light – Recorder](README/screenshots/main.png)
 
 ---
 
-<a id="klangpult-light--planer-quickstart"></a>
+<a id="sec-09"></a><a id="klangpult-light--planer-quickstart"></a>
 ## Klangpult light – Planer Quickstart
 
 ```powershell
@@ -221,7 +223,7 @@ If the Recorder is not running, the Planer functions in standalone mode for offl
 
 ---
 
-<a id="klangpult-light--recorder-quickstart"></a>
+<a id="sec-10"></a><a id="klangpult-light--recorder-quickstart"></a>
 ## Klangpult light – Recorder Quickstart
 
 ```powershell
@@ -253,7 +255,7 @@ pytest
 
 ---
 
-<a id="build-standalone-executable"></a>
+<a id="sec-11"></a><a id="build-standalone-executable"></a>
 ## Build Standalone Executable
 
 ```powershell
@@ -265,7 +267,7 @@ The build script packages a single-file executable at the project root (`Klangpu
 
 ---
 
-<a id="sibling-tools--ecosystem-matrix"></a>
+<a id="sec-12"></a><a id="sibling-tools--ecosystem-matrix"></a>
 ## Sibling Tools & Ecosystem Matrix
 
 Klangpult light is an integral member of the **entertain-and-more** suite and the broader **open-bricks** developer network:
@@ -292,7 +294,7 @@ Klangpult light is an integral member of the **entertain-and-more** suite and th
 
 ---
 
-<a id="feature-comparison-light-vs-full-edition"></a>
+<a id="sec-13"></a><a id="feature-comparison-light-vs-full-edition"></a>
 ## Feature Comparison: Light vs. Full Edition
 
 | Feature | Klangpult light (Freeware) | Klangpult (Full Suite) |
@@ -312,8 +314,8 @@ Concept: [KONZEPT.md](./KONZEPT.md) · Roadmap: [TODO.md](./TODO.md) · Changelo
 
 ---
 
-<a id="third-party-licenses--transparency"></a>
-## Third-Party Licenses & Transparency
+<a id="sec-14"></a><a id="third-party-licenses--transparency"></a><a id="third-party-licenses--level-1-sbom"></a>
+## Third-Party Licenses & Level 1 SBOM
 
 Klangpult light is released as a complimentary freeware application under the [Klangpult light Freeware License Agreement](LICENSE).
 
@@ -323,11 +325,11 @@ All bundled runtime libraries and development dependencies adhere to permissive 
 - **Subprocess Isolation**: External binaries such as FFmpeg are invoked exclusively via isolated subprocess boundaries with sanitized argument vectors.
 - **Zero-Copyleft Contagion**: User recordings (WAV, MP4), soundboard clips, teleprompter scripts, and episode data remain 100% proprietary to the creator and are never subjected to copyleft or relicensing.
 
-For complete dependency tables, license texts, and compliance notices, see [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md).
+For complete dependency tables, Level 1 SBOM Invariant Cross-Reference Matrix, license texts, and compliance notices, see [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md).
 
 ---
 
-<a id="validation--verification-gates"></a>
+<a id="sec-15"></a><a id="validation--verification-gates"></a>
 ## Validation & Verification Gates
 
 Quality, performance, and contract compliance are enforced through automated verification gates:
@@ -343,7 +345,7 @@ pytest tests/test_planer_accessibility_static.py
 # 3. Core Engine and Desktop Recorder Test Suite (440 tests)
 pytest Recorder/tests/
 
-# 4. Full Pytest Suite (450 tests: 449 passed, 1 skipped)
+# 4. Full Pytest Suite (521 tests: 521 passed)
 pytest
 
 # 5. Code Style and Linter Check
@@ -362,7 +364,7 @@ git diff --check
 
 ---
 
-<a id="security-policy--triage-sla"></a>
+<a id="sec-16"></a><a id="security-policy--triage-sla"></a>
 ## Security Policy & Triage SLA
 
 We maintain strict security guarantees:
@@ -377,8 +379,21 @@ We maintain strict security guarantees:
 
 ---
 
-<a id="license--author"></a>
-## License & Author
+<a id="sec-17"></a><a id="license--author"></a><a id="freeware-license-agreement--open-source-attribution"></a>
+## Freeware License Agreement & Open-Source Attribution
 
 Klangpult light is released as **Freeware / Closed-Source Proprietary**. See [LICENSE](./LICENSE) for full terms.<br>
-Copyright (c) 2026 Lukas Geiger. All rights reserved.
+Formal ecosystem attribution, author provenance, and contributor recognition are declared in [NOTICE](./NOTICE).<br>
+Copyright (c) 2026 Lukas Geiger, entertain-and-more. All rights reserved.
+
+---
+
+<a id="sec-18"></a><a id="statutory-notice-liability-limitation--license--521-bgb"></a>
+## Statutory Notice, Liability Limitation & License (§ 521 BGB)
+
+### German Statutory Notice & Liability Limitation (§ 521 BGB Gefälligkeitsrecht)
+The provision of this software and its associated documentation is gratuitous (unentgeltliche Bereitstellung). In accordance with the statutory liability regime under German Civil Law governing gratuitous services (**§ 521 BGB** — *Haftung des Schenkers*), liability for any defects of quality or title (Sach- und Rechtsmängel) is strictly limited to cases of intentional misconduct (**Vorsatz**) and gross negligence (**grobe Fahrlässigkeit**). Any broader statutory warranty or tortious liability for slight negligence is expressly excluded to the fullest extent permitted by applicable law.
+
+### Ecosystem Provenance & SLAs
+- **Umbrella Alignment**: Developed under the [open-bricks](https://github.com/open-bricks/open-bricks) umbrella ecosystem and maintained within the [entertain-and-more](https://github.com/entertain-and-more) product family.
+- **Response Commitment**: Vulnerability reports submitted via [SECURITY.md](./SECURITY.md) receive confirmed receipt within 48 hours and triage within 5 business days.

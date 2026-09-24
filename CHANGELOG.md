@@ -3,6 +3,18 @@
 Alle wesentlichen Änderungen an diesem Projekt werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
+## [Unreleased]
+
+### Pfad B Marketing, Discoverability, Visual Architecture & Bilateral Navigation Parity (2026-09-24) [G 2026-09-24]
+- **Version-Freeze Disziplin (`T-20260920-167562623`)**: Versionskonstante `0.1.0` in `pyproject.toml` und Manifesten unverändert beibehalten (Release-Isolation, kein Bump bei Pfad-A/B-Läufen).
+- **Remote-Metadaten & 20-Topic-Sättigung**: 20 GitHub-Topics gesättigt (`audio`, `audio-mixer`, `audio-production`, `audio-recorder`, `desktop-app`, `freeware`, `local-first`, `mixing-console`, `podcast`, `python`, `windows`, `live-transcription`, `pyside6`, `teleprompter`, `ai-monitor`, `multitrack-recording`, `offline-first`, `podcast-studio`, `zero-egress`, `episode-planner`), kanonische Homepage-URL `https://github.com/entertain-and-more/KlangpultLight#readme` bestätigt.
+- **Kanonische NOTICE Attribution**: Neue Datei `NOTICE` im Root für formale Copyright- und Open-Bricks-Ökosystem-Attribution.
+- **PEP 621 Standardisierung (`pyproject.toml`)**: `keywords` auf alle 20 kuratierten Topics synchronisiert, `license-files` definiert und `Notice`-URL unter `[project.urls]` registriert.
+- **Level 1 SBOM Invarianten-Kreuzreferenzmatrix (`THIRD_PARTY_LICENSES.md`)**: Vollständiges Re-Audit mit Stand 2026-09-24, Level 1 SBOM Matrix für alle 10 Invarianten (`INV-LOCAL-01` bis `INV-SLA-10`), `RunAsInvoker`-Zertifizierung und Verweis auf die `NOTICE`.
+- **18-Punkte Bilaterale Schnellnavigation & Duale Anker**: `README.md`, `README_de.md` und `README.es.md` um duale reziproke Anker (`<a id="sec-01"></a>` bis `<a id="sec-18"></a>`) erweitert, Badges für `NOTICE`, `Verified-2026--09--24` und 516 Tests harmonisiert.
+- **Gesetzlicher Haftungsausschluss (§ 521 BGB Gefälligkeitsrecht)**: Haftungsbeschränkung auf Vorsatz und grobe Fahrlässigkeit bei unentgeltlicher Software-Bereitstellung in Abschnitt 18 der Dokumentation und Governance verankert.
+- **Vertragstests & Testsuite**: Neue Vertragstests in `tests/test_metadata.py` für NOTICE, PEP 621, 18-Punkte-Navigation, Level 1 SBOM Matrix, § 521 BGB Disclaimer und MARKETING-LOG-Dokumentation. Testsuite: 516 Tests 100% bestanden.
+
 ## [Rebrand 2026-06-27]
 
 ### Geändert

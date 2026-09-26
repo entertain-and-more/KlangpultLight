@@ -5,6 +5,19 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Behoben / Fixed (Bugsweep: Board-Model, Workspace-v1 Validierung & Ducking Lifecycle 2026-09-26) [G 2026-09-26]
+- **Board-Model & Workspace-v1 Schema-Härtung (`Recorder/board/board_model.py`)**:
+  - `load_board()`: Schutz vor Nicht-Dict JSON-Roots (Listen, Strings, null) mit automatischem Fallback auf leeres `Board()`.
+  - `Pad.from_dict()`: Defensive Typkonvertierung und Clamping von `volume` auf `[0.0, 4.0]` (Default 1.0) gegen Thread-Abstürze (`TypeError`) im Audio-Feeder; Sanitisierung von `id`, `kind` und `mode`.
+  - `validate_workspace_payload()`: Strikte Typvalidierung (`type(v) is int`) für Schema-Versionen und Teleprompter-Konformität (`text`, `font_size >= 8`, `scroll_speed >= 0`) nach `shared/workspace_v1.json`.
+  - `export_workspace_full()`: Defensive Fallbacks für ungültige Teleprompter-Parameter und Schutz vor `None`-Stringifizierung.
+  - `save_board()`: Validierung des Zielpfads gegen verwaiste `.tmp`-Dateien.
+- **Ducking Release-Lebenszyklus & Audio-Engine Entkopplung (`Recorder/board/duck_controller.py`, `Recorder/audio/engine.py`, `Recorder/board/board_player.py`)**:
+  - `DuckController.is_idle()`: Indikator für den Abschluss der exponentiellen Release-Rampe (`faktor >= 1.0 - 1e-6`).
+  - `AudioEngine._mix_one_tick()`: Verzögert die Deregistrierung des Duck-Controllers, bis die Release-Rampe vollständig abgearbeitet ist, wodurch Pegelsprünge und Knackgeräusche verhindert werden.
+  - `BoardPlayer.on_finish()`: Entkoppelte Ducking-Freigabe und Bereinigung leerer Feeder-Schlüssel.
+- **Regressionstest-Suite (`Recorder/tests/test_bugsweep_board_model_and_ducking_20260926.py`)**: 17 hermetische Unittests zur Verifikation aller Edge Cases.
+
 ### Pfad B Marketing, Discoverability, Visual Architecture & Bilateral Navigation Parity (2026-09-24) [G 2026-09-24]
 - **Version-Freeze Disziplin (`T-20260920-167562623`)**: Versionskonstante `0.1.0` in `pyproject.toml` und Manifesten unverändert beibehalten (Release-Isolation, kein Bump bei Pfad-A/B-Läufen).
 - **Remote-Metadaten & 20-Topic-Sättigung**: 20 GitHub-Topics gesättigt (`audio`, `audio-mixer`, `audio-production`, `audio-recorder`, `desktop-app`, `freeware`, `local-first`, `mixing-console`, `podcast`, `python`, `windows`, `live-transcription`, `pyside6`, `teleprompter`, `ai-monitor`, `multitrack-recording`, `offline-first`, `podcast-studio`, `zero-egress`, `episode-planner`), kanonische Homepage-URL `https://github.com/entertain-and-more/KlangpultLight#readme` bestätigt.

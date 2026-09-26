@@ -592,6 +592,11 @@ class AudioEngine:
         if duck is not None:
             duck.tick(dt)
             duck_faktor = duck.current_gain_factor()
+            # Automatische Abmeldung sobald Ducking-Release vollständig abgeschlossen ist
+            if hasattr(duck, "is_idle") and duck.is_idle():
+                with self._duck_lock:
+                    if self._duck is duck:
+                        self._duck = None
         else:
             duck_faktor = 1.0
 

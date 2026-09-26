@@ -53,9 +53,49 @@ class Pad:
         """Erstellt ein Pad aus einem dict.
 
         Unbekannte Felder werden ignoriert (Vorwärts-Kompatibilität).
+        Typen und Standardwerte werden defensiv normalisiert.
         """
+        if not isinstance(daten, dict):
+            return cls(id="")
         bekannte = set(cls.__dataclass_fields__)
         gefiltert = {k: v for k, v in daten.items() if k in bekannte}
+
+        # ID absichern (String und getrimmt)
+        raw_id = gefiltert.get("id")
+        gefiltert["id"] = str(raw_id).strip() if raw_id is not None else ""
+
+        # Volume absichern: None, ungültige Typen, NaN, Clamping [0.0, 4.0]
+        vol = gefiltert.get("volume")
+        if vol is None:
+            gefiltert["volume"] = 1.0
+        else:
+            try:
+                v_float = float(vol)
+                import math
+                if math.isnan(v_float) or math.isinf(v_float):
+                    gefiltert["volume"] = 1.0
+                else:
+                    gefiltert["volume"] = max(0.0, min(4.0, v_float))
+            except (ValueError, TypeError):
+                gefiltert["volume"] = 1.0
+
+        # Kind absichern
+        kind = gefiltert.get("kind")
+        if kind not in {"audio", "video", "image"}:
+            gefiltert["kind"] = "audio"
+
+        # Mode absichern
+        mode = gefiltert.get("mode")
+        if mode not in {"play_stop", "loop", "overlap"}:
+            gefiltert["mode"] = "play_stop"
+
+        # String-Felder defensiv absichern
+        for s_field in ("label", "color", "asset_path", "hotkey"):
+            if s_field in gefiltert and gefiltert[s_field] is not None:
+                gefiltert[s_field] = str(gefiltert[s_field])
+            elif s_field in gefiltert and gefiltert[s_field] is None:
+                gefiltert[s_field] = ""
+
         return cls(**gefiltert)
 
 
@@ -100,15 +140,20 @@ def load_board(path: str) -> Board:
     Returns:
         Board mit geladenen Pads.
     """
-    if not os.path.exists(path):
+    if not path or not os.path.exists(path):
         return Board()
 
     try:
         with open(path, encoding="utf-8") as f:
             daten = json.load(f)
-        pads = [Pad.from_dict(p) for p in daten.get("pads", [])]
+        if not isinstance(daten, dict):
+            return Board()
+        raw_pads = daten.get("pads")
+        if not isinstance(raw_pads, list):
+            return Board()
+        pads = [Pad.from_dict(p) for p in raw_pads if isinstance(p, dict)]
         return Board(pads=pads)
-    except (json.JSONDecodeError, TypeError, ValueError, KeyError):
+    except (json.JSONDecodeError, TypeError, ValueError, KeyError, AttributeError, OSError):
         return Board()
 
 
@@ -123,11 +168,15 @@ def save_board(board: Board, path: str) -> None:
         board: Zu speicherndes Board.
         path:  Zielpfad.
     """
+    if not path or not str(path).strip():
+        raise ValueError("Pfad darf nicht leer sein")
+    path = str(path).strip()
+
     verzeichnis = os.path.dirname(path)
     if verzeichnis:
         os.makedirs(verzeichnis, exist_ok=True)
 
-    daten = {"pads": [p.to_dict() for p in board.pads]}
+    daten = {"pads": [p.to_dict() for p in board.pads if isinstance(p, Pad)]}
     tmp_pfad = path + ".tmp"
     with open(tmp_pfad, "w", encoding="utf-8") as f:
         json.dump(daten, f, indent=2, ensure_ascii=False)
@@ -200,7 +249,7 @@ def validate_workspace_payload(payload: dict) -> tuple[bool, str]:
     if payload.get("format") != WORKSPACE_FORMAT:
         return False, f"Format muss '{WORKSPACE_FORMAT}' sein, erhalten: {payload.get('format')!r}"
     version = payload.get("version")
-    if not isinstance(version, int) or version < 1:
+    if type(version) is not int or version < 1:
         return False, f"Version muss ein Integer >= 1 sein, erhalten: {version!r}"
 
     board_obj = payload.get("board")
@@ -235,6 +284,19 @@ def validate_workspace_payload(payload: dict) -> tuple[bool, str]:
     if teleprompter is not None:
         if not isinstance(teleprompter, dict):
             return False, "'teleprompter' muss ein Objekt sein"
+        if "text" in teleprompter:
+            t = teleprompter["text"]
+            if not isinstance(t, str):
+                return False, f"'teleprompter.text' muss ein String sein, erhalten: {type(t).__name__}"
+        if "font_size" in teleprompter:
+            fs = teleprompter["font_size"]
+            if type(fs) is not int or fs < 8:
+                return False, f"'teleprompter.font_size' muss ein Integer >= 8 sein, erhalten: {fs!r}"
+        if "scroll_speed" in teleprompter:
+            ss = teleprompter["scroll_speed"]
+            import math
+            if not isinstance(ss, (int, float)) or type(ss) is bool or math.isnan(ss) or math.isinf(ss) or ss < 0:
+                return False, f"'teleprompter.scroll_speed' muss eine Zahl >= 0 sein, erhalten: {ss!r}"
 
     return True, ""
 
@@ -275,14 +337,26 @@ def export_workspace_full(
         "line": [str(x) for x in (line or []) if str(x).strip()],
     }
 
-    if teleprompter:
+    if isinstance(teleprompter, dict):
         tp_clean = {}
-        if "text" in teleprompter:
+        if "text" in teleprompter and teleprompter["text"] is not None:
             tp_clean["text"] = str(teleprompter["text"])
-        if "font_size" in teleprompter:
-            tp_clean["font_size"] = int(teleprompter["font_size"])
-        if "scroll_speed" in teleprompter:
-            tp_clean["scroll_speed"] = float(teleprompter["scroll_speed"])
-        payload["teleprompter"] = tp_clean
+        if "font_size" in teleprompter and teleprompter["font_size"] is not None:
+            try:
+                fs_val = int(teleprompter["font_size"])
+                if fs_val >= 8:
+                    tp_clean["font_size"] = fs_val
+            except (ValueError, TypeError):
+                pass
+        if "scroll_speed" in teleprompter and teleprompter["scroll_speed"] is not None:
+            try:
+                ss_val = float(teleprompter["scroll_speed"])
+                import math
+                if not (math.isnan(ss_val) or math.isinf(ss_val)) and ss_val >= 0.0:
+                    tp_clean["scroll_speed"] = ss_val
+            except (ValueError, TypeError):
+                pass
+        if tp_clean:
+            payload["teleprompter"] = tp_clean
 
     return payload

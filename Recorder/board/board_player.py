@@ -388,6 +388,13 @@ class BoardPlayer:
         for feeder in feeder_liste:
             feeder.stop(timeout=2.0)
 
+        with self._lock:
+            self._feeder.pop(pad_id, None)
+            if self._duck is not None and self._aktive_feeder_anzahl() == 0:
+                self._duck.stop_duck()
+                if not hasattr(self._duck, "is_idle") and hasattr(self._engine, "unregister_duck"):
+                    self._engine.unregister_duck()
+
     def stop_all(self) -> None:
         """Stoppt alle laufenden Pads und wartet auf Thread-Ende."""
         with self._lock:
@@ -397,6 +404,13 @@ class BoardPlayer:
         for _, feeder_liste in alle:
             for feeder in feeder_liste:
                 feeder.stop(timeout=2.0)
+
+        with self._lock:
+            self._feeder.clear()
+            if self._duck is not None and self._aktive_feeder_anzahl() == 0:
+                self._duck.stop_duck()
+                if not hasattr(self._duck, "is_idle") and hasattr(self._engine, "unregister_duck"):
+                    self._engine.unregister_duck()
 
     def active_pad_ids(self) -> list[str]:
         """Gibt die IDs aller Pads zurück, für die aktuell mindestens ein Feeder läuft.
@@ -432,11 +446,17 @@ class BoardPlayer:
             with self._lock:
                 laufende = self._feeder.get(pad.id, [])
                 # Alle nicht mehr alive entfernen
-                self._feeder[pad.id] = [f for f in laufende if f.is_alive()]
+                rest = [f for f in laufende if f.is_alive()]
+                if rest:
+                    self._feeder[pad.id] = rest
+                else:
+                    self._feeder.pop(pad.id, None)
                 # Wenn kein Feeder mehr läuft: Ducking beenden
                 if self._duck is not None and self._aktive_feeder_anzahl() == 0:
                     self._duck.stop_duck()
-                    if hasattr(self._engine, "unregister_duck"):
+                    # Wenn DuckController kein is_idle() hat (z. B. Stub/Mock in Tests), direkt unregistrieren;
+                    # ansonsten führt die Engine den sanften Release durch und meldet ihn nach Abschluss ab.
+                    if not hasattr(self._duck, "is_idle") and hasattr(self._engine, "unregister_duck"):
                         self._engine.unregister_duck()
 
         return _PadFeeder(

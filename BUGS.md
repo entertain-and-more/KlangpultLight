@@ -76,6 +76,16 @@ Angelegt: 2026-06-22.
   `test_non_dict_json_body_returns_400_instead_of_crashing`,
   `test_aufnahme_entfernen_aktualisiert_updated_at`.
 
+- **[FIXED] Board-Model Robustheit, Workspace-v1 Validierung und Ducking Release-Lebenszyklus (2026-09-26):**
+  `Recorder/board/board_model.py`, `Recorder/board/duck_controller.py`, `Recorder/audio/engine.py` und `Recorder/board/board_player.py`:
+  1. `load_board()` stürzte mit ungehandhabtem `AttributeError: 'list' object has no attribute 'get'` ab, wenn die `board.json` kein Root-Dictionary enthielt (z. B. `[]`, `null`, `"str"`). Jetzt Validierung und robuster Fallback auf leeres `Board()`.
+  2. `Pad.from_dict()` akzeptierte `volume: None` und nicht-numerische Typen, was im Audio-Feeder-Thread bei `block * float(pad.volume)` zu einem unbehandelten `TypeError` führte. Jetzt Clamping `[0.0, 4.0]` und Fallback auf `1.0`, String-Sanitisierung für `id` und Defaults für ungültige `kind`/`mode`.
+  3. `validate_workspace_payload()` akzeptierte `version: True` (bool erbt in Python von int) und validierte Teleprompter-Eigenschaften nicht gegen `shared/workspace_v1.json`. Teleprompter-Validierung (String-Typ, `font_size >= 8`, `scroll_speed >= 0`) und strikte int-Prüfung ergänzt.
+  4. `export_workspace_full()` erzeugte bei None/ungültigen Teleprompter-Zahlen `TypeError`/`ValueError` und korrumpierte `text: None` zu `"None"`. Jetzt defensive Normalisierung.
+  5. `save_board()` erzeugte bei leerem Pfad verwaiste `.tmp`-Dateien.
+  6. Ducking Release-Lebenszyklus: `AudioEngine._mix_one_tick()` deregistrierte den Duck-Controller sofort beim Stop-Signal, wodurch der Pegelsprung schlagartig (Knacken) stattfand statt über die konfigurierte Release-Rampe abzublenden. Mit `duck.is_idle()` bleibt der Controller aktiv, bis die Rampe vollendet ist.
+  Regressionstests: `Recorder/tests/test_bugsweep_board_model_and_ducking_20260926.py` (17 Tests).
+
 ---
 
 ## Offen

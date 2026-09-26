@@ -104,3 +104,11 @@ class DuckController:
             ``10**(duck_db/20)``
         """
         return self._duck_faktor
+
+    def is_idle(self) -> bool:
+        """Gibt True zurück, wenn Ducking vollständig beendet ist (Gain-Faktor wieder bei 1.0).
+
+        Returns:
+            bool: True, wenn kein Ducking aktiv ist und die Release-Rampe abgeschlossen ist.
+        """
+        return self._ziel_faktor >= 1.0 and self._aktueller_faktor >= 1.0 - 1e-6

@@ -1,155 +1,75 @@
 {
-  "app_title": {
-    "de": "Klangpult light – Recorder",
-    "en": "Klangpult light – Recorder",
-    "es": "Klangpult light – Grabador",
-    "zh": "Klangpult light – 录音台",
-    "ja": "Klangpult light – レコーダー",
-    "ru": "Klangpult light – Рекордер"
+  "action_focus_title": {
+    "de": "Aufnahmetitel fokussieren",
+    "en": "Focus Recording Title",
+    "es": "Enfocar título de grabación",
+    "zh": "聚焦录音标题",
+    "ja": "録音タイトルにフォーカス",
+    "ru": "Фокусировать название записи"
   },
-  "planer_title": {
-    "de": "Klangpult light – Planer",
-    "en": "Klangpult light – Planner",
-    "es": "Klangpult light – Planificador",
-    "zh": "Klangpult light – 策划器",
-    "ja": "Klangpult light – プランナー",
-    "ru": "Klangpult light – Планировщик"
+  "action_quit": {
+    "de": "Beenden",
+    "en": "Quit",
+    "es": "Salir",
+    "zh": "退出",
+    "ja": "終了",
+    "ru": "Выход"
   },
-  "start_recording": {
-    "de": "Aufnahme starten",
-    "en": "Start Recording",
-    "es": "Iniciar grabación",
-    "zh": "开始录制",
-    "ja": "録音開始",
-    "ru": "Начать запись"
+  "action_refresh": {
+    "de": "Aufnahmeliste aktualisieren",
+    "en": "Refresh Recordings List",
+    "es": "Actualizar lista de grabaciones",
+    "zh": "刷新录音列表",
+    "ja": "録音一覧を更新",
+    "ru": "Обновить список записей"
   },
-  "stop_recording": {
-    "de": "Aufnahme stoppen",
-    "en": "Stop Recording",
-    "es": "Detener grabación",
-    "zh": "停止录制",
-    "ja": "録音停止",
-    "ru": "Остановить запись"
+  "action_shortcuts": {
+    "de": "Tastaturkürzel & Barrierefreiheit…",
+    "en": "Keyboard Shortcuts & Accessibility…",
+    "es": "Atajos de teclado y accesibilidad…",
+    "zh": "键盘快捷键与无障碍…",
+    "ja": "キーボードショートカットとアクセシビリティ…",
+    "ru": "Горячие клавиши и доступность…"
   },
-  "sources": {
-    "de": "Quellen",
-    "en": "Sources",
-    "es": "Fuentes",
-    "zh": "信号源",
-    "ja": "ソース",
-    "ru": "Источники"
+  "action_toggle_pads": {
+    "de": "Einspieler-Panel umschalten",
+    "en": "Toggle Soundboard Panel",
+    "es": "Alternar panel de efectos",
+    "zh": "切换音效垫面板",
+    "ja": "サウンドボードパネルを切り替え",
+    "ru": "Переключить панель эффектов"
   },
-  "recordings": {
-    "de": "Aufnahmen",
-    "en": "Recordings",
-    "es": "Grabaciones",
-    "zh": "录音列表",
-    "ja": "録音一覧",
-    "ru": "Записи"
+  "action_toggle_recording": {
+    "de": "Aufnahme-Panel umschalten",
+    "en": "Toggle Recording Panel",
+    "es": "Alternar panel de grabación",
+    "zh": "切换录音面板",
+    "ja": "録音パネルを切り替え",
+    "ru": "Переключить панель записи"
   },
-  "levels": {
-    "de": "Pegel",
-    "en": "Levels",
-    "es": "Niveles",
-    "zh": "电平",
-    "ja": "レベル",
-    "ru": "Уровни"
+  "action_toggle_recordings": {
+    "de": "Aufnahmen-Panel umschalten",
+    "en": "Toggle Recordings Panel",
+    "es": "Alternar panel de grabaciones",
+    "zh": "切换录音列表面板",
+    "ja": "録音一覧パネルを切り替え",
+    "ru": "Переключить панель записей"
   },
-  "recording_mode": {
-    "de": "Aufnahme-Modus",
-    "en": "Recording Mode",
-    "es": "Modo de grabación",
-    "zh": "录制模式",
-    "ja": "録音モード",
-    "ru": "Режим записи"
+  "action_toggle_sources": {
+    "de": "Quellen-Panel umschalten",
+    "en": "Toggle Sources Panel",
+    "es": "Alternar panel de fuentes",
+    "zh": "切换信号源面板",
+    "ja": "ソースパネルを切り替え",
+    "ru": "Переключить панель источников"
   },
-  "recording_mode_tooltip": {
-    "de": "Wählt, ob Ton, Video oder beides aufgezeichnet wird.",
-    "en": "Selects whether audio, video, or both are recorded.",
-    "es": "Selecciona si se graba audio, vídeo o ambos.",
-    "zh": "选择录制音频、视频还是两者兼录。",
-    "ja": "音声、映像、またはその両方を記録するかを選択します。",
-    "ru": "Выбирает, записывать ли звук, видео или то и другое."
-  },
-  "mode_audio_video": {
-    "de": "Ton + Video",
-    "en": "Audio + Video",
-    "es": "Audio + Vídeo",
-    "zh": "音频 + 视频",
-    "ja": "音声 + 映像",
-    "ru": "Аудио + Видео"
-  },
-  "mode_audio_only": {
-    "de": "Nur Ton",
-    "en": "Audio Only",
-    "es": "Solo audio",
-    "zh": "仅音频",
-    "ja": "音声のみ",
-    "ru": "Только аудио"
-  },
-  "mode_video_only": {
-    "de": "Nur Video",
-    "en": "Video Only",
-    "es": "Solo vídeo",
-    "zh": "仅视频",
-    "ja": "映像のみ",
-    "ru": "Только видео"
-  },
-  "capture_active": {
-    "de": "Mitschneiden:",
-    "en": "Capture:",
-    "es": "Capturar:",
-    "zh": "录制:",
-    "ja": "キャプチャ:",
-    "ru": "Захват:"
-  },
-  "available_inputs": {
-    "de": "Verfügbare Eingänge:",
-    "en": "Available Inputs:",
-    "es": "Entradas disponibles:",
-    "zh": "可用输入:",
-    "ja": "利用可能な入力:",
-    "ru": "Доступные входы:"
-  },
-  "video_sources": {
-    "de": "Video-Quellen:",
-    "en": "Video Sources:",
-    "es": "Fuentes de vídeo:",
-    "zh": "视频源:",
-    "ja": "映像ソース:",
-    "ru": "Источники видео:"
-  },
-  "preview": {
-    "de": "Vorschau:",
-    "en": "Preview:",
-    "es": "Vista previa:",
-    "zh": "预览:",
-    "ja": "プレビュー:",
-    "ru": "Предпросмотр:"
-  },
-  "open_planer": {
-    "de": "🌐 Planer im Browser öffnen",
-    "en": "🌐 Open Planner in Browser",
-    "es": "🌐 Abrir planificador en el navegador",
-    "zh": "🌐 在浏览器中打开策划器",
-    "ja": "🌐 ブラウザでプランナーを開く",
-    "ru": "🌐 Открыть планировщик в браузере"
-  },
-  "open_planer_tooltip": {
-    "de": "Öffnet die Web-App zur Episoden- und Medienplanung (Standard: http://127.0.0.1:8770) im Browser",
-    "en": "Opens the web application for episode and media planning (default: http://127.0.0.1:8770) in browser",
-    "es": "Abre la aplicación web de planificación de episodios y medios (predeterminado: http://127.0.0.1:8770) en el navegador",
-    "zh": "在浏览器中打开剧集和媒体策划 Web 应用（默认：http://127.0.0.1:8770）",
-    "ja": "エピソードおよびメディア計画用 Web アプリ（デフォルト: http://127.0.0.1:8770）をブラウザで開きます",
-    "ru": "Открывает веб-приложение планирования эпизодов и медиа (по умолчанию: http://127.0.0.1:8770) в браузере"
-  },
-  "pads_title": {
-    "de": "Einspieler",
-    "en": "Soundboard Pads",
-    "es": "Efectos y cortes",
-    "zh": "音效按键",
-    "ja": "サンプラーパッド",
-    "ru": "Сэмплерные кнопки"
+  "action_toggle_video": {
+    "de": "Video-Panel umschalten",
+    "en": "Toggle Video Panel",
+    "es": "Alternar panel de video",
+    "zh": "切换视频面板",
+    "ja": "ビデオパネルを切り替え",
+    "ru": "Переключить панель видео"
   },
   "add_pad": {
     "de": "+ Einspieler hinzufügen",
@@ -159,13 +79,221 @@
     "ja": "+ パッド追加",
     "ru": "+ Добавить кнопку"
   },
-  "no_pads_yet": {
-    "de": "Noch keine Einspieler – Button oben nutzen, um Pads anzulegen.",
-    "en": "No pads yet – use the button above to add pads.",
-    "es": "Todavía no hay efectos: usa el botón superior para crearlos.",
-    "zh": "暂无音效按键 – 请使用上方按钮创建。",
-    "ja": "パッドがまだありません – 上のボタンから追加してください。",
-    "ru": "Кнопок ещё нет – используйте кнопку выше для добавления."
+  "add_pad_accessible_desc": {
+    "de": "Öffnet einen Dateidialog, um ein neues Audio-, Video- oder Bild-Pad hinzuzufügen.",
+    "en": "Opens a file dialog to add a new audio, video, or image pad.",
+    "es": "Abre un diálogo de archivo para agregar un nuevo efecto de audio, video o imagen.",
+    "zh": "打开文件对话框以添加新的音频、视频或图像音效垫。",
+    "ja": "新しいオーディオ、ビデオ、または画像パッドを追加するファイルダイアログを開きます。",
+    "ru": "Открывает диалоговое окно для добавления новой панели аудио, видео или изображений."
+  },
+  "app_title": {
+    "de": "Klangpult light – Recorder",
+    "en": "Klangpult light – Recorder",
+    "es": "Klangpult light – Grabador",
+    "zh": "Klangpult light – 录音台",
+    "ja": "Klangpult light – レコーダー",
+    "ru": "Klangpult light – Рекордер"
+  },
+  "available_inputs": {
+    "de": "Verfügbare Eingänge:",
+    "en": "Available Inputs:",
+    "es": "Entradas disponibles:",
+    "zh": "可用输入:",
+    "ja": "利用可能な入力:",
+    "ru": "Доступные входы:"
+  },
+  "branch_create": {
+    "de": "Branch anlegen",
+    "en": "Create Branch",
+    "es": "Crear rama",
+    "zh": "创建分支",
+    "ja": "ブランチ作成",
+    "ru": "Создать ветку"
+  },
+  "btn_close": {
+    "de": "Schließen",
+    "en": "Close",
+    "es": "Cerrar",
+    "zh": "关闭",
+    "ja": "閉じる",
+    "ru": "Закрыть"
+  },
+  "capture_active": {
+    "de": "Mitschneiden:",
+    "en": "Capture:",
+    "es": "Capturar:",
+    "zh": "录制:",
+    "ja": "キャプチャ:",
+    "ru": "Захват:"
+  },
+  "checking_connection": {
+    "de": "Prüfe Verbindung…",
+    "en": "Checking connection…",
+    "es": "Comprobando conexión…",
+    "zh": "正在检查连接…",
+    "ja": "接続確認中…",
+    "ru": "Проверка соединения…"
+  },
+  "delete": {
+    "de": "Löschen",
+    "en": "Delete",
+    "es": "Eliminar",
+    "zh": "删除",
+    "ja": "削除",
+    "ru": "Удалить"
+  },
+  "header_created": {
+    "de": "Erstellt",
+    "en": "Created",
+    "es": "Creado",
+    "zh": "创建时间",
+    "ja": "作成日時",
+    "ru": "Создано"
+  },
+  "header_duration": {
+    "de": "Dauer",
+    "en": "Duration",
+    "es": "Duración",
+    "zh": "时长",
+    "ja": "再生時間",
+    "ru": "Длительность"
+  },
+  "header_format": {
+    "de": "Format",
+    "en": "Format",
+    "es": "Formato",
+    "zh": "格式",
+    "ja": "フォーマット",
+    "ru": "Формат"
+  },
+  "header_recording_branch": {
+    "de": "Aufnahme / Branch",
+    "en": "Recording / Branch",
+    "es": "Grabación / Rama",
+    "zh": "录音 / 分支",
+    "ja": "録音 / ブランチ",
+    "ru": "Запись / Ветка"
+  },
+  "header_title": {
+    "de": "Titel",
+    "en": "Title",
+    "es": "Título",
+    "zh": "标题",
+    "ja": "タイトル",
+    "ru": "Название"
+  },
+  "language": {
+    "de": "Sprache",
+    "en": "Language",
+    "es": "Idioma",
+    "zh": "语言",
+    "ja": "言語",
+    "ru": "Язык"
+  },
+  "levels": {
+    "de": "Pegel",
+    "en": "Levels",
+    "es": "Niveles",
+    "zh": "电平",
+    "ja": "レベル",
+    "ru": "Уровни"
+  },
+  "menu_file": {
+    "de": "&Datei",
+    "en": "&File",
+    "es": "&Archivo",
+    "zh": "文件(&F)",
+    "ja": "ファイル(&F)",
+    "ru": "&Файл"
+  },
+  "menu_help": {
+    "de": "&Hilfe",
+    "en": "&Help",
+    "es": "A&yuda",
+    "zh": "帮助(&H)",
+    "ja": "ヘルプ(&H)",
+    "ru": "Справка(&H)"
+  },
+  "menu_view": {
+    "de": "&Ansicht",
+    "en": "&View",
+    "es": "&Ver",
+    "zh": "视图(&V)",
+    "ja": "表示(&V)",
+    "ru": "&Вид"
+  },
+  "mock_mode_active": {
+    "de": "Mock-Modus aktiv (keine reale Audio-Hardware)",
+    "en": "Mock mode active (no real audio hardware)",
+    "es": "Modo simulado activo (sin hardware de audio real)",
+    "zh": "模拟模式激活（无真实音频硬件）",
+    "ja": "モックモード有効（実オーディオハードウェアなし）",
+    "ru": "Активен демо-режим (нет реального аудиооборудования)"
+  },
+  "mode_audio_only": {
+    "de": "Nur Ton",
+    "en": "Audio Only",
+    "es": "Solo audio",
+    "zh": "仅音频",
+    "ja": "音声のみ",
+    "ru": "Только аудио"
+  },
+  "mode_audio_video": {
+    "de": "Ton + Video",
+    "en": "Audio + Video",
+    "es": "Audio + Vídeo",
+    "zh": "音频 + 视频",
+    "ja": "音声 + 映像",
+    "ru": "Аудио + Видео"
+  },
+  "mode_video_only": {
+    "de": "Nur Video",
+    "en": "Video Only",
+    "es": "Solo vídeo",
+    "zh": "仅视频",
+    "ja": "映像のみ",
+    "ru": "Только видео"
+  },
+  "nav_assets": {
+    "de": "Assets & Board",
+    "en": "Assets & Board",
+    "es": "Recursos y panel",
+    "zh": "素材与面板",
+    "ja": "素材とボード",
+    "ru": "Ресурсы и панель"
+  },
+  "nav_library": {
+    "de": "Bibliothek",
+    "en": "Library",
+    "es": "Biblioteca",
+    "zh": "媒体库",
+    "ja": "ライブラリ",
+    "ru": "Библиотека"
+  },
+  "nav_monitor": {
+    "de": "KI-Monitor",
+    "en": "AI Monitor",
+    "es": "Monitor IA",
+    "zh": "AI 监视器",
+    "ja": "AI モニター",
+    "ru": "ИИ-монитор"
+  },
+  "nav_projects": {
+    "de": "Projekte",
+    "en": "Projects",
+    "es": "Proyectos",
+    "zh": "项目",
+    "ja": "プロジェクト",
+    "ru": "Проекты"
+  },
+  "nav_teleprompter": {
+    "de": "Teleprompter",
+    "en": "Teleprompter",
+    "es": "Teleprónter",
+    "zh": "提词器",
+    "ja": "テレプロンプター",
+    "ru": "Телесуфлёр"
   },
   "no_board_loaded": {
     "de": "Kein Board geladen.",
@@ -183,14 +311,6 @@
     "ja": "デバイスが見つかりません",
     "ru": "Устройства не найдены"
   },
-  "mock_mode_active": {
-    "de": "Mock-Modus aktiv (keine reale Audio-Hardware)",
-    "en": "Mock mode active (no real audio hardware)",
-    "es": "Modo simulado activo (sin hardware de audio real)",
-    "zh": "模拟模式激活（无真实音频硬件）",
-    "ja": "モックモード有効（実オーディオハードウェアなし）",
-    "ru": "Активен демо-режим (нет реального аудиооборудования)"
-  },
   "no_loopback_available": {
     "de": "Kein Loopback verfügbar – Checkbox deaktiviert",
     "en": "No loopback available – checkbox disabled",
@@ -199,29 +319,237 @@
     "ja": "ループバック利用不可 – チェックボックス無効",
     "ru": "Петлевой захват недоступен – флажок отключен"
   },
-  "header_recording_branch": {
-    "de": "Aufnahme / Branch",
-    "en": "Recording / Branch",
-    "es": "Grabación / Rama",
-    "zh": "录音 / 分支",
-    "ja": "録音 / ブランチ",
-    "ru": "Запись / Ветка"
+  "no_pads_yet": {
+    "de": "Noch keine Einspieler – Button oben nutzen, um Pads anzulegen.",
+    "en": "No pads yet – use the button above to add pads.",
+    "es": "Todavía no hay efectos: usa el botón superior para crearlos.",
+    "zh": "暂无音效按键 – 请使用上方按钮创建。",
+    "ja": "パッドがまだありません – 上のボタンから追加してください。",
+    "ru": "Кнопок ещё нет – используйте кнопку выше для добавления."
   },
-  "header_duration": {
-    "de": "Dauer",
-    "en": "Duration",
-    "es": "Duración",
-    "zh": "时长",
-    "ja": "再生時間",
-    "ru": "Длительность"
+  "open_planer": {
+    "de": "🌐 Planer im Browser öffnen",
+    "en": "🌐 Open Planner in Browser",
+    "es": "🌐 Abrir planificador en el navegador",
+    "zh": "🌐 在浏览器中打开策划器",
+    "ja": "🌐 ブラウザでプランナーを開く",
+    "ru": "🌐 Открыть планировщик в браузере"
   },
-  "header_format": {
-    "de": "Format",
-    "en": "Format",
-    "es": "Formato",
-    "zh": "格式",
-    "ja": "フォーマット",
-    "ru": "Формат"
+  "open_planer_tooltip": {
+    "de": "Öffnet die Web-App zur Episoden- und Medienplanung (Standard: http://127.0.0.1:8770) im Browser",
+    "en": "Opens the web application for episode and media planning (default: http://127.0.0.1:8770) in browser",
+    "es": "Abre la aplicación web de planificación de episodios y medios (predeterminado: http://127.0.0.1:8770) en el navegador",
+    "zh": "在浏览器中打开剧集和媒体策划 Web 应用（默认：http://127.0.0.1:8770）",
+    "ja": "エピソードおよびメディア計画用 Web アプリ（デフォルト: http://127.0.0.1:8770）をブラウザで開きます",
+    "ru": "Открывает веб-приложение планирования эпизодов и медиа (по умолчанию: http://127.0.0.1:8770) в браузере"
+  },
+  "pad_accessible_desc": {
+    "de": "Spielt den Einspieler '{label}' ab (Typ: {kind}, Taste: {key}).",
+    "en": "Plays soundboard pad '{label}' (Kind: {kind}, Key: {key}).",
+    "es": "Reproduce el efecto '{label}' (Tipo: {kind}, Tecla: {key}).",
+    "zh": "播放音效垫 '{label}' (类型: {kind}, 按键: {key})。",
+    "ja": "サウンドパッド '{label}' を再生します (種類: {kind}、キー: {key})。",
+    "ru": "Воспроизводит эффект '{label}' (Тип: {kind}, Клавиша: {key})."
+  },
+  "pad_accessible_name": {
+    "de": "Einspieler: {label}",
+    "en": "Soundboard: {label}",
+    "es": "Efecto: {label}",
+    "zh": "音效: {label}",
+    "ja": "サウンド: {label}",
+    "ru": "Эффект: {label}"
+  },
+  "pads_title": {
+    "de": "Einspieler",
+    "en": "Soundboard Pads",
+    "es": "Efectos y cortes",
+    "zh": "音效按键",
+    "ja": "サンプラーパッド",
+    "ru": "Сэмплерные кнопки"
+  },
+  "planer_title": {
+    "de": "Klangpult light – Planer",
+    "en": "Klangpult light – Planner",
+    "es": "Klangpult light – Planificador",
+    "zh": "Klangpult light – 策划器",
+    "ja": "Klangpult light – プランナー",
+    "ru": "Klangpult light – Планировщик"
+  },
+  "play": {
+    "de": "Abspielen",
+    "en": "Play",
+    "es": "Reproducir",
+    "zh": "播放",
+    "ja": "再生",
+    "ru": "Воспроизвести"
+  },
+  "preview": {
+    "de": "Vorschau:",
+    "en": "Preview:",
+    "es": "Vista previa:",
+    "zh": "预览:",
+    "ja": "プレビュー:",
+    "ru": "Предпросмотр:"
+  },
+  "recording_copied_to_clipboard": {
+    "de": "Aufnahme-Information in Zwischenablage kopiert.",
+    "en": "Recording information copied to clipboard.",
+    "es": "Información de grabación copiada al portapapeles.",
+    "zh": "录音信息已复制到剪贴板。",
+    "ja": "録音情報をクリップボードにコピーしました。",
+    "ru": "Информация о записи скопирована в буфер обмена."
+  },
+  "recording_mode": {
+    "de": "Aufnahme-Modus",
+    "en": "Recording Mode",
+    "es": "Modo de grabación",
+    "zh": "录制模式",
+    "ja": "録音モード",
+    "ru": "Режим записи"
+  },
+  "recording_mode_tooltip": {
+    "de": "Wählt, ob Ton, Video oder beides aufgezeichnet wird.",
+    "en": "Selects whether audio, video, or both are recorded.",
+    "es": "Selecciona si se graba audio, vídeo o ambos.",
+    "zh": "选择录制音频、视频还是两者兼录。",
+    "ja": "音声、映像、またはその両方を記録するかを選択します。",
+    "ru": "Выбирает, записывать ли звук, видео или то и другое."
+  },
+  "recordings": {
+    "de": "Aufnahmen",
+    "en": "Recordings",
+    "es": "Grabaciones",
+    "zh": "录音列表",
+    "ja": "録音一覧",
+    "ru": "Записи"
+  },
+  "recordings_tree_accessible_desc": {
+    "de": "Hierarchische Liste bisheriger Aufnahmen und deren Branches. Eingabetaste öffnet die Datei, Entf löscht sie, F2 benennt um, Strg+C kopiert Pfad.",
+    "en": "Hierarchical list of previous recordings and their branches. Enter opens the file, Del deletes, F2 renames, Ctrl+C copies path.",
+    "es": "Lista jerárquica de grabaciones anteriores y sus ramas. Enter abre el archivo, Supr elimina, F2 renombra, Ctrl+C copia la ruta.",
+    "zh": "历史录音及其分支的分层列表。回车打开文件，Del删除，F2重命名，Ctrl+C复制路径。",
+    "ja": "以前の録音とそのブランチの階層リスト。Enterでファイルを開き、Delで削除、F2で名前変更、Ctrl+Cでパスをコピーします。",
+    "ru": "Иерархический список предыдущих записей и их ветвей. Enter открывает файл, Del удаляет, F2 переименовывает, Ctrl+C копирует путь."
+  },
+  "recordings_tree_accessible_name": {
+    "de": "Aufnahmen und Branches",
+    "en": "Recordings and Branches",
+    "es": "Grabaciones y ramas",
+    "zh": "录音与分支",
+    "ja": "録音とブランチ",
+    "ru": "Записи и ветви"
+  },
+  "recordings_tree_tooltip": {
+    "de": "Aufnahmeliste (Eingabe: Abspielen, Entf: Löschen, F2: Umbenennen, Strg+C: Kopieren, F5: Aktualisieren)",
+    "en": "Recordings list (Enter: Play, Del: Delete, F2: Rename, Ctrl+C: Copy, F5: Refresh)",
+    "es": "Lista de grabaciones (Enter: Reproducir, Supr: Eliminar, F2: Renombrar, Ctrl+C: Copiar, F5: Actualizar)",
+    "zh": "录音列表 (回车: 播放, Del: 删除, F2: 重命名, Ctrl+C: 复制, F5: 刷新)",
+    "ja": "録音一覧 (Enter: 再生, Del: 削除, F2: 名前変更, Ctrl+C: コピー, F5: 更新)",
+    "ru": "Список записей (Enter: Воспроизвести, Del: Удалить, F2: Переименовать, Ctrl+C: Копировать, F5: Обновить)"
+  },
+  "reload_view": {
+    "de": "Aktuelle Ansicht neu laden",
+    "en": "Reload current view",
+    "es": "Recargar vista actual",
+    "zh": "重新加载当前视图",
+    "ja": "現在の表示を再読み込み",
+    "ru": "Перезагрузить текущий вид"
+  },
+  "rename": {
+    "de": "Umbenennen",
+    "en": "Rename",
+    "es": "Renombrar",
+    "zh": "重命名",
+    "ja": "名前変更",
+    "ru": "Переименовать"
+  },
+  "reveal_in_explorer": {
+    "de": "Im Explorer anzeigen",
+    "en": "Show in Explorer",
+    "es": "Mostrar en el explorador",
+    "zh": "在文件资源管理器中显示",
+    "ja": "エクスプローラーで表示",
+    "ru": "Показать в проводнике"
+  },
+  "settings": {
+    "de": "Einstellungen",
+    "en": "Settings",
+    "es": "Configuración",
+    "zh": "设置",
+    "ja": "設定",
+    "ru": "Настройки"
+  },
+  "shortcuts_a11y_note": {
+    "de": "Barrierefreiheit nach BITV 2.0 / WCAG 2.1 AA: Alle Kernfunktionen von Klangpult light lassen sich vollständig ohne Maus über die Tastatur und Screenreader bedienen.",
+    "en": "Accessibility per BITV 2.0 / WCAG 2.1 AA: All core features of Klangpult light can be fully operated without a mouse using keyboard and screen readers.",
+    "es": "Accesibilidad según BITV 2.0 / WCAG 2.1 AA: Todas las funciones principales de Klangpult light se pueden manejar completamente sin ratón mediante teclado y lectores de pantalla.",
+    "zh": "符合 BITV 2.0 / WCAG 2.1 AA 无障碍标准：Klangpult light 的所有核心功能均支持完全脱离鼠标，仅通过键盘与屏幕阅读器操作。",
+    "ja": "BITV 2.0 / WCAG 2.1 AA アクセシビリティ準拠: Klangpult lightのすべての主要機能は、マウスを使わずにキーボードとスクリーンリーダーで完全に操作できます。",
+    "ru": "Доступность по BITV 2.0 / WCAG 2.1 AA: Все основные функции Klangpult light полностью доступны для управления без мыши с помощью клавиатуры и программ чтения с экрана."
+  },
+  "shortcuts_header_action": {
+    "de": "Aktion / Funktion",
+    "en": "Action / Function",
+    "es": "Acción / Función",
+    "zh": "操作 / 功能",
+    "ja": "操作 / 機能",
+    "ru": "Действие / Функция"
+  },
+  "shortcuts_header_section": {
+    "de": "Bereich",
+    "en": "Section",
+    "es": "Sección",
+    "zh": "区域",
+    "ja": "セクション",
+    "ru": "Раздел"
+  },
+  "shortcuts_header_shortcut": {
+    "de": "Tastenkombination",
+    "en": "Shortcut",
+    "es": "Combinación de teclas",
+    "zh": "快捷键",
+    "ja": "ショートカット",
+    "ru": "Сочетание клавиш"
+  },
+  "shortcuts_title": {
+    "de": "Tastaturkürzel & Barrierefreiheit",
+    "en": "Keyboard Shortcuts & Accessibility",
+    "es": "Atajos de teclado y accesibilidad",
+    "zh": "键盘快捷键与无障碍",
+    "ja": "キーボードショートカットとアクセシビリティ",
+    "ru": "Горячие клавиши и доступность"
+  },
+  "sources": {
+    "de": "Quellen",
+    "en": "Sources",
+    "es": "Fuentes",
+    "zh": "信号源",
+    "ja": "ソース",
+    "ru": "Источники"
+  },
+  "start_recording": {
+    "de": "Aufnahme starten",
+    "en": "Start Recording",
+    "es": "Iniciar grabación",
+    "zh": "开始录制",
+    "ja": "録音開始",
+    "ru": "Начать запись"
+  },
+  "start_recording_accessible_desc": {
+    "de": "Startet oder stoppt die Aufnahme aller aktiven Audio- und Videokanäle (Tastenkürzel: Strg+R oder Leertaste).",
+    "en": "Starts or stops recording of all active audio and video channels (Shortcut: Ctrl+R or Space).",
+    "es": "Inicia o detiene la grabación de todos los canales de audio y video activos (Atajo: Ctrl+R o Espacio).",
+    "zh": "开始或停止录制所有活跃的音频和视频通道 (快捷键: Ctrl+R 或 空格键)。",
+    "ja": "すべてのアクティブなオーディオおよびビデオチャンネルの録音/録画を開始または停止します (ショートカット: Ctrl+R または スペース)。",
+    "ru": "Запускает или останавливает запись всех активных аудио- и видеоканалов (Сочетание клавиш: Ctrl+R или Пробел)."
+  },
+  "start_recording_tooltip": {
+    "de": "Aufnahme starten/stoppen (Strg+R)",
+    "en": "Start/Stop Recording (Ctrl+R)",
+    "es": "Iniciar/Detener grabación (Ctrl+R)",
+    "zh": "开始/停止录制 (Ctrl+R)",
+    "ja": "録音の開始/停止 (Ctrl+R)",
+    "ru": "Начать/Остановить запись (Ctrl+R)"
   },
   "status_ready": {
     "de": "Bereit",
@@ -247,125 +575,13 @@
     "ja": "録音終了",
     "ru": "Запись завершена"
   },
-  "delete": {
-    "de": "Löschen",
-    "en": "Delete",
-    "es": "Eliminar",
-    "zh": "删除",
-    "ja": "削除",
-    "ru": "Удалить"
-  },
-  "rename": {
-    "de": "Umbenennen",
-    "en": "Rename",
-    "es": "Renombrar",
-    "zh": "重命名",
-    "ja": "名前変更",
-    "ru": "Переименовать"
-  },
-  "play": {
-    "de": "Abspielen",
-    "en": "Play",
-    "es": "Reproducir",
-    "zh": "播放",
-    "ja": "再生",
-    "ru": "Воспроизвести"
-  },
-  "reveal_in_explorer": {
-    "de": "Im Explorer anzeigen",
-    "en": "Show in Explorer",
-    "es": "Mostrar en el explorador",
-    "zh": "在文件资源管理器中显示",
-    "ja": "エクスプローラーで表示",
-    "ru": "Показать в проводнике"
-  },
-  "language": {
-    "de": "Sprache",
-    "en": "Language",
-    "es": "Idioma",
-    "zh": "语言",
-    "ja": "言語",
-    "ru": "Язык"
-  },
-  "settings": {
-    "de": "Einstellungen",
-    "en": "Settings",
-    "es": "Configuración",
-    "zh": "设置",
-    "ja": "設定",
-    "ru": "Настройки"
-  },
-  "nav_library": {
-    "de": "Bibliothek",
-    "en": "Library",
-    "es": "Biblioteca",
-    "zh": "媒体库",
-    "ja": "ライブラリ",
-    "ru": "Библиотека"
-  },
-  "nav_projects": {
-    "de": "Projekte",
-    "en": "Projects",
-    "es": "Proyectos",
-    "zh": "项目",
-    "ja": "プロジェクト",
-    "ru": "Проекты"
-  },
-  "nav_assets": {
-    "de": "Assets & Board",
-    "en": "Assets & Board",
-    "es": "Recursos y panel",
-    "zh": "素材与面板",
-    "ja": "素材とボード",
-    "ru": "Ресурсы и панель"
-  },
-  "nav_teleprompter": {
-    "de": "Teleprompter",
-    "en": "Teleprompter",
-    "es": "Teleprónter",
-    "zh": "提词器",
-    "ja": "テレプロンプター",
-    "ru": "Телесуфлёр"
-  },
-  "nav_monitor": {
-    "de": "KI-Monitor",
-    "en": "AI Monitor",
-    "es": "Monitor IA",
-    "zh": "AI 监视器",
-    "ja": "AI モニター",
-    "ru": "ИИ-монитор"
-  },
-  "checking_connection": {
-    "de": "Prüfe Verbindung…",
-    "en": "Checking connection…",
-    "es": "Comprobando conexión…",
-    "zh": "正在检查连接…",
-    "ja": "接続確認中…",
-    "ru": "Проверка соединения…"
-  },
-  "reload_view": {
-    "de": "Aktuelle Ansicht neu laden",
-    "en": "Reload current view",
-    "es": "Recargar vista actual",
-    "zh": "重新加载当前视图",
-    "ja": "現在の表示を再読み込み",
-    "ru": "Перезагрузить текущий вид"
-  },
-  "header_title": {
-    "de": "Titel",
-    "en": "Title",
-    "es": "Título",
-    "zh": "标题",
-    "ja": "タイトル",
-    "ru": "Название"
-  },
-  "header_created": {
-    "de": "Erstellt",
-    "en": "Created",
-    "es": "Creado",
-    "zh": "创建时间",
-    "ja": "作成日時",
-    "ru": "Создано"
+  "stop_recording": {
+    "de": "Aufnahme stoppen",
+    "en": "Stop Recording",
+    "es": "Detener grabación",
+    "zh": "停止录制",
+    "ja": "録音停止",
+    "ru": "Остановить запись"
   },
   "title": {
     "de": "Titel",
@@ -375,6 +591,14 @@
     "ja": "タイトル",
     "ru": "Название"
   },
+  "title_accessible_desc": {
+    "de": "Geben Sie einen optionalen Titel für die Aufnahme ein (Tastenkürzel: Strg+T).",
+    "en": "Enter an optional title for the recording (Shortcut: Ctrl+T).",
+    "es": "Introduzca un título opcional para la grabación (Atajo: Ctrl+T).",
+    "zh": "输入录音的自选标题 (快捷键: Ctrl+T)。",
+    "ja": "録音の任意のタイトルを入力します (ショートカット: Ctrl+T)。",
+    "ru": "Введите дополнительное название для записи (Сочетание клавиш: Ctrl+T)."
+  },
   "title_placeholder": {
     "de": "Aufnahmetitel …",
     "en": "Recording title …",
@@ -383,12 +607,36 @@
     "ja": "録音タイトル …",
     "ru": "Название записи …"
   },
-  "branch_create": {
-    "de": "Branch anlegen",
-    "en": "Create Branch",
-    "es": "Crear rama",
-    "zh": "创建分支",
-    "ja": "ブランチ作成",
-    "ru": "Создать ветку"
+  "title_tooltip": {
+    "de": "Aufnahmetitel eingeben (Strg+T)",
+    "en": "Enter Recording Title (Ctrl+T)",
+    "es": "Introducir título de grabación (Ctrl+T)",
+    "zh": "输入录音标题 (Ctrl+T)",
+    "ja": "録音タイトルを入力 (Ctrl+T)",
+    "ru": "Ввести название записи (Ctrl+T)"
+  },
+  "video_sources": {
+    "de": "Video-Quellen:",
+    "en": "Video Sources:",
+    "es": "Fuentes de vídeo:",
+    "zh": "视频源:",
+    "ja": "映像ソース:",
+    "ru": "Источники видео:"
+  },
+  "video_sources_accessible_desc": {
+    "de": "Liste der erkannten Videokameras und Bildschirmaufnahmen. Pfeiltasten zur Auswahl.",
+    "en": "List of detected video cameras and screen captures. Use arrow keys to select.",
+    "es": "Lista de cámaras de video y capturas de pantalla detectadas. Use las teclas de flecha para seleccionar.",
+    "zh": "检测到的摄像机和屏幕捕获列表。使用方向键进行选择。",
+    "ja": "検出されたビデオカメラおよび画面キャプチャのリスト。矢印キーで選択します。",
+    "ru": "Список обнаруженных видеокамер и захватов экрана. Используйте стрелки для выбора."
+  },
+  "video_sources_accessible_name": {
+    "de": "Videoquellen-Auswahl",
+    "en": "Video Sources Selection",
+    "es": "Selección de fuentes de video",
+    "zh": "视频源选择",
+    "ja": "ビデオソースの選択",
+    "ru": "Выбор видеоисточников"
   }
 }

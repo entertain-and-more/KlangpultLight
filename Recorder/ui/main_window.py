@@ -13,7 +13,7 @@ from typing import Optional
 
 import numpy as np
 from PySide6.QtCore import Qt, QTimer, QSettings
-from PySide6.QtGui import QAction, QActionGroup, QImage, QKeySequence, QPixmap, QShortcut
+from PySide6.QtGui import QAction, QActionGroup, QGuiApplication, QImage, QKeySequence, QPixmap, QShortcut
 from PySide6.QtWidgets import (
     QCheckBox,
     QGroupBox,
@@ -73,6 +73,72 @@ class _FloatPanelWindow(QWidget):
             self._redock(self._box)
         finally:
             event.accept()
+
+
+class AccessibleRecordingTree(QTreeWidget):
+    """Barrierefreies TreeWidget für die Aufnahmeliste mit nativer Tastaturbedienung.
+
+    WCAG 2.1 AA / BITV 2.0 Konformität:
+    - Eingabe / Return: Öffnet die ausgewählte Aufnahme im externen Player
+    - Entf / Backspace: Löscht die ausgewählte Aufnahme mit Sicherheitsabfrage
+    - F2: Öffnet den Umbenennen-Dialog
+    - Strg+C: Kopiert Titel und Dateipfad in die Zwischenablage
+    - F5: Aktualisiert die Aufnahmeliste
+    """
+
+    def __init__(self, main_window: "MainWindow", parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self._main_window = main_window
+
+    def keyPressEvent(self, event) -> None:  # noqa: N802
+        key = event.key()
+        modifiers = event.modifiers()
+
+        # Strg+C: In Zwischenablage kopieren
+        if key == Qt.Key.Key_C and bool(modifiers & Qt.KeyboardModifier.ControlModifier):
+            item = self.currentItem()
+            if item:
+                self._main_window._kopiere_aufnahme_in_zwischenablage(item)
+                event.accept()
+                return
+
+        # Eingabe / Return: Abspielen
+        if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            item = self.currentItem()
+            if item:
+                recording_id = self._main_window._ermittle_recording_id(item)
+                if recording_id:
+                    self._main_window._aufnahme_abspielen(recording_id)
+                    event.accept()
+                    return
+
+        # Entf / Backspace: Löschen
+        if key in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
+            item = self.currentItem()
+            if item:
+                recording_id = self._main_window._ermittle_recording_id(item)
+                if recording_id:
+                    self._main_window._loeschabfrage_starten(recording_id)
+                    event.accept()
+                    return
+
+        # F2: Umbenennen
+        if key == Qt.Key.Key_F2:
+            item = self.currentItem()
+            if item:
+                recording_id = self._main_window._ermittle_recording_id(item)
+                if recording_id:
+                    self._main_window._umbenennen_dialog_starten(recording_id)
+                    event.accept()
+                    return
+
+        # F5: Aktualisieren
+        if key == Qt.Key.Key_F5:
+            self._main_window._lade_aufnahmeliste()
+            event.accept()
+            return
+
+        super().keyPressEvent(event)
 
 
 class MainWindow(QMainWindow):
@@ -164,8 +230,11 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(900, 560)
         self.setStyleSheet(APP_QSS)
 
-        # Sprach-Menü in der Menüleiste
-        self._baue_sprachmenue()
+        # Menüleiste aufbauen (Datei, Ansicht, Sprache, Hilfe)
+        self._baue_menueleiste()
+
+        # Globale Shortcuts registrieren (F1, Strg+R, Strg+T, Strg+P, F5, Strg+Q, Strg+1..5)
+        self._setup_global_shortcuts()
 
         # Zentrales Widget
         zentral = QWidget()
@@ -207,8 +276,152 @@ class MainWindow(QMainWindow):
 
 
     # -------------------------------------------------------------------------
-    # Multi-Language i18n Menü & Umschaltung (Policy P-006)
     # -------------------------------------------------------------------------
+    # Menüleiste & Globale Shortcuts (WCAG 2.1 AA / BITV 2.0 & Policy P-006)
+    # -------------------------------------------------------------------------
+
+    def _baue_menueleiste(self) -> None:
+        """Baut die barrierefreie Menüleiste auf (Datei, Ansicht, Sprache, Hilfe)."""
+        menu_bar = self.menuBar()
+
+        # --- Menü: Datei (Alt+D) ---
+        self._datei_menu = menu_bar.addMenu(t("menu_file"))
+
+        self._aktion_aufnahme = QAction(t("start_recording"), self)
+        self._aktion_aufnahme.setShortcut(QKeySequence("Ctrl+R"))
+        self._aktion_aufnahme.setStatusTip(t("start_recording_accessible_desc"))
+        self._aktion_aufnahme.triggered.connect(self._aufnahme_umschalten)
+        self._datei_menu.addAction(self._aktion_aufnahme)
+
+        self._aktion_titel = QAction(t("action_focus_title"), self)
+        self._aktion_titel.setShortcut(QKeySequence("Ctrl+T"))
+        self._aktion_titel.setStatusTip(t("title_accessible_desc"))
+        self._aktion_titel.triggered.connect(self._fokussiere_titel)
+        self._datei_menu.addAction(self._aktion_titel)
+
+        self._aktion_refresh = QAction(t("action_refresh"), self)
+        self._aktion_refresh.setShortcut(QKeySequence(Qt.Key.Key_F5))
+        self._aktion_refresh.setStatusTip(t("recordings_tree_tooltip"))
+        self._aktion_refresh.triggered.connect(self._lade_aufnahmeliste)
+        self._datei_menu.addAction(self._aktion_refresh)
+
+        self._datei_menu.addSeparator()
+
+        self._aktion_beenden = QAction(t("action_quit"), self)
+        self._aktion_beenden.setShortcut(QKeySequence("Ctrl+Q"))
+        self._aktion_beenden.setStatusTip("Beendet die Anwendung.")
+        self._aktion_beenden.triggered.connect(self.close)
+        self._datei_menu.addAction(self._aktion_beenden)
+
+        # --- Menü: Ansicht (Alt+A) ---
+        self._ansicht_menu = menu_bar.addMenu(t("menu_view"))
+
+        self._aktion_toggle_quellen = QAction(t("action_toggle_sources"), self)
+        self._aktion_toggle_quellen.setShortcut(QKeySequence("Ctrl+1"))
+        self._aktion_toggle_quellen.triggered.connect(lambda: self._toggle_panel(0))
+        self._ansicht_menu.addAction(self._aktion_toggle_quellen)
+
+        self._aktion_toggle_aufnahme = QAction(t("action_toggle_recording"), self)
+        self._aktion_toggle_aufnahme.setShortcut(QKeySequence("Ctrl+2"))
+        self._aktion_toggle_aufnahme.triggered.connect(lambda: self._toggle_panel(1))
+        self._ansicht_menu.addAction(self._aktion_toggle_aufnahme)
+
+        self._aktion_toggle_pads = QAction(t("action_toggle_pads"), self)
+        self._aktion_toggle_pads.setShortcut(QKeySequence("Ctrl+3"))
+        self._aktion_toggle_pads.triggered.connect(lambda: self._toggle_panel(2))
+        self._ansicht_menu.addAction(self._aktion_toggle_pads)
+
+        self._aktion_toggle_video = QAction(t("action_toggle_video"), self)
+        self._aktion_toggle_video.setShortcut(QKeySequence("Ctrl+4"))
+        self._aktion_toggle_video.triggered.connect(lambda: self._toggle_panel(3))
+        self._ansicht_menu.addAction(self._aktion_toggle_video)
+
+        self._aktion_toggle_aufnahmen = QAction(t("action_toggle_recordings"), self)
+        self._aktion_toggle_aufnahmen.setShortcut(QKeySequence("Ctrl+5"))
+        self._aktion_toggle_aufnahmen.triggered.connect(lambda: self._toggle_panel(4))
+        self._ansicht_menu.addAction(self._aktion_toggle_aufnahmen)
+
+        # --- Menü: Sprache (Alt+S) ---
+        self._baue_sprachmenue()
+
+        # --- Menü: Hilfe (Alt+H) ---
+        self._hilfe_menu = menu_bar.addMenu(t("menu_help"))
+
+        self._aktion_hilfe = QAction(t("action_shortcuts"), self)
+        self._aktion_hilfe.setShortcut(QKeySequence(Qt.Key.Key_F1))
+        self._aktion_hilfe.setStatusTip("Öffnet die Übersicht aller Tastenkombinationen und Barrierefreiheits-Hinweise.")
+        self._aktion_hilfe.triggered.connect(self._zeige_tastaturkuerzel_dialog)
+        self._hilfe_menu.addAction(self._aktion_hilfe)
+
+        self._aktion_planer = QAction(t("open_planer"), self)
+        self._aktion_planer.setShortcut(QKeySequence("Ctrl+P"))
+        self._aktion_planer.setStatusTip(t("open_planer_tooltip"))
+        self._aktion_planer.triggered.connect(self._oeffne_planer)
+        self._hilfe_menu.addAction(self._aktion_planer)
+
+    def _setup_global_shortcuts(self) -> None:
+        """Registriert anwendungsweite Tastenkombinationen für WCAG 2.1 AA Barrierefreiheit."""
+        # F1: Hilfedialog für Tastaturkürzel
+        self._shortcut_f1 = QShortcut(QKeySequence(Qt.Key.Key_F1), self)
+        self._shortcut_f1.activated.connect(self._zeige_tastaturkuerzel_dialog)
+
+        # Strg+R: Aufnahme starten/stoppen
+        self._shortcut_rec = QShortcut(QKeySequence("Ctrl+R"), self)
+        self._shortcut_rec.activated.connect(self._aufnahme_umschalten)
+
+        # Strg+T: Aufnahmetitel fokussieren
+        self._shortcut_titel = QShortcut(QKeySequence("Ctrl+T"), self)
+        self._shortcut_titel.activated.connect(self._fokussiere_titel)
+
+        # Strg+P: Planer im Webbrowser öffnen
+        self._shortcut_planer = QShortcut(QKeySequence("Ctrl+P"), self)
+        self._shortcut_planer.activated.connect(self._oeffne_planer)
+
+        # F5: Aufnahmeliste aktualisieren
+        self._shortcut_f5 = QShortcut(QKeySequence(Qt.Key.Key_F5), self)
+        self._shortcut_f5.activated.connect(self._lade_aufnahmeliste)
+
+        # Strg+Q: Anwendung beenden
+        self._shortcut_quit = QShortcut(QKeySequence("Ctrl+Q"), self)
+        self._shortcut_quit.activated.connect(self.close)
+
+        # Strg+1 bis Strg+5: Panels umschalten
+        self._shortcut_panels: list[QShortcut] = []
+        for i in range(5):
+            sc = QShortcut(QKeySequence(f"Ctrl+{i + 1}"), self)
+            sc.activated.connect(lambda idx=i: self._toggle_panel(idx))
+            self._shortcut_panels.append(sc)
+
+    def _fokussiere_titel(self) -> None:
+        """Fokussiert das Titelfeld und wählt den vorhandenen Text aus."""
+        if hasattr(self, "_titel_eingabe") and self._titel_eingabe:
+            self._titel_eingabe.setFocus()
+            self._titel_eingabe.selectAll()
+
+    def _toggle_panel(self, index: int) -> None:
+        """Schaltet die Sichtbarkeit eines der 5 Hauptpanels um (Ctrl+1 bis Ctrl+5)."""
+        panels = [
+            getattr(self, "_quellen_box", None),
+            getattr(self, "_aufnahme_box", None),
+            getattr(self, "_board_panel", None),
+            getattr(self, "_video_box", None),
+            getattr(self, "_aufnahmen_box", None),
+        ]
+        if 0 <= index < len(panels):
+            p = panels[index]
+            if p and isinstance(p, QGroupBox) and p.isCheckable():
+                p.setChecked(not p.isChecked())
+                status = "eingeklappt" if not p.isChecked() else "ausgeklappt"
+                if getattr(self, "_statusleiste", None) is not None:
+                    self._statusleiste.showMessage(f"Panel „{p.title()}“ {status}.", 3000)
+            elif p and isinstance(p, QWidget):
+                p.setVisible(not p.isVisible())
+
+    def _zeige_tastaturkuerzel_dialog(self) -> None:
+        """Öffnet den modalen Tastaturkürzel- und Barrierefreiheits-Dialog."""
+        from ui.shortcuts_dialog import ShortcutsDialog
+        dlg = ShortcutsDialog(self)
+        dlg.exec()
 
     def _baue_sprachmenue(self) -> None:
         """Erstellt das 'Sprache' Menü mit Radio-Aktionen für alle 6 Sprachen."""
@@ -244,12 +457,46 @@ class MainWindow(QMainWindow):
         # Fenstertitel
         self.setWindowTitle(t("app_title"))
 
-        # Menü
+        # Menüs
+        if hasattr(self, "_datei_menu") and self._datei_menu:
+            self._datei_menu.setTitle(t("menu_file"))
+        if hasattr(self, "_ansicht_menu") and self._ansicht_menu:
+            self._ansicht_menu.setTitle(t("menu_view"))
+        if hasattr(self, "_hilfe_menu") and self._hilfe_menu:
+            self._hilfe_menu.setTitle(t("menu_help"))
         if hasattr(self, "_sprach_menu") and self._sprach_menu:
             self._sprach_menu.setTitle(t("language"))
         if hasattr(self, "_sprach_aktionen"):
             for code, aktion in self._sprach_aktionen.items():
                 aktion.setChecked(code == current_lang)
+
+        # Menü-Aktionen
+        if hasattr(self, "_aktion_aufnahme") and self._aktion_aufnahme:
+            self._aktion_aufnahme.setText(t("stop_recording") if self._aufnahme_läuft else t("start_recording"))
+            self._aktion_aufnahme.setStatusTip(t("start_recording_accessible_desc"))
+        if hasattr(self, "_aktion_titel") and self._aktion_titel:
+            self._aktion_titel.setText(t("action_focus_title"))
+            self._aktion_titel.setStatusTip(t("title_accessible_desc"))
+        if hasattr(self, "_aktion_refresh") and self._aktion_refresh:
+            self._aktion_refresh.setText(t("action_refresh"))
+            self._aktion_refresh.setStatusTip(t("recordings_tree_tooltip"))
+        if hasattr(self, "_aktion_beenden") and self._aktion_beenden:
+            self._aktion_beenden.setText(t("action_quit"))
+        if hasattr(self, "_aktion_toggle_quellen") and self._aktion_toggle_quellen:
+            self._aktion_toggle_quellen.setText(t("action_toggle_sources"))
+        if hasattr(self, "_aktion_toggle_aufnahme") and self._aktion_toggle_aufnahme:
+            self._aktion_toggle_aufnahme.setText(t("action_toggle_recording"))
+        if hasattr(self, "_aktion_toggle_pads") and self._aktion_toggle_pads:
+            self._aktion_toggle_pads.setText(t("action_toggle_pads"))
+        if hasattr(self, "_aktion_toggle_video") and self._aktion_toggle_video:
+            self._aktion_toggle_video.setText(t("action_toggle_video"))
+        if hasattr(self, "_aktion_toggle_aufnahmen") and self._aktion_toggle_aufnahmen:
+            self._aktion_toggle_aufnahmen.setText(t("action_toggle_recordings"))
+        if hasattr(self, "_aktion_hilfe") and self._aktion_hilfe:
+            self._aktion_hilfe.setText(t("action_shortcuts"))
+        if hasattr(self, "_aktion_planer") and self._aktion_planer:
+            self._aktion_planer.setText(t("open_planer"))
+            self._aktion_planer.setStatusTip(t("open_planer_tooltip"))
 
         # GroupBox Titel
         if hasattr(self, "_quellen_box") and self._quellen_box and isinstance(self._quellen_box, QGroupBox):
@@ -265,7 +512,7 @@ class MainWindow(QMainWindow):
         if hasattr(self, "_aufnahmen_box") and self._aufnahmen_box and isinstance(self._aufnahmen_box, QGroupBox):
             self._aufnahmen_box.setTitle(t("recordings"))
 
-        # Labels & Widgets
+        # Labels & Widgets (Buddies & A11y)
         if hasattr(self, "_capture_label") and self._capture_label:
             self._capture_label.setText(t("capture_active"))
         if hasattr(self, "_verfuegbare_eingaenge_label") and self._verfuegbare_eingaenge_label:
@@ -274,6 +521,9 @@ class MainWindow(QMainWindow):
             self._titel_label.setText(t("title"))
         if hasattr(self, "_titel_eingabe") and self._titel_eingabe:
             self._titel_eingabe.setPlaceholderText(t("title_placeholder"))
+            self._titel_eingabe.setAccessibleName(t("title"))
+            self._titel_eingabe.setAccessibleDescription(t("title_accessible_desc"))
+            self._titel_eingabe.setToolTip(t("title_tooltip"))
         if hasattr(self, "_modus_label") and self._modus_label:
             self._modus_label.setText(t("recording_mode"))
         if hasattr(self, "_pegel_label") and self._pegel_label:
@@ -284,6 +534,9 @@ class MainWindow(QMainWindow):
             self._video_vorschau_label.setText(t("preview"))
         if hasattr(self, "_add_pad_btn") and self._add_pad_btn:
             self._add_pad_btn.setText(t("add_pad"))
+            self._add_pad_btn.setAccessibleName(t("add_pad"))
+            self._add_pad_btn.setAccessibleDescription(t("add_pad_accessible_desc"))
+            self._add_pad_btn.setToolTip(f"{t('add_pad')} ({t('add_pad_accessible_desc')})")
         if hasattr(self, "_no_board_label") and self._no_board_label:
             self._no_board_label.setText(t("no_board_loaded"))
 
@@ -293,26 +546,42 @@ class MainWindow(QMainWindow):
             self._aufnahme_modus.setItemText(1, t("mode_audio_only"))
             self._aufnahme_modus.setItemText(2, t("mode_video_only"))
             self._aufnahme_modus.setToolTip(t("recording_mode_tooltip"))
+            self._aufnahme_modus.setAccessibleName(t("recording_mode"))
+            self._aufnahme_modus.setAccessibleDescription(t("recording_mode_tooltip"))
 
         # Aufnahme-Button
         if hasattr(self, "_btn_aufnahme") and self._btn_aufnahme:
             if self._aufnahme_läuft:
                 self._btn_aufnahme.setText(t("stop_recording"))
+                self._btn_aufnahme.setAccessibleName(t("stop_recording"))
             else:
                 self._btn_aufnahme.setText(t("start_recording"))
+                self._btn_aufnahme.setAccessibleName(t("start_recording"))
+            self._btn_aufnahme.setAccessibleDescription(t("start_recording_accessible_desc"))
+            self._btn_aufnahme.setToolTip(t("start_recording_tooltip"))
 
         # Planer-Button
         if hasattr(self, "_btn_planer") and self._btn_planer:
             self._btn_planer.setText(t("open_planer"))
-            self._btn_planer.setToolTip(t("open_planer_tooltip"))
+            self._btn_planer.setAccessibleName(t("open_planer"))
+            self._btn_planer.setAccessibleDescription(t("open_planer_tooltip"))
+            self._btn_planer.setToolTip(f"{t('open_planer_tooltip')} (Strg+P)")
 
-        # Aufnahme-Tree Header
+        # Video-Quellen Liste
+        if hasattr(self, "_video_quelle_liste") and self._video_quelle_liste:
+            self._video_quelle_liste.setAccessibleName(t("video_sources_accessible_name"))
+            self._video_quelle_liste.setAccessibleDescription(t("video_sources_accessible_desc"))
+
+        # Aufnahme-Tree Header & A11y
         if hasattr(self, "_aufnahme_tree") and self._aufnahme_tree:
             self._aufnahme_tree.setHeaderLabels([
                 t("header_title"),
                 t("header_duration"),
                 t("header_created"),
             ])
+            self._aufnahme_tree.setAccessibleName(t("recordings_tree_accessible_name"))
+            self._aufnahme_tree.setAccessibleDescription(t("recordings_tree_accessible_desc"))
+            self._aufnahme_tree.setToolTip(t("recordings_tree_tooltip"))
 
         # Statusleiste
         self._aktualisiere_status()
@@ -551,6 +820,10 @@ class MainWindow(QMainWindow):
         layout.addWidget(titel_label)
         self._titel_eingabe = QLineEdit()
         self._titel_eingabe.setPlaceholderText(t("title_placeholder"))
+        self._titel_eingabe.setAccessibleName(t("title"))
+        self._titel_eingabe.setAccessibleDescription(t("title_accessible_desc"))
+        self._titel_eingabe.setToolTip(t("title_tooltip"))
+        titel_label.setBuddy(self._titel_eingabe)
         layout.addWidget(self._titel_eingabe)
 
         layout.addSpacing(12)
@@ -565,6 +838,9 @@ class MainWindow(QMainWindow):
         self._aufnahme_modus.addItem(t("mode_audio_only"), "audio_only")
         self._aufnahme_modus.addItem(t("mode_video_only"), "video_only")
         self._aufnahme_modus.setToolTip(t("recording_mode_tooltip"))
+        self._aufnahme_modus.setAccessibleName(t("recording_mode"))
+        self._aufnahme_modus.setAccessibleDescription(t("recording_mode_tooltip"))
+        modus_label.setBuddy(self._aufnahme_modus)
         self._aufnahme_modus.currentIndexChanged.connect(lambda _idx: self._aktualisiere_status())
         layout.addWidget(self._aufnahme_modus)
 
@@ -573,6 +849,9 @@ class MainWindow(QMainWindow):
         # Aufnahme-Button
         self._btn_aufnahme = QPushButton(t("start_recording"))
         self._btn_aufnahme.setObjectName("btn_aufnahme")
+        self._btn_aufnahme.setAccessibleName(t("start_recording"))
+        self._btn_aufnahme.setAccessibleDescription(t("start_recording_accessible_desc"))
+        self._btn_aufnahme.setToolTip(t("start_recording_tooltip"))
         self._btn_aufnahme.setCheckable(False)
         self._btn_aufnahme.clicked.connect(self._aufnahme_umschalten)
         layout.addWidget(self._btn_aufnahme, alignment=Qt.AlignmentFlag.AlignHCenter)
@@ -615,6 +894,9 @@ class MainWindow(QMainWindow):
 
         self._video_quelle_liste = QListWidget()
         self._video_quelle_liste.setMaximumHeight(100)
+        self._video_quelle_liste.setAccessibleName(t("video_sources_accessible_name"))
+        self._video_quelle_liste.setAccessibleDescription(t("video_sources_accessible_desc"))
+        self._video_quelle_liste.setToolTip(t("video_sources_accessible_desc"))
         for info in self._video_quellen:
             mock_hint = " (Mock)" if info.is_mock else ""
             verifiziert = " ✓" if info.verified else ""
@@ -683,6 +965,9 @@ class MainWindow(QMainWindow):
         # „+ Einspieler"-Button immer sichtbar (auch bei leerem Board).
         add_btn = QPushButton(t("add_pad"))
         self._add_pad_btn = add_btn
+        add_btn.setAccessibleName(t("add_pad"))
+        add_btn.setAccessibleDescription(t("add_pad_accessible_desc"))
+        add_btn.setToolTip(f"{t('add_pad')} ({t('add_pad_accessible_desc')})")
         add_btn.clicked.connect(self._neues_einspieler_pad)
         layout.addWidget(add_btn)
 
@@ -750,6 +1035,18 @@ class MainWindow(QMainWindow):
             )
             btn.setProperty("pad_aktiv", False)
             pad_id = pad.id
+
+            hotkey_str = str(idx + 1) if idx < 8 else ""
+            hotkey_text = f"Taste {idx + 1}" if idx < 8 else "kein Direktkürzel"
+            btn.setAccessibleName(t("pad_accessible_name").format(label=pad.label or pad.id))
+            btn.setAccessibleDescription(
+                t("pad_accessible_desc").format(
+                    label=pad.label or pad.id,
+                    kind=pad.kind,
+                    key=hotkey_text
+                )
+            )
+            btn.setToolTip(f"{pad.label or pad.id} ({hotkey_text})" if hotkey_str else (pad.label or pad.id))
 
             def _mache_trigger(pid=pad_id, p=pad):
                 def _on_click():
@@ -856,20 +1153,23 @@ class MainWindow(QMainWindow):
         # Schnelleinsprung / Ein-Klick-Verbund: Planer im Standard-Browser öffnen
         self._btn_planer = QPushButton(t("open_planer"))
         self._btn_planer.setObjectName("btn_planer_oeffnen")
-        self._btn_planer.setToolTip(t("open_planer_tooltip"))
-        self._btn_planer.setAccessibleName("Planer im Browser öffnen")
+        self._btn_planer.setToolTip(f"{t('open_planer_tooltip')} (Strg+P)")
+        self._btn_planer.setAccessibleName(t("open_planer"))
         self._btn_planer.setAccessibleDescription(
             "Öffnet den Klangpult light Planer im Standard-Webbrowser zur Planung und Teleprompter-Nutzung."
         )
         self._btn_planer.clicked.connect(self._oeffne_planer)
         layout.addWidget(self._btn_planer)
 
-        self._aufnahme_tree = QTreeWidget()
+        self._aufnahme_tree = AccessibleRecordingTree(self)
         self._aufnahme_tree.setHeaderLabels([t("header_title"), t("header_duration"), t("header_created")])
         self._aufnahme_tree.setColumnWidth(0, 180)
         self._aufnahme_tree.setColumnWidth(1, 70)
         self._aufnahme_tree.setAlternatingRowColors(True)
         self._aufnahme_tree.setRootIsDecorated(True)
+        self._aufnahme_tree.setAccessibleName(t("recordings_tree_accessible_name"))
+        self._aufnahme_tree.setAccessibleDescription(t("recordings_tree_accessible_desc"))
+        self._aufnahme_tree.setToolTip(t("recordings_tree_tooltip"))
 
         # Kontextmenü „Branch anlegen" (M5). Original bleibt unveränderlich —
         # add_branch fügt nur einen neuen Kind-Eintrag hinzu, kein Schnitt.
@@ -1228,48 +1528,77 @@ class MainWindow(QMainWindow):
             return
 
         menu = QMenu(self._aufnahme_tree)
-        aktion_abspielen = menu.addAction("Abspielen")
-        aktion_umbenennen = menu.addAction("Umbenennen…")
-        aktion_branch = menu.addAction("Branch anlegen")
+        aktion_abspielen = menu.addAction(t("play"))
+        aktion_umbenennen = menu.addAction(f"{t('rename')}…")
+        aktion_branch = menu.addAction(f"{t('branch_create')}…")
+        aktion_kopieren = menu.addAction(f"{t('shortcuts_header_shortcut')}: Strg+C")
         menu.addSeparator()
-        aktion_loeschen = menu.addAction("Löschen…")
+        aktion_loeschen = menu.addAction(f"{t('delete')}…")
         gewaehlt = menu.exec(self._aufnahme_tree.viewport().mapToGlobal(pos))
 
         if gewaehlt == aktion_branch:
-            name, ok = QInputDialog.getText(
-                self,
-                "Branch anlegen",
-                "Name des neuen Branches:",
-                text="Neuer Branch",
-            )
-            if ok:
-                final_name = name.strip() or "Neuer Branch"
-                self._branch_anlegen(recording_id, final_name)
+            self._branch_dialog_starten(recording_id)
         elif gewaehlt == aktion_abspielen:
             self._aufnahme_abspielen(recording_id)
         elif gewaehlt == aktion_umbenennen:
-            aktuell = next(
-                (m.title for m in self._library.list_recordings()
-                 if m.recording_id == recording_id),
-                "",
-            )
-            neuer, ok = QInputDialog.getText(
-                self, "Aufnahme umbenennen", "Neuer Titel:", text=aktuell
-            )
-            if ok and neuer.strip():
-                self._aufnahme_umbenennen(recording_id, neuer.strip())
+            self._umbenennen_dialog_starten(recording_id)
+        elif gewaehlt == aktion_kopieren:
+            self._kopiere_aufnahme_in_zwischenablage(item)
         elif gewaehlt == aktion_loeschen:
-            from PySide6.QtWidgets import QMessageBox
-            antwort = QMessageBox.question(
-                self,
-                "Aufnahme löschen",
-                "Diese Aufnahme endgültig löschen (inkl. Audio/Video)?\n\n"
-                f"{recording_id}",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No,
-            )
-            if antwort == QMessageBox.StandardButton.Yes:
-                self._aufnahme_loeschen(recording_id)
+            self._loeschabfrage_starten(recording_id)
+
+    def _branch_dialog_starten(self, recording_id: str) -> None:
+        """Startet den Dialog zum Anlegen eines Branches."""
+        name, ok = QInputDialog.getText(
+            self,
+            t("branch_create"),
+            "Name des neuen Branches:",
+            text="Neuer Branch",
+        )
+        if ok:
+            final_name = name.strip() or "Neuer Branch"
+            self._branch_anlegen(recording_id, final_name)
+
+    def _umbenennen_dialog_starten(self, recording_id: str) -> None:
+        """Startet den Dialog zum Umbenennen einer Aufnahme."""
+        aktuell = next(
+            (m.title for m in self._library.list_recordings()
+             if m.recording_id == recording_id),
+            "",
+        )
+        neuer, ok = QInputDialog.getText(
+            self, t("rename"), "Neuer Titel:", text=aktuell
+        )
+        if ok and neuer.strip():
+            self._aufnahme_umbenennen(recording_id, neuer.strip())
+
+    def _loeschabfrage_starten(self, recording_id: str) -> None:
+        """Öffnet die Sicherheitsabfrage und löscht die Aufnahme bei Bestätigung."""
+        from PySide6.QtWidgets import QMessageBox
+        antwort = QMessageBox.question(
+            self,
+            t("delete"),
+            "Diese Aufnahme endgültig löschen (inkl. Audio/Video)?\n\n"
+            f"{recording_id}",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if antwort == QMessageBox.StandardButton.Yes:
+            self._aufnahme_loeschen(recording_id)
+
+    def _kopiere_aufnahme_in_zwischenablage(self, item) -> None:
+        """Kopiert den Titel und Dateipfad der ausgewählten Aufnahme in die Zwischenablage."""
+        recording_id = self._ermittle_recording_id(item)
+        if not recording_id:
+            return
+        titel = item.text(0)
+        pfad = self._aufnahme_audio_pfad(recording_id) or ""
+        text = f"{titel}\n{pfad}" if pfad else titel
+        clipboard = QGuiApplication.clipboard()
+        if clipboard:
+            clipboard.setText(text)
+        if getattr(self, "_statusleiste", None) is not None:
+            self._statusleiste.showMessage(t("recording_copied_to_clipboard"), 4000)
 
     def _branch_anlegen(self, recording_id: str, name: str) -> None:
         """Legt einen Branch über die Library an und aktualisiert die Liste.

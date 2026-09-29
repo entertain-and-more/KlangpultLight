@@ -86,6 +86,16 @@ Angelegt: 2026-06-22.
   6. Ducking Release-Lebenszyklus: `AudioEngine._mix_one_tick()` deregistrierte den Duck-Controller sofort beim Stop-Signal, wodurch der Pegelsprung schlagartig (Knacken) stattfand statt über die konfigurierte Release-Rampe abzublenden. Mit `duck.is_idle()` bleibt der Controller aktiv, bis die Rampe vollendet ist.
   Regressionstests: `Recorder/tests/test_bugsweep_board_model_and_ducking_20260926.py` (17 Tests).
 
+- **[FIXED] ProjectsApiServer: Typsicherheit für Titel & Body, Workspace-Export Lautstärke-Parität, Teleprompter Float-Resilienz und CORS/OPTIONS-Support (2026-09-29):**
+  `Recorder/bridge/projects_api.py`:
+  1. `_handle_projekt_post`, `_handle_projekt_put`, `_handle_episode_post` und `_handle_episode_put` stürzten mit ungefangenem `AttributeError` ab, wenn Clients `title: null` oder Nicht-Strings sendeten (`get("title", "").strip()`). Nun zentral über `_parse_title()` abgesichert (prüft `isinstance(raw, str)` und `strip()`, liefert sauberen `HTTP 400 Bad Request`).
+  2. `_handle_workspace_import_post`: `AttributeError` wird nun im `try/except` abgefangen und `workspace_importieren()` validiert `board`, `line` und `teleprompter` vor der Übernahme strikt auf deren Typ (`dict` bzw. `list`), wodurch Server-Abstürze bei abweichenden Payload-Typen verhindert werden.
+  3. `workspace_exportieren()`: Fehlendes Feld `"volume"` in den exportierten Pad-Dictionaries ergänzt (`_safe_volume(a.get("volume", 1.0), 1.0)`), sodass gesetzte Pad-Lautstärken bei Export/Import-Zyklen nicht mehr stillschweigend auf 1.0 zurückgesetzt werden.
+  4. `speichere_teleprompter()` & `workspace_importieren()`: Neue Hilfsfunktion `_safe_scroll_speed()` fängt `NaN`, `Infinity` und ungültige Strings/Typen defensiv ab (Bereich `[0.1, 10.0]`, Default `1.0`), um Non-RFC-8259 JSON-Korruption zu verhindern.
+  5. `speichere_line()` & `workspace_importieren()`: Sanitisierung filtert `None`, Whitespace-Strings und Phantom-Tokens wie `"None"` oder `"none"` zuverlässig heraus.
+  6. `_ProjectsHandler`: `do_OPTIONS` (204 No Content) und `_set_cors_headers()` ergänzt, sodass direkte Browser-Fetch-Aufrufe mit Preflight-Anfragen standardkonform unterstützt werden.
+  Regressionstests: `Recorder/tests/test_bugsweep_projects_api_resilience_20260929.py` (9 Tests).
+
 ---
 
 ## Offen

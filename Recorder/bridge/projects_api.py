@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import os
 import re
 import threading
@@ -90,6 +91,22 @@ def _safe_volume(val: object, default: float = 1.0) -> float:
         if v != v:  # NaN-Prüfung
             return default
         return max(0.0, min(4.0, v))
+    except (ValueError, TypeError):
+        return default
+
+
+def _safe_scroll_speed(val: object, default: float = 1.0) -> float:
+    """Konvertiert val robust in einen Float-Scroll-Speed im Bereich [0.1, 10.0].
+
+    Bei None, leerem String, nicht numerischen Werten, NaN oder Infinity wird der Defaultwert genutzt.
+    """
+    if val is None:
+        return default
+    try:
+        v = float(val)  # type: ignore[arg-type]
+        if math.isnan(v) or math.isinf(v):
+            return default
+        return max(0.1, min(10.0, v))
     except (ValueError, TypeError):
         return default
 
@@ -443,12 +460,17 @@ class _ProjektStore:
                 return None
             return list(self._line_lesen(project_id))
 
-    def speichere_line(self, project_id: str, line: list[str]) -> Optional[list[str]]:
+    def speichere_line(self, project_id: str, line: list) -> Optional[list[str]]:
         """Speichert die Line-Reihenfolge. None wenn Projekt fehlt."""
+        if not isinstance(line, list):
+            raise ValueError("Line muss eine Liste sein")
         with self._lock:
             if self._projekt_holen_nolock(project_id) is None:
                 return None
-            saubere_line = [str(x) for x in line if str(x).strip()]
+            saubere_line = [
+                str(x).strip() for x in line
+                if isinstance(x, str) and str(x).strip() and str(x).strip().lower() != "none"
+            ]
             _json_schreiben(self._line_pfad(project_id), saubere_line)
             return saubere_line
 
@@ -498,10 +520,7 @@ class _ProjektStore:
                 except (ValueError, TypeError):
                     pass
             if "scroll_speed" in daten:
-                try:
-                    aktuell["scroll_speed"] = max(0.1, float(daten["scroll_speed"]))
-                except (ValueError, TypeError):
-                    pass
+                aktuell["scroll_speed"] = _safe_scroll_speed(daten.get("scroll_speed"), default=1.0)
             if "mode" in daten:
                 mode = str(daten["mode"])
                 if mode in {"manual", "time", "speech", "hybrid"}:
@@ -680,6 +699,7 @@ class _ProjektStore:
                     "asset_path": a.get("asset_path", ""),
                     "mode": a.get("mode", "play_stop"),
                     "hotkey": a.get("hotkey", ""),
+                    "volume": _safe_volume(a.get("volume", 1.0), 1.0),
                 }
                 pads.append(pad)
             return {
@@ -704,13 +724,19 @@ class _ProjektStore:
         version = payload.get("version")
         if not isinstance(version, int) or version < 1:
             raise ValueError(f"Version muss ein Integer >= 1 sein, erhalten: {version!r}")
+        if "board" in payload and payload["board"] is not None and not isinstance(payload["board"], dict):
+            raise ValueError("Feld 'board' muss ein JSON-Objekt sein")
+        if "line" in payload and payload["line"] is not None and not isinstance(payload["line"], list):
+            raise ValueError("Feld 'line' muss eine JSON-Liste sein")
+        if "teleprompter" in payload and payload["teleprompter"] is not None and not isinstance(payload["teleprompter"], dict):
+            raise ValueError("Feld 'teleprompter' muss ein JSON-Objekt sein")
 
         with self._lock:
             if self._projekt_holen_nolock(project_id) is None:
                 return None
 
             board_daten = payload.get("board") or {}
-            roh_pads = board_daten.get("pads") or []
+            roh_pads = board_daten.get("pads") if isinstance(board_daten.get("pads"), list) else []
             jetzt = datetime.now(timezone.utc).isoformat()
 
             neue_assets = []
@@ -738,8 +764,11 @@ class _ProjektStore:
                 })
             _json_schreiben(self._assets_pfad(project_id), neue_assets)
 
-            roh_line = payload.get("line") or []
-            neue_line = [str(x) for x in roh_line if str(x).strip()]
+            roh_line = payload.get("line") if isinstance(payload.get("line"), list) else []
+            neue_line = [
+                str(x).strip() for x in roh_line
+                if isinstance(x, str) and str(x).strip() and str(x).strip().lower() != "none"
+            ]
             _json_schreiben(self._line_pfad(project_id), neue_line)
 
             tele_payload = payload.get("teleprompter")
@@ -753,10 +782,7 @@ class _ProjektStore:
                     except (ValueError, TypeError):
                         pass
                 if "scroll_speed" in tele_payload:
-                    try:
-                        aktuell_tele["scroll_speed"] = max(0.1, float(tele_payload["scroll_speed"]))
-                    except (ValueError, TypeError):
-                        pass
+                    aktuell_tele["scroll_speed"] = _safe_scroll_speed(tele_payload.get("scroll_speed"), default=1.0)
                 if "mode" in tele_payload and str(tele_payload["mode"]) in {"manual", "time", "speech", "hybrid"}:
                     aktuell_tele["mode"] = str(tele_payload["mode"])
                 aktuell_tele["updated_at"] = jetzt
@@ -775,6 +801,24 @@ class _ProjektStore:
 
 class _ProjectsHandler(BaseHTTPRequestHandler):
     """HTTP-Request-Handler für die Projektplanung-API."""
+
+    def _set_cors_headers(self) -> None:
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+
+    def do_OPTIONS(self) -> None:  # noqa: N802
+        self.send_response(204)
+        self._set_cors_headers()
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+    def _parse_title(self, body: dict) -> Optional[str]:
+        raw = body.get("title")
+        if not isinstance(raw, str) or not raw.strip():
+            self._json(400, {"error": "Pflichtfeld 'title' fehlt oder leer"})
+            return None
+        return raw.strip()
 
     def _path(self) -> str:
         """Gibt den Pfad ohne Query-String zurück (selbst wenn Proxy Query-String durchreicht)."""
@@ -961,9 +1005,8 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
         body = self._lese_body()
         if body is None:
             return
-        title = body.get("title", "").strip()
-        if not title:
-            self._json(400, {"error": "Pflichtfeld 'title' fehlt oder leer"})
+        title = self._parse_title(body)
+        if title is None:
             return
         store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
         projekt = store.projekt_anlegen(
@@ -976,9 +1019,8 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
         body = self._lese_body()
         if body is None:
             return
-        title = body.get("title", "").strip()
-        if not title:
-            self._json(400, {"error": "Pflichtfeld 'title' fehlt oder leer"})
+        title = self._parse_title(body)
+        if title is None:
             return
         store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
         episode = store.episode_anlegen(
@@ -1024,7 +1066,7 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
         store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
         try:
             res = store.workspace_importieren(project_id, body)
-        except (ValueError, TypeError) as exc:
+        except (ValueError, TypeError, AttributeError) as exc:
             self._json(400, {"error": str(exc)})
             return
         if res is None:
@@ -1038,9 +1080,8 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
         body = self._lese_body()
         if body is None:
             return
-        title = body.get("title", "").strip()
-        if not title:
-            self._json(400, {"error": "Pflichtfeld 'title' fehlt oder leer"})
+        title = self._parse_title(body)
+        if title is None:
             return
         store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
         projekt = store.projekt_aktualisieren(
@@ -1100,6 +1141,7 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
         ok = store.projekt_loeschen(project_id)
         if ok:
             self.send_response(204)
+            self._set_cors_headers()
             self.end_headers()
         else:
             self._json(404, {"error": "Projekt nicht gefunden"})
@@ -1108,9 +1150,8 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
         body = self._lese_body()
         if body is None:
             return
-        title = body.get("title", "").strip()
-        if not title:
-            self._json(400, {"error": "Pflichtfeld 'title' fehlt oder leer"})
+        title = self._parse_title(body)
+        if title is None:
             return
         store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
         episode = store.episode_aktualisieren(
@@ -1129,6 +1170,7 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
         store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
         if store.episode_loeschen(project_id, episode_id):
             self.send_response(204)
+            self._set_cors_headers()
             self.end_headers()
         else:
             self._json(404, {"error": "Projekt oder Episode nicht gefunden"})
@@ -1137,6 +1179,7 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
         store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
         if store.asset_loeschen(project_id, asset_id):
             self.send_response(204)
+            self._set_cors_headers()
             self.end_headers()
         else:
             self._json(404, {"error": "Projekt oder Asset nicht gefunden"})
@@ -1180,6 +1223,7 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
+        self._set_cors_headers()
         self.end_headers()
         self.wfile.write(body)
 

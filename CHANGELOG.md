@@ -5,6 +5,19 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Behoben / Fixed (Bugsweep: Planer-Backend API ProjectsApiServer Resilienz, Volume-Parität & CORS 2026-09-29) [G 2026-09-29]
+- **Titel- & Payload-Typsicherheit (`Recorder/bridge/projects_api.py`)**:
+  - `_handle_projekt_post`, `_handle_projekt_put`, `_handle_episode_post` und `_handle_episode_put`: `_parse_title()` validiert den Typ strikt gegen Nicht-Strings (`null`, Zahlen, Listen) und liefert `HTTP 400 Bad Request` statt ungefangener `AttributeError`-Abstürze im Request-Handler.
+  - `_handle_workspace_import_post`: `AttributeError` wird im Exception-Handler abgefangen; `workspace_importieren()` prüft `board`, `line` und `teleprompter` vor der Verarbeitung auf deren Schema-Typ (`dict` bzw. `list`).
+- **Workspace-Export Lautstärke-Parität (`Recorder/bridge/projects_api.py`)**:
+  - `workspace_exportieren()`: Ergänzung des fehlenden Feldes `"volume": _safe_volume(a.get("volume", 1.0), 1.0)` bei exportierten Pad-Dictionaries, sodass benutzerdefinierte Pad-Lautstärken bei Export/Import-Zyklen unverändert erhalten bleiben.
+- **Teleprompter Float-Resilienz & Line-Filterung (`Recorder/bridge/projects_api.py`)**:
+  - `_safe_scroll_speed()`: Abfangen von `NaN`, `Infinity` und ungültigen Typen mit Clamping auf `[0.1, 10.0]` (Default `1.0`), um Non-RFC-8259 JSON-Korruption in `speichere_teleprompter()` und `workspace_importieren()` auszuschließen.
+  - `speichere_line()` & `workspace_importieren()`: Sanitisierung filtert `None`, Whitespace-Einträge und ungültige Phantom-Tokens (`"None"`, `"none"`) zuverlässig heraus.
+- **CORS & OPTIONS Preflight (`Recorder/bridge/projects_api.py`)**:
+  - `_ProjectsHandler`: `do_OPTIONS` (204 No Content) und `_set_cors_headers()` für `Access-Control-Allow-Origin`, `Access-Control-Allow-Methods` und `Access-Control-Allow-Headers` integriert, um browserseitige Cross-Origin-Aufrufe mit Preflight-Anfragen standardkonform zu bedienen.
+- **Regressionstest-Suite (`Recorder/tests/test_bugsweep_projects_api_resilience_20260929.py`)**: 9 hermetische End-to-End-Tests zur Absicherung aller Defektbereiche.
+
 ### Behoben / Fixed (Bugsweep: Board-Model, Workspace-v1 Validierung & Ducking Lifecycle 2026-09-26) [G 2026-09-26]
 - **Board-Model & Workspace-v1 Schema-Härtung (`Recorder/board/board_model.py`)**:
   - `load_board()`: Schutz vor Nicht-Dict JSON-Roots (Listen, Strings, null) mit automatischem Fallback auf leeres `Board()`.

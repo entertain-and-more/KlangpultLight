@@ -5,6 +5,31 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Pfad A Repository Lifecycle Hardening, CI Lifecycle Workflows & Level 1 SBOM Text-Companion (2026-09-30) [G 2026-09-30]
+- **Version-Freeze Disziplin (`T-20260920-167562623`)**: Versionskonstante `0.1.0` in `pyproject.toml` und Manifesten unverändert beibehalten (kein Version-Bump; Release-Vorgang und Distribution bleiben separater Autorisierung vorbehalten).
+- **CI/CD Lifecycle Workflows & Labels Parität**:
+  - `.github/workflows/auto-assign.yml`: Neu bereitgestellt mit `actions/github-script@v7`, `timeout-minutes: 5`, Concurrency `group: auto-assign-${{ github.ref }}` (`cancel-in-progress: true`) und least-privilege permissions `issues: write`, `pull-requests: write`.
+  - `.github/workflows/label-sync.yml`: Neu bereitgestellt mit `EndBug/label-sync@v2`, `timeout-minutes: 5`, Concurrency `group: label-sync-${{ github.ref }}` (`cancel-in-progress: true`) und least-privilege permissions `issues: write`.
+  - `.github/labels.yml`: Kanonische 11 Standard-Labels gemäß GOVERNANCE.md §4.2 angelegt.
+  - `.github/workflows/stale.yml` und `welcome.yml`: Verifiziert und mit Concurrency `cancel-in-progress: true` gehärtet.
+- **CONTRIBUTING.md**:
+  - Neu angelegt mit Invarianten (Local-First, Zero-Egress, RunAsInvoker), Quality Gates (`pytest`, `ruff check .`, `python -m compileall -q .`, `git diff --check`), lokalem Development-Setup und strikter Version-Freeze-Regel.
+- **Level 1 SBOM Plain-Text Companion (`THIRD_PARTY_LICENSES.txt`)**:
+  - Stand 2026-09-30 mit formaler Bestätigung aller 10 Governance- und Laufzeitinvarianten (`INV-LOCAL-01` bis `INV-SLA-10`), `RunAsInvoker`-Zertifizierung (`INV-USER-02`), Zero-Copyleft-Garantie und 100% Offline Air-Gap Verifikation.
+  - Vollständige Lizenztexte der Kernlizenzen (LGPL-3.0, MIT, BSD-3-Clause, Apache-2.0, PSF-2.0).
+  - `NOTICE` und `THIRD_PARTY_LICENSES.md` mit formalem Querverweis auf den Plain-Text Companion synchronisiert.
+- **Multi-Host Cloud-Sync-, Lock- und Cache-Defense in `.gitignore`**:
+  - Gehärtet gegen Cloud-Sync-Muster (`*-IDEAPAD*`, `*-IDEAPAD-GEI*`, `*-WORKSTATION.*`, `*-WORKSTATION-LG.*`), kanonische Multi-Agent Locks (`LOCK.dev.*`, `LOCK.antigravity.*`, `LOCK.bugsearch.*`), OS-Artefakte (`Desktop.ini`, `desktop.ini`, `ehthumbs.db`, `*.swo`), Task-Dateien (`TASKPLAN_*.md`) sowie Test- und Coverage-Caches (`.pytest_temp/`, `.pytest_tmp*/`).
+- **PEP 621 Standardisierung in `pyproject.toml`**:
+  - URLs für `Contributing`, `Plain-Text License` und `Level 1 SBOM` unter `[project.urls]` registriert.
+  - Pytest `addopts = "-ra -v --basetemp=.pytest_temp"` und gehärtete `norecursedirs` mit `.pytest_temp`, `.pytest_tmp*`.
+- **Dokumentations- & Badge-Synchronisation**:
+  - `README.md`, `README_de.md` und `README.es.md` Badges für `Verified-2026--09--30` aktualisiert unter Beibehaltung aller 18 bilateralen Schnellnavigations-Anker und dualen Diagramme.
+  - `llms.txt` Stand 2026-09-30 mit Testsuite-Baseline und Querverweisen auf `CONTRIBUTING.md` und `THIRD_PARTY_LICENSES.txt` aktualisiert.
+  - `MARKETING-LOG.txt`: Pfad A Revisionsbericht Stand 2026-09-30 dokumentiert.
+- **Vertragstest-Erweiterung (`tests/test_metadata.py`)**:
+  - 8 neue Contract-Tests für CI-Workflows (`auto-assign.yml`, `label-sync.yml`, `labels.yml`), `CONTRIBUTING.md`, Level 1 SBOM Text-Companion Invarianten, PEP 621 URLs, pytest basetemp options und .gitignore Multi-Host Guards.
+
 ### Behoben / Fixed (Bugsweep: Planer-Backend API ProjectsApiServer Resilienz, Volume-Parität & CORS 2026-09-29) [G 2026-09-29]
 - **Titel- & Payload-Typsicherheit (`Recorder/bridge/projects_api.py`)**:
   - `_handle_projekt_post`, `_handle_projekt_put`, `_handle_episode_post` und `_handle_episode_put`: `_parse_title()` validiert den Typ strikt gegen Nicht-Strings (`null`, Zahlen, Listen) und liefert `HTTP 400 Bad Request` statt ungefangener `AttributeError`-Abstürze im Request-Handler.

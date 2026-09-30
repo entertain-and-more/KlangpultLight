@@ -160,8 +160,8 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         self.assertIn("entertain-and-more/KlangpultLight", text)
         self.assertIn("entertain-and-more", text)
         self.assertIn("open-bricks", text)
-        self.assertTrue("2026-09-24" in text or "2026-09-18" in text or "2026-09-14" in text or "2026-09-09" in text)
-        self.assertTrue("521" in text or "516" in text or "502" in text or "483" in text or "449" in text)
+        self.assertTrue("2026-09-30" in text or "2026-09-24" in text or "2026-09-18" in text or "2026-09-14" in text or "2026-09-09" in text)
+        self.assertTrue("563" in text or "555" in text or "521" in text or "516" in text or "502" in text or "483" in text or "449" in text)
         self.assertIn("NOTICE", text)
         self.assertIn("MARKETING-LOG.txt", text)
         self.assertIn("THIRD_PARTY_LICENSES.md", text)
@@ -182,7 +182,7 @@ class TestKlangpultLightMetadata(unittest.TestCase):
             self.assertIn("MARKETING-LOG.txt", text, f"{name} must reference MARKETING-LOG.txt")
             self.assertIn("THIRD_PARTY_LICENSES.md", text, f"{name} must reference THIRD_PARTY_LICENSES.md")
             self.assertIn("actions/workflows/ci.yml", text, f"{name} must have CI badge")
-            self.assertTrue("521%20" in text or "516%20" in text or "503%20" in text or "484%20" in text or "450%20" in text, f"{name} must have tests badge")
+            self.assertTrue("563%20" in text or "555%20" in text or "521%20" in text or "516%20" in text or "503%20" in text or "484%20" in text or "450%20" in text, f"{name} must have tests badge")
             self.assertIn("RunAsInvoker", text, f"{name} must have security badge")
             self.assertTrue("5d%20triage" in text or "5d%20Triage" in text, f"{name} must have 5d triage badge")
             self.assertIn("graph TD", text, f"{name} must have architecture graph")
@@ -464,6 +464,106 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         self.assertIn("Pfad B", text)
         self.assertIn("T-20260920-167562623", text)
         self.assertIn("NOTICE", text)
+
+    def test_ci_lifecycle_workflows_and_labels(self):
+        """Verify presence and hardening of auto-assign.yml, label-sync.yml, and labels.yml."""
+        auto_assign = PROJECT_ROOT / ".github" / "workflows" / "auto-assign.yml"
+        self.assertTrue(auto_assign.is_file(), "auto-assign.yml must exist")
+        aa_text = auto_assign.read_text(encoding="utf-8")
+        self.assertIn("actions/github-script@v7", aa_text)
+        self.assertIn("timeout-minutes: 5", aa_text)
+        self.assertIn("cancel-in-progress: true", aa_text)
+        self.assertIn("issues: write", aa_text)
+        self.assertIn("pull-requests: write", aa_text)
+
+        label_sync = PROJECT_ROOT / ".github" / "workflows" / "label-sync.yml"
+        self.assertTrue(label_sync.is_file(), "label-sync.yml must exist")
+        ls_text = label_sync.read_text(encoding="utf-8")
+        self.assertIn("EndBug/label-sync@v2", ls_text)
+        self.assertIn("timeout-minutes: 5", ls_text)
+        self.assertIn("cancel-in-progress: true", ls_text)
+        self.assertIn("issues: write", ls_text)
+        self.assertIn("config-file: .github/labels.yml", ls_text)
+
+        labels_file = PROJECT_ROOT / ".github" / "labels.yml"
+        self.assertTrue(labels_file.is_file(), "labels.yml must exist")
+        lbl_text = labels_file.read_text(encoding="utf-8")
+        for label in ["bug", "enhancement", "good first issue", "help wanted", "documentation", "duplicate", "wontfix", "security"]:
+            self.assertIn(f"name: {label}", lbl_text, f"Label {label} must be defined in labels.yml")
+
+    def test_contributing_contract(self):
+        """Verify CONTRIBUTING.md exists, non-empty, and enforces invariants and version freeze."""
+        contrib_file = PROJECT_ROOT / "CONTRIBUTING.md"
+        self.assertTrue(contrib_file.is_file(), "CONTRIBUTING.md must exist")
+        text = contrib_file.read_text(encoding="utf-8")
+        self.assertGreater(len(text), 200, "CONTRIBUTING.md must be comprehensive")
+        self.assertIn("INV-LOCAL-01", text)
+        self.assertIn("RunAsInvoker", text)
+        self.assertIn("T-20260920-167562623", text)
+        self.assertIn("Quality Gates", text)
+        self.assertIn("pytest", text)
+        self.assertIn("ruff check", text)
+
+    def test_third_party_licenses_plain_text_companion_invariants(self):
+        """Verify THIRD_PARTY_LICENSES.txt contains Level 1 SBOM invariant confirmations and full license texts."""
+        txt_file = PROJECT_ROOT / "THIRD_PARTY_LICENSES.txt"
+        self.assertTrue(txt_file.is_file(), "THIRD_PARTY_LICENSES.txt must exist")
+        text = txt_file.read_text(encoding="utf-8")
+        self.assertIn("THIRD-PARTY SOFTWARE LICENSES & LEVEL 1 SBOM COMPANION", text)
+        self.assertIn("2026-09-30", text)
+        self.assertIn("LEVEL 1 SBOM INVARIANT VALIDATION CONFIRMATION", text)
+        for inv in ["INV-LOCAL-01", "INV-USER-02", "INV-IPC-03", "INV-SAFE-04", "INV-BUF-05", "INV-STT-06", "INV-STORE-07", "INV-PLAT-08", "INV-SYNC-09", "INV-SLA-10"]:
+            self.assertIn(inv, text, f"Invariant {inv} must be confirmed in THIRD_PARTY_LICENSES.txt")
+        self.assertIn("RunAsInvoker", text)
+        self.assertIn("LGPL-3.0", text)
+        self.assertIn("MIT LICENSE", text)
+        self.assertIn("BSD 3-CLAUSE LICENSE", text)
+
+    def test_pep621_extended_project_urls(self):
+        """Verify pyproject.toml registers Contributing, Plain-Text License, and Level 1 SBOM URLs."""
+        pyproject_file = PROJECT_ROOT / "pyproject.toml"
+        text = pyproject_file.read_text(encoding="utf-8")
+        self.assertIn("Contributing = ", text)
+        self.assertIn('"Plain-Text License" = ', text)
+        self.assertIn('"Level 1 SBOM" = ', text)
+
+        if tomllib is not None:
+            data = tomllib.loads(text)
+            urls = data.get("project", {}).get("urls", {})
+            self.assertIn("Contributing", urls)
+            self.assertIn("Plain-Text License", urls)
+            self.assertIn("Level 1 SBOM", urls)
+
+    def test_pytest_basetemp_and_norecursedirs_options(self):
+        """Verify pytest configuration specifies --basetemp=.pytest_temp and protects temp directories."""
+        pyproject_file = PROJECT_ROOT / "pyproject.toml"
+        text = pyproject_file.read_text(encoding="utf-8")
+        self.assertIn("--basetemp=.pytest_temp", text)
+        self.assertIn(".pytest_temp", text)
+        self.assertIn(".pytest_tmp*", text)
+
+    def test_extended_gitignore_multihost_and_lock_defense(self):
+        """Verify .gitignore includes IDEAPAD tokens, canonical locks, and pytest temp directories."""
+        gi_file = PROJECT_ROOT / ".gitignore"
+        text = gi_file.read_text(encoding="utf-8")
+        for pat in ["*-IDEAPAD*", "*-IDEAPAD-GEI*", "*-WORKSTATION.*", "*-WORKSTATION-LG.*", "LOCK.dev.*", "LOCK.antigravity.*", "Desktop.ini", ".pytest_temp/"]:
+            self.assertIn(pat, text, f"Pattern {pat} must be present in .gitignore")
+
+    def test_changelog_recent_pfad_a_unreleased_entry(self):
+        """Verify CHANGELOG.md documents Pfad A hardening under [Unreleased]."""
+        cl_file = PROJECT_ROOT / "CHANGELOG.md"
+        text = cl_file.read_text(encoding="utf-8")
+        self.assertIn("## [Unreleased]", text)
+        self.assertIn("Pfad A Repository Lifecycle Hardening", text)
+        self.assertIn("2026-09-30", text)
+        self.assertIn("T-20260920-167562623", text)
+
+    def test_marketing_log_pfad_a_20260930_audit(self):
+        """Verify MARKETING-LOG.txt documents the Pfad A milestone from 2026-09-30."""
+        log_file = PROJECT_ROOT / "MARKETING-LOG.txt"
+        text = log_file.read_text(encoding="utf-8")
+        self.assertIn("PFAD_A_REPOSITORY_HYGIENE_AND_LIFECYCLE_WORKFLOWS_20260930", text)
+        self.assertIn("2026-09-30", text)
 
 
 if __name__ == "__main__":

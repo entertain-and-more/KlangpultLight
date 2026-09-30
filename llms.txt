@@ -7,10 +7,12 @@
 - **Umbrella Ecosystem:** open-bricks
 - **Modus:** Freeware / Funnel für Klangpult (proprietäre Vollversion)
 - **Standard-Branch:** main
-- **Last checked:** 2026-09-24 (Pfad B Discoverability, Level 1 SBOM, NOTICE Attribution, 18-Punkte Navigations-Parität & § 521 BGB Haftungsausschluss)
+- **Last checked:** 2026-09-30 (Pfad A Repository Lifecycle Hardening, CI Workflows auto-assign/label-sync, Level 1 SBOM Text-Companion THIRD_PARTY_LICENSES.txt & CONTRIBUTING.md)
 - **Discoverability Log:** `MARKETING-LOG.txt` (SEO-Analyse, Visual-Assets, 4 Personas, Vergleichsmatrix, 10 Invarianten & 18-Punkte Navigation)
 - **Third-Party Licenses:** `THIRD_PARTY_LICENSES.md` (Level 1 SBOM Invarianten-Kreuzreferenzmatrix, PySide6 LGPLv3 § 4 dynamische Bindung, Zero-Copyleft)
+- **Plain-Text SBOM Companion:** `THIRD_PARTY_LICENSES.txt` (Level 1 SBOM Invarianten INV-LOCAL-01..INV-SLA-10, RunAsInvoker & vollständige Lizenzen)
 - **Canonical Notice:** `NOTICE` (Urheber-, Dachorganisations- und Mitwirkenden-Attribution)
+- **Contributing Guidelines:** `CONTRIBUTING.md` (Lokales Setup, Quality Gates, Invarianten & Version-Freeze)
 
 ## Core Components
 
@@ -18,14 +20,16 @@
 - `planer/`: Web-App (Python/HTTP) für Medien- und Projektplanung (Episoden, Assets, Line, Workspace-v1, Teleprompter, KI-Monitor).
 - `shared/`: Gemeinsame Datenmodelle, Protocols & Utilities (`remote_protocol_v1.json`, `workspace_v1.json`).
 - `THIRD_PARTY_LICENSES.md`: Vollständiges Lizenz- und Transparenz-Audit der Laufzeit- und Entwicklungswerkzeuge samt Level 1 SBOM Invarianten-Kreuzreferenzmatrix (`INV-LOCAL-01` bis `INV-SLA-10`).
+- `THIRD_PARTY_LICENSES.txt`: Level 1 SBOM Text-Begleiter mit Bestätigung aller 10 Invarianten und Volltexten.
 - `NOTICE`: Formale Urheber- und Lizenz-Attribution (open-bricks Dachorganisation, entertain-and-more).
-- `tests/`: Pytest-Vertragstests (`test_planer_accessibility_static.py`, `test_metadata.py`, `test_registry_status.py`).
+- `CONTRIBUTING.md`: Richtlinien für Entwicklungssetup, Quality Gates und Pull Requests.
+- `tests/`: Pytest-Vertragstests (`test_planer_accessibility_static.py`, `test_metadata.py`, `test_registry_status.py`, `test_security_license_contract.py`).
 - `SECURITY.md`: Bilinguale Sicherheits- & Zero-Egress-Richtlinie mit Unterstützte-Versionen-Matrix, 48h SLA und 5-Werktage-Triage-Zusage.
-- `.github/workflows/`: Gehärtete GitHub Actions CI Matrix (`ci.yml`: Ubuntu, Windows & macOS, Python 3.10–3.13, timeout-minutes: 15, permissions: contents: read), `stale.yml` (täglicher Cron, timeout-minutes: 10) und `welcome.yml` (timeout-minutes: 5).
+- `.github/workflows/`: Gehärtete GitHub Actions CI Matrix (`ci.yml`, `auto-assign.yml`, `label-sync.yml`, `stale.yml`, `welcome.yml`).
 
 ## Usage & Commands
 
-- Full Pytest Suite: `pytest` (521 Tests: 521 bestanden)
+- Full Pytest Suite: `pytest` (563 Tests: 563 bestanden)
 - Metadata & Contract Tests: `pytest tests/test_metadata.py`
 - Code Quality: `ruff check .`
 - Build EXE: `.\build_exe.bat`

@@ -67,11 +67,20 @@ output/playwright/
 * (Copy)*
 *-ASUS*
 *-ASUS-GEI*
+*-IDEAPAD*
+*-IDEAPAD-GEI*
 *-LAPTOP*
 *-WORKSTATION*
 *-WORKSTATION-LG*
+*-WORKSTATION.*
+*-WORKSTATION-LG.*
 *-Mac Studio*
 *-MacBook*
+Desktop.ini
+desktop.ini
+ehthumbs.db
+*.swo
+TASKPLAN_*.md
 
 # Multi-Agent Locks & Schutzsperren
 LOCK
@@ -81,10 +90,15 @@ LOCK.permissions.json
 LOCK.user.*
 LOCK.until.*
 LOCK.condition.*
+LOCK.dev.*
+LOCK.antigravity.*
+LOCK.bugsearch.*
 uv.lock
 !package-lock.json
 
 # Test & Coverage Caches
+.pytest_temp/
+.pytest_tmp*/
 .coverage*
 coverage/
 htmlcov/

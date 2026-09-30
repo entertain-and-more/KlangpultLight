@@ -78,8 +78,11 @@ Repository = "https://github.com/entertain-and-more/KlangpultLight.git"
 Documentation = "https://github.com/entertain-and-more/KlangpultLight#readme"
 Issues = "https://github.com/entertain-and-more/KlangpultLight/issues"
 Changelog = "https://github.com/entertain-and-more/KlangpultLight/blob/main/CHANGELOG.md"
+Contributing = "https://github.com/entertain-and-more/KlangpultLight/blob/main/CONTRIBUTING.md"
 Security = "https://github.com/entertain-and-more/KlangpultLight/blob/main/SECURITY.md"
 Notice = "https://github.com/entertain-and-more/KlangpultLight/blob/main/NOTICE"
+"Plain-Text License" = "https://github.com/entertain-and-more/KlangpultLight/blob/main/LICENSE"
+"Level 1 SBOM" = "https://github.com/entertain-and-more/KlangpultLight/blob/main/THIRD_PARTY_LICENSES.txt"
 "Third-Party Licenses" = "https://github.com/entertain-and-more/KlangpultLight/blob/main/THIRD_PARTY_LICENSES.md"
 "Third-Party Licenses (Text)" = "https://github.com/entertain-and-more/KlangpultLight/blob/main/THIRD_PARTY_LICENSES.txt"
 "Marketing Log" = "https://github.com/entertain-and-more/KlangpultLight/blob/main/MARKETING-LOG.txt"
@@ -89,10 +92,10 @@ Umbrella = "https://github.com/open-bricks/open-bricks"
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = "-ra -q"
+addopts = "-ra -v --basetemp=.pytest_temp"
 testpaths = ["Recorder/tests", "tests"]
 pythonpath = ["."]
-norecursedirs = [".git", ".github", "workspace", "_archive", "releases", "dist", "build", "node_modules", ".playwright-cli"]
+norecursedirs = [".git", ".github", "workspace", "_archive", "releases", "dist", "build", "node_modules", ".playwright-cli", ".pytest_temp", ".pytest_tmp*"]
 
 [tool.ruff]
 line-length = 100

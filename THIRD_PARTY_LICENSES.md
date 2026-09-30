@@ -1,7 +1,8 @@
 # Third-Party Licenses & Transparency Notice (Level 1 SBOM)
 
 > **Project:** `entertain-and-more/KlangpultLight` (Klangpult light — Desktop & Web Media Workstation)<br>
-> **Audited:** 2026-09-24<br>
+> **Audited:** 2026-09-30 (Previous Audits: 2026-09-24, 2026-09-18)<br>
+> **Plain-Text Companion:** [THIRD_PARTY_LICENSES.txt](THIRD_PARTY_LICENSES.txt)<br>
 > **Repository License:** [Freeware / Proprietary License](LICENSE)<br>
 > **Canonical Notice:** [NOTICE](NOTICE)<br>
 > **Architecture & Privacy:** 100% Local-First, Zero-Egress by default, Unprivileged User-Mode (`RunAsInvoker`)

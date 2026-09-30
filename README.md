@@ -7,7 +7,7 @@
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#)
 [![Version](https://img.shields.io/badge/Version-v0.1.7-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-[![Pytest](https://img.shields.io/badge/Pytest-521%20tests%20(521%20passed)-success.svg)](https://docs.pytest.org/)
+[![Pytest](https://img.shields.io/badge/Pytest-563%20tests%20(563%20passed)-success.svg)](https://docs.pytest.org/)
 [![CI](https://img.shields.io/badge/CI-Multi--OS%20Matrix-blue.svg)](https://github.com/entertain-and-more/KlangpultLight/actions/workflows/ci.yml)
 [![Platforms](https://img.shields.io/badge/Platforms-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](#)
 [![License](https://img.shields.io/badge/License-Freeware-informational.svg)](./LICENSE)
@@ -16,7 +16,7 @@
 [![Security](https://img.shields.io/badge/Security-Unprivileged%20(RunAsInvoker)-green.svg)](./SECURITY.md)
 [![Security SLA](https://img.shields.io/badge/Security%20SLA-48h%20response%20%7C%205d%20triage-blue.svg)](./SECURITY.md)
 [![Third-Party Audited](https://img.shields.io/badge/Third--Party%20Licenses-Audited%20(100%25%20Permissive%20%2F%20LGPL)--Dynamic-green.svg)](./THIRD_PARTY_LICENSES.md)
-[![Marketing Log](https://img.shields.io/badge/Marketing%20Log-Active%20(2026--09--24)-blue.svg)](./MARKETING-LOG.txt)
+[![Marketing Log](https://img.shields.io/badge/Marketing%20Log-Active%20(2026--09--30)-blue.svg)](./MARKETING-LOG.txt)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Ecosystem](https://img.shields.io/badge/Ecosystem-entertain--and--more-blueviolet.svg)](https://github.com/entertain-and-more)
 [![Umbrella](https://img.shields.io/badge/Umbrella-open--bricks-blue.svg)](https://github.com/open-bricks/open-bricks)
@@ -29,7 +29,7 @@
 > License: Freeware / Proprietary, Closed-Source.
 
 > [!NOTE]
-> For AI agents and automated tools: See [llms.txt](./llms.txt) (Last checked: 2026-09-24) for machine-readable repository overview and test contracts. Formal provenance and contributor recognition are declared in [NOTICE](./NOTICE). Detailed third-party license audits and Level 1 SBOM are documented in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md), and marketing, SEO, and visual asset telemetry is tracked in [MARKETING-LOG.txt](./MARKETING-LOG.txt).
+> For AI agents and automated tools: See [llms.txt](./llms.txt) (Last checked: 2026-09-30) for machine-readable repository overview and test contracts. Formal provenance and contributor recognition are declared in [NOTICE](./NOTICE). Detailed third-party license audits and Level 1 SBOM are documented in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md), and marketing, SEO, and visual asset telemetry is tracked in [MARKETING-LOG.txt](./MARKETING-LOG.txt).
 
 ---
 

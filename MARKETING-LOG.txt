@@ -166,3 +166,29 @@ Comprehensive SPDX license audit completed in `THIRD_PARTY_LICENSES.md` on 2026-
 - **STATUTORY DISCLAIMER & SECURITY SLA**:
   - Statutory liability limitation under German civil law (**§ 521 BGB** — *Gefälligkeitsrecht*) anchored in Section 18 of READMEs and referenced in governance documentation, restricting liability for gratuitous software to gross negligence and willful intent.
   - Binding 48-hour response confirmation and 5-day triage commitments re-verified across `SECURITY.md` and READMEs.
+
+---
+
+## 8. Technical Hygiene, CI Workflows & Level 1 SBOM Text-Companion Parity (Pfad A — Stand 2026-09-30)
+
+### PFAD_A_REPOSITORY_HYGIENE_AND_LIFECYCLE_WORKFLOWS_20260930
+- **Audit Date**: 2026-09-30
+- **Version Integrity**: `0.1.0` strictly frozen in compliance with `T-20260920-167562623` (no version bump in Pfad A/B runs).
+- **CI/CD Lifecycle Workflows & Labels Parität**:
+  - Provisioned `.github/workflows/auto-assign.yml` with `actions/github-script@v7`, `timeout-minutes: 5`, Concurrency `group: auto-assign-${{ github.ref }}` (`cancel-in-progress: true`), and least-privilege permissions (`issues: write`, `pull-requests: write`).
+  - Provisioned `.github/workflows/label-sync.yml` with `EndBug/label-sync@v2`, `timeout-minutes: 5`, Concurrency `group: label-sync-${{ github.ref }}` (`cancel-in-progress: true`), and least-privilege permissions (`issues: write`).
+  - Deployed canonical `.github/labels.yml` containing the 11 standard governance labels per GOVERNANCE.md §4.2.
+  - Verified `.github/workflows/ci.yml`, `stale.yml`, and `welcome.yml` with concurrency control.
+- **CONTRIBUTING.md**:
+  - Published comprehensive contribution guide with architectural invariants (`INV-LOCAL-01` to `INV-SLA-10`), quality gates (`pytest`, `ruff check .`, `python -m compileall -q .`, `git diff --check`), local development instructions, and strict version freeze rule.
+- **Level 1 SBOM Plain-Text Companion (`THIRD_PARTY_LICENSES.txt`)**:
+  - Re-audited with Stand 2026-09-30, certifying full compliance with all 10 runtime invariants (`INV-LOCAL-01` through `INV-SLA-10`), unprivileged `RunAsInvoker` user mode (`INV-USER-02`), and zero-copyleft permissive stack.
+  - Added full license texts for LGPL-3.0, BSD-3-Clause, MIT, Apache-2.0, and PSF-2.0.
+  - Synchronized `NOTICE` and `THIRD_PARTY_LICENSES.md` to reference the plain-text companion.
+- **Multi-Host Cloud-Sync & Lock Defense**:
+  - Hardened `.gitignore` against IDEAPAD and WORKSTATION sync tokens (`*-IDEAPAD*`, `*-IDEAPAD-GEI*`, `*-WORKSTATION.*`, `*-WORKSTATION-LG.*`), canonical multi-agent locks (`LOCK.dev.*`, `LOCK.antigravity.*`, `LOCK.bugsearch.*`), OS artifacts (`Desktop.ini`, `desktop.ini`, `ehthumbs.db`, `*.swo`), task files (`TASKPLAN_*.md`), and test caches (`.pytest_temp/`, `.pytest_tmp*/`).
+- **PEP 621 Standardisation (`pyproject.toml`)**:
+  - Registered `Contributing`, `Plain-Text License`, and `Level 1 SBOM` URLs under `[project.urls]`.
+  - Configured pytest options: `addopts = "-ra -v --basetemp=.pytest_temp"` and hardened `norecursedirs` to exclude `.pytest_temp` and `.pytest_tmp*`.
+- **Quality Gates & Test Surface**:
+  - 8 new contract tests added to `tests/test_metadata.py` verifying workflows, labels, contributing guidelines, SBOM companions, and multi-host defenses.

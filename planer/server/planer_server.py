@@ -76,38 +76,69 @@ class PlanerHandler(BaseHTTPRequestHandler):
     Alles andere: statische Dateien aus _STATIC_ROOT.
     """
 
+    def _set_cors_headers(self) -> None:
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD")
+        self.send_header(
+            "Access-Control-Allow-Headers",
+            "Content-Type, Authorization, Range, X-Requested-With",
+        )
+        self.send_header(
+            "Access-Control-Expose-Headers",
+            "Content-Range, Accept-Ranges, Content-Length",
+        )
+
+    def do_OPTIONS(self) -> None:  # noqa: N802
+        self.send_response(204)
+        self._set_cors_headers()
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+    def do_HEAD(self) -> None:  # noqa: N802
+        path = urlparse(self.path).path
+        if path == "/api/status":
+            self._bridge_status(is_head=True)
+        elif path.startswith("/api/library"):
+            self._proxy(self.server.library_port, is_head=True)  # type: ignore[attr-defined]
+        elif path.startswith("/api/projects"):
+            self._proxy(self.server.projects_port, is_head=True)  # type: ignore[attr-defined]
+        elif path in ("/api/translations", "/api/i18n"):
+            self._serve_translations(is_head=True)
+        else:
+            self._serve_static(path, is_head=True)
+
     def do_GET(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
 
         if path == "/api/status":
-            self._bridge_status()
+            self._bridge_status(is_head=False)
         elif path.startswith("/api/library"):
-            self._proxy(self.server.library_port)  # type: ignore[attr-defined]
+            self._proxy(self.server.library_port, is_head=False)  # type: ignore[attr-defined]
         elif path.startswith("/api/projects"):
-            self._proxy(self.server.projects_port)  # type: ignore[attr-defined]
+            self._proxy(self.server.projects_port, is_head=False)  # type: ignore[attr-defined]
         elif path in ("/api/translations", "/api/i18n"):
-            self._serve_translations()
+            self._serve_translations(is_head=False)
         else:
-            self._serve_static(path)
+            self._serve_static(path, is_head=False)
 
     def do_POST(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
         if path.startswith("/api/projects"):
-            self._proxy(self.server.projects_port)  # type: ignore[attr-defined]
+            self._proxy(self.server.projects_port, is_head=False)  # type: ignore[attr-defined]
         else:
             self._fehler(405, "Methode nicht erlaubt")
 
     def do_PUT(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
         if path.startswith("/api/projects"):
-            self._proxy(self.server.projects_port)  # type: ignore[attr-defined]
+            self._proxy(self.server.projects_port, is_head=False)  # type: ignore[attr-defined]
         else:
             self._fehler(405, "Methode nicht erlaubt")
 
     def do_DELETE(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
         if path.startswith("/api/projects"):
-            self._proxy(self.server.projects_port)  # type: ignore[attr-defined]
+            self._proxy(self.server.projects_port, is_head=False)  # type: ignore[attr-defined]
         else:
             self._fehler(405, "Methode nicht erlaubt")
 
@@ -115,7 +146,7 @@ class PlanerHandler(BaseHTTPRequestHandler):
     # Bridge-Status und Proxy
     # -------------------------------------------------------------------------
 
-    def _bridge_status(self) -> None:
+    def _bridge_status(self, is_head: bool = False) -> None:
         """Liest den Health-Zustand beider Recorder-Dienste separat aus.
 
         Der Planer braucht für seine Kopfzeile keinen vollständigen Bibliotheks-
@@ -139,6 +170,7 @@ class PlanerHandler(BaseHTTPRequestHandler):
                     "projects": {"ok": projects_ok},
                 },
             },
+            is_head=is_head,
         )
 
     @staticmethod
@@ -157,7 +189,7 @@ class PlanerHandler(BaseHTTPRequestHandler):
             if conn is not None:
                 conn.close()
 
-    def _proxy(self, backend_port: int) -> None:
+    def _proxy(self, backend_port: int, is_head: bool = False) -> None:
         """Leitet die Anfrage an den Backend-Dienst weiter.
 
         Routing verwendet den geparsten Pfad (ohne Query) zur Bestimmung des Backends,
@@ -166,25 +198,33 @@ class PlanerHandler(BaseHTTPRequestHandler):
         """
         method = self.command
         content_length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(content_length) if content_length > 0 else b""
+        body = self.rfile.read(content_length) if content_length > 0 and not is_head else b""
 
         try:
             conn = http.client.HTTPConnection("127.0.0.1", backend_port, timeout=10)
             headers = {"Content-Type": self.headers.get("Content-Type", "application/json")}
+            if "Range" in self.headers:
+                headers["Range"] = self.headers["Range"]
             # self.path enthält Query-String (z. B. /api/projects?sort=asc) — vollständig
             # durchreichen, damit Filter/Paginierung beim Backend ankommen.
             conn.request(method, self.path, body=body, headers=headers)
             resp = conn.getresponse()
-            resp_body = resp.read()
 
             self.send_response(resp.status)
-            ct = resp.getheader("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Content-Type", ct)
-            self.send_header("Content-Length", str(len(resp_body)))
+            for h in ["Content-Type", "Content-Length", "Content-Range", "Accept-Ranges"]:
+                val = resp.getheader(h)
+                if val is not None:
+                    self.send_header(h, val)
             # CORS-Header für den Fall, dass das Frontend doch direkt geöffnet wird
-            self.send_header("Access-Control-Allow-Origin", "*")
+            self._set_cors_headers()
             self.end_headers()
-            self.wfile.write(resp_body)
+
+            if not is_head:
+                while True:
+                    chunk = resp.read(65536)
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
             conn.close()
         except OSError as exc:
             _log.warning("Proxy-Fehler zu Port %d: %s", backend_port, exc)
@@ -192,9 +232,10 @@ class PlanerHandler(BaseHTTPRequestHandler):
                 502,
                 f"Backend-Dienst nicht erreichbar (Port {backend_port}). "
                 "Bitte Klangpult light – Recorder starten.",
+                is_head=is_head,
             )
 
-    def _serve_translations(self) -> None:
+    def _serve_translations(self, is_head: bool = False) -> None:
         """Liefert das Wörterbuch translations.json für den Planer-Web-Companion."""
         cand_paths = [
             _STATIC_ROOT / "locales" / "translations.json",
@@ -211,17 +252,17 @@ class PlanerHandler(BaseHTTPRequestHandler):
                 try:
                     with open(p, "r", encoding="utf-8") as f:
                         data = json.load(f)
-                    self._json_response(200, data)
+                    self._json_response(200, data, is_head=is_head)
                     return
                 except Exception as exc:
                     _log.warning("Fehler beim Lesen von %s: %s", p, exc)
-        self._fehler(404, "Translations not found")
+        self._fehler(404, "Translations not found", is_head=is_head)
 
     # -------------------------------------------------------------------------
     # Statische Dateien
     # -------------------------------------------------------------------------
 
-    def _serve_static(self, path: str) -> None:
+    def _serve_static(self, path: str, is_head: bool = False) -> None:
         """Liefert statische Dateien aus dem Planer-Verzeichnis."""
         # Index-Datei-Fallback
         if path == "/" or path == "":
@@ -232,16 +273,16 @@ class PlanerHandler(BaseHTTPRequestHandler):
             abs_path = (_STATIC_ROOT / path.lstrip("/")).resolve()
             abs_path.relative_to(_STATIC_ROOT.resolve())
         except ValueError:
-            self._fehler(403, "Zugriff verweigert")
+            self._fehler(403, "Zugriff verweigert", is_head=is_head)
             return
 
         # Sicherheitscheck: keine Python-Quelldateien oder -Bytecode ausliefern
         if abs_path.suffix.lower() in _BLOCKED_SUFFIXES:
-            self._fehler(404, f"Datei nicht gefunden: {path}")
+            self._fehler(404, f"Datei nicht gefunden: {path}", is_head=is_head)
             return
 
         if not abs_path.exists():
-            self._fehler(404, f"Datei nicht gefunden: {path}")
+            self._fehler(404, f"Datei nicht gefunden: {path}", is_head=is_head)
             return
 
         if abs_path.is_dir():
@@ -250,36 +291,46 @@ class PlanerHandler(BaseHTTPRequestHandler):
             if index.exists():
                 abs_path = index
             else:
-                self._fehler(403, "Verzeichnis-Listing nicht erlaubt")
+                self._fehler(403, "Verzeichnis-Listing nicht erlaubt", is_head=is_head)
                 return
 
         mime = mimetypes.guess_type(str(abs_path))[0] or "application/octet-stream"
         try:
-            data = abs_path.read_bytes()
+            size = os.path.getsize(abs_path)
             self.send_response(200)
             self.send_header("Content-Type", mime)
-            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Content-Length", str(size))
+            self.send_header("Accept-Ranges", "bytes")
+            self._set_cors_headers()
             self.end_headers()
-            self.wfile.write(data)
+            if not is_head:
+                with open(abs_path, "rb") as f:
+                    while True:
+                        chunk = f.read(65536)
+                        if not chunk:
+                            break
+                        self.wfile.write(chunk)
         except OSError as exc:
             _log.error("Fehler beim Lesen von %s: %s", abs_path, exc)
-            self._fehler(500, "Interner Fehler")
+            self._fehler(500, "Interner Fehler", is_head=is_head)
 
     # -------------------------------------------------------------------------
     # Hilfsmethoden
     # -------------------------------------------------------------------------
 
-    def _json_response(self, status: int, daten: dict) -> None:
+    def _json_response(self, status: int, daten: dict, is_head: bool = False) -> None:
         """Sendet einen kleinen UTF-8-JSON-Body."""
         body = json.dumps(daten, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
+        self._set_cors_headers()
         self.end_headers()
-        self.wfile.write(body)
+        if not is_head:
+            self.wfile.write(body)
 
-    def _fehler(self, status: int, meldung: str) -> None:
-        self._json_response(status, {"error": meldung})
+    def _fehler(self, status: int, meldung: str, is_head: bool = False) -> None:
+        self._json_response(status, {"error": meldung}, is_head=is_head)
 
     def log_message(self, fmt: str, *args) -> None:  # noqa: D102
         _log.debug("PlanerServer: " + fmt, *args)

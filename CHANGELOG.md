@@ -5,6 +5,24 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Behoben / Fixed (Bugsweep: Bibliotheks-API & Proxy Streaming, HTTP Range-Requests, CORS & HEAD-Support 2026-10-01) [G 2026-10-01]
+- **HTTP Byte-Range Requests & Partial Content (`Recorder/bridge/library_api.py`)**:
+  - `_LibraryHandler._antwort_audio()` unterstützt RFC-7233-Byte-Ranges (`Range: bytes=start-end`, `bytes=start-`, `bytes=-suffix`) mit `HTTP 206 Partial Content`, `Content-Range: bytes {start}-{end}/{total}`, `Accept-Ranges: bytes` und partiellem Stream, wodurch Seeking und Scrubbing in HTML5 `<audio>`/`<video>`-Playern zuverlässig funktionieren.
+  - Abweisung ungültiger bzw. unbefriedigbarer Ranges (`start >= total` oder `start > end`) mit standardkonformem `HTTP 416 Range Not Satisfiable` (`Content-Range: bytes */{total}`).
+- **CORS & OPTIONS Preflight (`Recorder/bridge/library_api.py`, `planer/server/planer_server.py`)**:
+  - `_LibraryHandler`: `do_OPTIONS` (204 No Content) und `_set_cors_headers()` für `Access-Control-Allow-Origin: *`, `Access-Control-Allow-Methods` (GET, HEAD, OPTIONS) und `Access-Control-Allow-Headers` integriert; analog zu `ProjectsApiServer` werden alle JSON- und Audio-Antworten mit CORS-Headern ausgestattet.
+  - `PlanerHandler`: `do_OPTIONS` (204 No Content) und `_set_cors_headers()` ergänzt, um browserseitige Preflight-Anfragen über den PlanerServer transparent zu beantworten.
+- **HEAD Method Support (`Recorder/bridge/library_api.py`, `planer/server/planer_server.py`)**:
+  - `_LibraryHandler`: `do_HEAD` implementiert; liefert identische Response-Header (`Content-Length`, `Content-Type`, `Accept-Ranges`, `CORS`) ohne Body-Stream aus, sodass Vorabprüfungen von Media-Playern nicht mit `HTTP 501 Unsupported method` scheitern.
+  - `PlanerHandler`: `do_HEAD` implementiert und für alle internen sowie geproxyten Routen bereitgestellt.
+- **URL-Decoding & Path-Traversal-Schutz (`Recorder/bridge/library_api.py`)**:
+  - `_antwort_audio()` und `_antwort_recording()` normalisieren `recording_id` via `urllib.parse.unquote()`, wodurch prozent-kodierte URLs (`recording%5F...`) aufgelöst und ungültige Pfadtrenner über `library.recording_dir()` sauber mit 404 abgefangen werden.
+- **Metadaten-Detailabfrage für Einzelaufnahmen (`Recorder/bridge/library_api.py`)**:
+  - Neuer Endpoint `GET /api/library/<recording_id>` liefert Metadaten (`{"recording": meta.to_dict()}`) oder `HTTP 404 Not Found`.
+- **Chunked Proxy-Streaming & Header-Durchleitung (`planer/server/planer_server.py`)**:
+  - `PlanerHandler._proxy()` leitet `Range`-Header aus eingehenden Client-Anfragen an das Backend weiter, reicht `Content-Range` und `Accept-Ranges` durch und streamt Daten in 64-KB-Blöcken statt den gesamten Response-Body in den Arbeitsspeicher zu laden.
+- **Regressionstest-Suite (`Recorder/tests/test_bugsweep_library_api_streaming_resilience_20261001.py`)**: 7 neue automatisierte Regressionstests zur lückenlosen Absicherung von CORS, Range-Requests, 416-Fehlern, HEAD-Support, Detail-Endpoint, URL-Decoding und Proxy-Streaming.
+
 ### Pfad A Repository Lifecycle Hardening, CI Lifecycle Workflows & Level 1 SBOM Text-Companion (2026-09-30) [G 2026-09-30]
 - **Version-Freeze Disziplin (`T-20260920-167562623`)**: Versionskonstante `0.1.0` in `pyproject.toml` und Manifesten unverändert beibehalten (kein Version-Bump; Release-Vorgang und Distribution bleiben separater Autorisierung vorbehalten).
 - **CI/CD Lifecycle Workflows & Labels Parität**:

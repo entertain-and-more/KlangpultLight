@@ -94,7 +94,15 @@ Angelegt: 2026-06-22.
   4. `speichere_teleprompter()` & `workspace_importieren()`: Neue Hilfsfunktion `_safe_scroll_speed()` fängt `NaN`, `Infinity` und ungültige Strings/Typen defensiv ab (Bereich `[0.1, 10.0]`, Default `1.0`), um Non-RFC-8259 JSON-Korruption zu verhindern.
   5. `speichere_line()` & `workspace_importieren()`: Sanitisierung filtert `None`, Whitespace-Strings und Phantom-Tokens wie `"None"` oder `"none"` zuverlässig heraus.
   6. `_ProjectsHandler`: `do_OPTIONS` (204 No Content) und `_set_cors_headers()` ergänzt, sodass direkte Browser-Fetch-Aufrufe mit Preflight-Anfragen standardkonform unterstützt werden.
-  Regressionstests: `Recorder/tests/test_bugsweep_projects_api_resilience_20260929.py` (9 Tests).
+- **[FIXED] Bibliotheks-API & Proxy Streaming: HTTP Range-Requests, CORS & HEAD-Support (2026-10-01):**
+  `Recorder/bridge/library_api.py` und `planer/server/planer_server.py`:
+  1. `_antwort_audio()` unterstützt nun RFC-7233-Byte-Ranges (`Range: bytes=start-end`, `bytes=start-`, `bytes=-suffix`) mit `HTTP 206 Partial Content`, `Content-Range: bytes {start}-{end}/{total}`, `Accept-Ranges: bytes` und partiellem Stream, wodurch Seeking und Scrubbing in HTML5 `<audio>`/`<video>`-Playern zuverlässig funktionieren. Ungültige Ranges (`start >= total` oder `start > end`) werden mit `HTTP 416 Range Not Satisfiable` abgewiesen.
+  2. `_LibraryHandler` & `PlanerHandler`: `do_OPTIONS` (204 No Content) und `_set_cors_headers()` für `Access-Control-Allow-Origin: *`, `Access-Control-Allow-Methods` (GET, HEAD, OPTIONS) und `Access-Control-Allow-Headers` integriert; alle JSON- und Audio-Antworten werden mit CORS-Headern ausgestattet.
+  3. `_LibraryHandler` & `PlanerHandler`: `do_HEAD` implementiert; liefert identische Response-Header (`Content-Length`, `Content-Type`, `Accept-Ranges`, `CORS`) ohne Body-Stream aus, sodass Vorabprüfungen von Media-Playern nicht mit `HTTP 501 Unsupported method` scheitern.
+  4. `_antwort_audio()` und `_antwort_recording()` normalisieren `recording_id` via `urllib.parse.unquote()`, wodurch prozent-kodierte URLs (`recording%5F...`) aufgelöst und ungültige Pfadtrenner über `library.recording_dir()` sauber mit 404 abgefangen werden.
+  5. Neuer Endpoint `GET /api/library/<recording_id>` in `_LibraryHandler` liefert Metadaten (`{"recording": meta.to_dict()}`) oder `HTTP 404 Not Found`.
+  6. `PlanerHandler._proxy()` leitet `Range`-Header aus eingehenden Client-Anfragen an das Backend weiter, reicht `Content-Range` und `Accept-Ranges` durch und streamt Daten in 64-KB-Blöcken statt den gesamten Response-Body in den Arbeitsspeicher zu laden.
+  Regressionstests: `Recorder/tests/test_bugsweep_library_api_streaming_resilience_20261001.py` (7 Tests).
 
 ---
 

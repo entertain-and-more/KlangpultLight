@@ -160,8 +160,8 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         self.assertIn("entertain-and-more/KlangpultLight", text)
         self.assertIn("entertain-and-more", text)
         self.assertIn("open-bricks", text)
-        self.assertTrue("2026-09-30" in text or "2026-09-24" in text or "2026-09-18" in text or "2026-09-14" in text or "2026-09-09" in text)
-        self.assertTrue("563" in text or "555" in text or "521" in text or "516" in text or "502" in text or "483" in text or "449" in text)
+        self.assertTrue("2026-10-02" in text or "2026-09-30" in text or "2026-09-24" in text or "2026-09-18" in text or "2026-09-14" in text or "2026-09-09" in text)
+        self.assertTrue("573" in text or "570" in text or "563" in text or "555" in text or "521" in text or "516" in text or "502" in text or "483" in text or "449" in text)
         self.assertIn("NOTICE", text)
         self.assertIn("MARKETING-LOG.txt", text)
         self.assertIn("THIRD_PARTY_LICENSES.md", text)
@@ -182,7 +182,7 @@ class TestKlangpultLightMetadata(unittest.TestCase):
             self.assertIn("MARKETING-LOG.txt", text, f"{name} must reference MARKETING-LOG.txt")
             self.assertIn("THIRD_PARTY_LICENSES.md", text, f"{name} must reference THIRD_PARTY_LICENSES.md")
             self.assertIn("actions/workflows/ci.yml", text, f"{name} must have CI badge")
-            self.assertTrue("563%20" in text or "555%20" in text or "521%20" in text or "516%20" in text or "503%20" in text or "484%20" in text or "450%20" in text, f"{name} must have tests badge")
+            self.assertTrue("573%20" in text or "570%20" in text or "563%20" in text or "555%20" in text or "521%20" in text or "516%20" in text or "503%20" in text or "484%20" in text or "450%20" in text, f"{name} must have tests badge")
             self.assertIn("RunAsInvoker", text, f"{name} must have security badge")
             self.assertTrue("5d%20triage" in text or "5d%20Triage" in text, f"{name} must have 5d triage badge")
             self.assertIn("graph TD", text, f"{name} must have architecture graph")
@@ -564,6 +564,38 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         text = log_file.read_text(encoding="utf-8")
         self.assertIn("PFAD_A_REPOSITORY_HYGIENE_AND_LIFECYCLE_WORKFLOWS_20260930", text)
         self.assertIn("2026-09-30", text)
+
+    def test_ascii_four_view_topology_parity(self):
+        """Verify ASCII Four-View Architectural Topology projection presence and parity in README.md and README_de.md."""
+        readme_en = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+        readme_de = (PROJECT_ROOT / "README_de.md").read_text(encoding="utf-8")
+
+        self.assertIn("### Four-View Architectural Topology", readme_en)
+        self.assertIn("VIEW 1: CLIENT RUNTIMES, RECORDER DESKTOP HUD & PLANNER BROWSER ENTRYPOINTS", readme_en)
+        self.assertIn("VIEW 2: SOVEREIGN AUDIO PIPELINE, WASAPI LOOPBACK ENGINE & WEBSOCKET IPC BRIDGE", readme_en)
+        self.assertIn("VIEW 3: RUNTIME PERSISTENCE, MULTITRACK WAV/MP4 ENCODING & WORKSPACE STORAGE", readme_en)
+        self.assertIn("VIEW 4: AIR-GAP DEFENSE PERIMETER, RUNASINVOKER & ZERO-EGRESS GOVERNANCE BOUNDARY", readme_en)
+
+        self.assertIn("### Architektur-Topologie in vier Sichten", readme_de)
+        self.assertIn("SICHT 1: CLIENT-LAUFZEITEN, RECORDER-DESKTOP-HUD & PLANER-BROWSER-EINSTIEGSPUNKTE", readme_de)
+        self.assertIn("SICHT 2: AUTONOME AUDIO-PIPELINE, WASAPI-LOOPBACK-ENGINE & WEBSOCKET-IPC-BRIDGE", readme_de)
+        self.assertIn("SICHT 3: LAUFZEIT-PERSISTENZ, MEHRSPUR-WAV/MP4-KODIERUNG & ARBEITSBEREICH-SPEICHER", readme_de)
+        self.assertIn("SICHT 4: AIR-GAP-SICHERHEITSPERIMETER, RUNASINVOKER & ZERO-EGRESS-GOVERNANCE-GRENZE", readme_de)
+
+    def test_version_freeze_discipline(self):
+        """Verify version is strictly frozen to 0.1.0 per T-20260920-167562623 without elevation."""
+        pyproject_file = PROJECT_ROOT / "pyproject.toml"
+        text = pyproject_file.read_text(encoding="utf-8")
+        self.assertIn('version = "0.1.0"', text)
+
+    def test_changelog_recent_pfad_b_unreleased_entry(self):
+        """Verify CHANGELOG.md documents Pfad B milestone under [Unreleased]."""
+        cl_file = PROJECT_ROOT / "CHANGELOG.md"
+        text = cl_file.read_text(encoding="utf-8")
+        self.assertIn("## [Unreleased]", text)
+        self.assertIn("Pfad B Marketing, Discoverability, Visual Architecture & ASCII Four-View Topology", text)
+        self.assertIn("2026-10-02", text)
+        self.assertIn("T-20260920-167562623", text)
 
 
 if __name__ == "__main__":

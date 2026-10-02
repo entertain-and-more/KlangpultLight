@@ -7,7 +7,7 @@
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#)
 [![Version](https://img.shields.io/badge/Version-v0.1.7-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-[![Pytest](https://img.shields.io/badge/Pytest-563%20tests%20(563%20passed)-success.svg)](https://docs.pytest.org/)
+[![Pytest](https://img.shields.io/badge/Pytest-573%20tests%20(573%20passed)-success.svg)](https://docs.pytest.org/)
 [![CI](https://img.shields.io/badge/CI-Multi--OS%20Matrix-blue.svg)](https://github.com/entertain-and-more/KlangpultLight/actions/workflows/ci.yml)
 [![Platforms](https://img.shields.io/badge/Platforms-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](#)
 [![License](https://img.shields.io/badge/License-Freeware-informational.svg)](./LICENSE)
@@ -16,7 +16,7 @@
 [![Security](https://img.shields.io/badge/Security-Unprivileged%20(RunAsInvoker)-green.svg)](./SECURITY.md)
 [![Security SLA](https://img.shields.io/badge/Security%20SLA-48h%20response%20%7C%205d%20triage-blue.svg)](./SECURITY.md)
 [![Third-Party Audited](https://img.shields.io/badge/Third--Party%20Licenses-Audited%20(100%25%20Permissive%20%2F%20LGPL)--Dynamic-green.svg)](./THIRD_PARTY_LICENSES.md)
-[![Marketing Log](https://img.shields.io/badge/Marketing%20Log-Active%20(2026--09--30)-blue.svg)](./MARKETING-LOG.txt)
+[![Marketing Log](https://img.shields.io/badge/Marketing%20Log-Active%20(2026--10--02)-blue.svg)](./MARKETING-LOG.txt)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Ecosystem](https://img.shields.io/badge/Ecosystem-entertain--and--more-blueviolet.svg)](https://github.com/entertain-and-more)
 [![Umbrella](https://img.shields.io/badge/Umbrella-open--bricks-blue.svg)](https://github.com/open-bricks/open-bricks)
@@ -29,7 +29,7 @@
 > License: Freeware / Proprietary, Closed-Source.
 
 > [!NOTE]
-> For AI agents and automated tools: See [llms.txt](./llms.txt) (Last checked: 2026-09-30) for machine-readable repository overview and test contracts. Formal provenance and contributor recognition are declared in [NOTICE](./NOTICE). Detailed third-party license audits and Level 1 SBOM are documented in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md), and marketing, SEO, and visual asset telemetry is tracked in [MARKETING-LOG.txt](./MARKETING-LOG.txt).
+> For AI agents and automated tools: See [llms.txt](./llms.txt) (Last checked: 2026-10-02) for machine-readable repository overview and test contracts. Formal provenance and contributor recognition are declared in [NOTICE](./NOTICE). Detailed third-party license audits and Level 1 SBOM are documented in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md), and marketing, SEO, and visual asset telemetry is tracked in [MARKETING-LOG.txt](./MARKETING-LOG.txt).
 
 ---
 
@@ -82,6 +82,48 @@ graph TD
     C --> G[Teleprompter & AI Monitor]
     B <-->|IPC Bridge Ports 8767 / 8769| C
     A --> H[Shared Models & Local Storage]
+```
+
+### Four-View Architectural Topology
+
+```text
++--------------------------------------------------------------------------------------------------+
+|             [VIEW 1: CLIENT RUNTIMES, RECORDER DESKTOP HUD & PLANNER BROWSER ENTRYPOINTS]        |
+|  - Recorder Desktop GUI: PySide6/Qt6 dark studio interface, volume meters & real-time waveform   |
+|  - Web Planer Dashboard: Vanilla JS / HTML5 responsive planner, episode line & asset manager     |
+|  - Teleprompter & AI Monitor: Dual-monitor auto-scroll engine, font scaling & script markers    |
+|  - Interactive Soundboard: Multi-pad low-latency audio triggers, ducking volume & hotkey actions |
++--------------------------------------------------------------------------------------------------+
+                                                |
+                                                | Localhost IPC Bridge & WebSocket Streaming (:8767 / :8769)
+                                                v
++--------------------------------------------------------------------------------------------------+
+|             [VIEW 2: SOVEREIGN AUDIO PIPELINE, WASAPI LOOPBACK ENGINE & WEBSOCKET IPC BRIDGE]    |
+|  - SoundDevice Capture Core: WASAPI loopback system-audio + microphone multichannel acquisition   |
+|  - Live STT Engine: Local Faster-Whisper worker thread with non-blocking transcription queue    |
+|  - Bidirectional IPC Bridge: WebSocket event dispatcher syncing recorder status & teleprompter    |
+|  - HTTP Media API: Streaming library server with RFC-7233 range requests, CORS & HEAD preflights|
++--------------------------------------------------------------------------------------------------+
+                                                |
+                                                | Atomic Chunk Flushing & Session Serialization
+                                                v
++--------------------------------------------------------------------------------------------------+
+|             [VIEW 3: RUNTIME PERSISTENCE, MULTITRACK WAV/MP4 ENCODING & WORKSPACE STORAGE]       |
+|  - Audio Container Writer: 32-bit float / 24-bit PCM WAV multitrack writing with NaN sanitization|
+|  - FFmpeg Video Remuxer: Guarded subprocess pipeline for screen & webcam MP4 muxing             |
+|  - Workspace-v1 Store: JSON metadata schema for episodes, cue points, line items & board layouts |
+|  - Structured Session Log: Append-only events.jsonl auditing recording events and marker stamps  |
++--------------------------------------------------------------------------------------------------+
+                                                |
+                                                | Air-Gap Confinement & Governance Perimeter
+                                                v
++--------------------------------------------------------------------------------------------------+
+|             [VIEW 4: AIR-GAP DEFENSE PERIMETER, RUNASINVOKER & ZERO-EGRESS GOVERNANCE BOUNDARY]  |
+|  - 100% Local-First Isolation: Strict loopback 127.0.0.1 binding; zero outbound telemetry (INV-01)|
+|  - Unprivileged RunAsInvoker: Non-elevated execution guarantee without admin elevation (INV-02)  |
+|  - Zero-Copyleft Contagion: Dynamic PySide6 LGPL-3.0 § 4 linking preserving creator asset rights |
+|  - Level 1 SBOM Transparency: Plain-text companion THIRD_PARTY_LICENSES.txt & 48h Security SLA   |
++--------------------------------------------------------------------------------------------------+
 ```
 
 ---
@@ -345,7 +387,7 @@ pytest tests/test_planer_accessibility_static.py
 # 3. Core Engine and Desktop Recorder Test Suite (440 tests)
 pytest Recorder/tests/
 
-# 4. Full Pytest Suite (521 tests: 521 passed)
+# 4. Full Pytest Suite (573 tests: 573 passed)
 pytest
 
 # 5. Code Style and Linter Check

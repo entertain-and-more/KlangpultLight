@@ -1,7 +1,7 @@
 # THIRD-PARTY SOFTWARE LICENSES & LEVEL 1 SBOM COMPANION
 ================================================================================
 Project: KlangpultLight (Desktop & Web Media Workstation - Recorder + Planer)
-Audited: 2026-09-30 against Level 1 SBOM and Runtime Invariants (Previous Audits: 2026-09-24, 2026-09-18)
+Audited: 2026-10-02 against Level 1 SBOM and Runtime Invariants (Previous Audits: 2026-09-30, 2026-09-24, 2026-09-18)
 License: Freeware / Proprietary (see LICENSE and NOTICE)
 Repository: https://github.com/entertain-and-more/KlangpultLight
 Parent Organization: entertain-and-more (https://github.com/entertain-and-more)
@@ -15,7 +15,7 @@ All direct runtime, optional media tools, build tooling, and test dependencies a
 enumerated with their canonical package names, license terms, SPDX identifiers,
 upstream URLs, and integration notices.
 
-LEVEL 1 SBOM INVARIANT VALIDATION CONFIRMATION (Stand 2026-09-30):
+LEVEL 1 SBOM INVARIANT VALIDATION CONFIRMATION (Stand 2026-10-02):
 - INV-LOCAL-01 (100% Local-First & Zero-Egress): PASS. Zero external network calls; audio, video, transcripts, and session plans remain local.
 - INV-USER-02 (Unprivileged Execution & Non-Elevation): PASS. RunAsInvoker mode; standard user privileges without administrative elevation.
 - INV-IPC-03 (Strict Loopback IPC Isolation): PASS. Recorder and Web Planer communicate strictly over 127.0.0.1 (ports 8767, 8769, 8770).

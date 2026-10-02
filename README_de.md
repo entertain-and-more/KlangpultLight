@@ -7,7 +7,7 @@
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#)
 [![Version](https://img.shields.io/badge/Version-v0.1.7-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-[![Pytest](https://img.shields.io/badge/Pytest-563%20Tests%20(563%20bestanden)-success.svg)](https://docs.pytest.org/)
+[![Pytest](https://img.shields.io/badge/Pytest-573%20Tests%20(573%20bestanden)-success.svg)](https://docs.pytest.org/)
 [![CI](https://img.shields.io/badge/CI-Multi--OS%20Matrix-blue.svg)](https://github.com/entertain-and-more/KlangpultLight/actions/workflows/ci.yml)
 [![Plattformen](https://img.shields.io/badge/Plattformen-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](#)
 [![Lizenz](https://img.shields.io/badge/Lizenz-Freeware-informational.svg)](./LICENSE)
@@ -16,7 +16,7 @@
 [![Sicherheit](https://img.shields.io/badge/Sicherheit-Unprivilegiert%20(RunAsInvoker)-green.svg)](./SECURITY.md)
 [![Sicherheits-SLA](https://img.shields.io/badge/Sicherheits--SLA-48h%20Antwort%20%7C%205d%20Triage-blue.svg)](./SECURITY.md)
 [![Drittanbieter-Audit](https://img.shields.io/badge/Drittanbieter--Lizenzen-Gepr%C3%BCft%20(100%25%20Frei%20%2F%20LGPL)--Dynamisch-green.svg)](./THIRD_PARTY_LICENSES.md)
-[![Marketing-Log](https://img.shields.io/badge/Marketing--Log-Aktiv%20(2026--09--30)-blue.svg)](./MARKETING-LOG.txt)
+[![Marketing-Log](https://img.shields.io/badge/Marketing--Log-Aktiv%20(2026--10--02)-blue.svg)](./MARKETING-LOG.txt)
 [![Code-Stil: ruff](https://img.shields.io/badge/Code--Stil-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Ökosystem](https://img.shields.io/badge/%C3%96kosystem-entertain--and--more-blueviolet.svg)](https://github.com/entertain-and-more)
 [![Dachorganisation](https://img.shields.io/badge/Dachorganisation-open--bricks-blue.svg)](https://github.com/open-bricks/open-bricks)
@@ -29,7 +29,7 @@
 > Lizenz: Freeware / Proprietär, Closed-Source.
 
 > [!NOTE]
-> Für KI-Agenten und automatisierte Tools: Siehe [llms.txt](./llms.txt) (Stand: 2026-09-30) für eine maschinenlesbare Repository-Übersicht und Testverträge. Formale Herkunft und Mitwirkenden-Attribution sind in [NOTICE](./NOTICE) deklariert. Vollständige Drittanbieter-Lizenzaudits und Level 1 SBOM sind in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md) dokumentiert, und Marketing-, SEO- und Asset-Dokumentation wird in [MARKETING-LOG.txt](./MARKETING-LOG.txt) geführt.
+> Für KI-Agenten und automatisierte Tools: Siehe [llms.txt](./llms.txt) (Stand: 2026-10-02) für eine maschinenlesbare Repository-Übersicht und Testverträge. Formale Herkunft und Mitwirkenden-Attribution sind in [NOTICE](./NOTICE) deklariert. Vollständige Drittanbieter-Lizenzaudits und Level 1 SBOM sind in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md) dokumentiert, und Marketing-, SEO- und Asset-Dokumentation wird in [MARKETING-LOG.txt](./MARKETING-LOG.txt) geführt.
 
 ---
 
@@ -82,6 +82,48 @@ graph TD
     C --> G[Teleprompter & KI-Monitor]
     B <-->|IPC Bridge Ports 8767 / 8769| C
     A --> H[Gemeinsame Modelle & Lokaler Speicher]
+```
+
+### Architektur-Topologie in vier Sichten
+
+```text
++--------------------------------------------------------------------------------------------------+
+|             [SICHT 1: CLIENT-LAUFZEITEN, RECORDER-DESKTOP-HUD & PLANER-BROWSER-EINSTIEGSPUNKTE]   |
+|  - Recorder Desktop-GUI: PySide6/Qt6 Studio-Oberfläche, Aussteuerungsanzeigen & Echtzeit-Wellen  |
+|  - Web-Planer-Dashboard: Reaktionsschnelle HTML5/JS-Planungsoberfläche, Episoden & Asset-Manager |
+|  - Teleprompter & KI-Monitor: Multi-Monitor Auto-Scroll, dynamische Skalierung & Skriptmarken   |
+|  - Interaktives Soundboard: Latenzarme Audio-Pads, automatische Ducking-Absenkung & Schnelltasten|
++--------------------------------------------------------------------------------------------------+
+                                                |
+                                                | Lokale IPC-Bridge & WebSocket-Streaming (:8767 / :8769)
+                                                v
++--------------------------------------------------------------------------------------------------+
+|             [SICHT 2: AUTONOME AUDIO-PIPELINE, WASAPI-LOOPBACK-ENGINE & WEBSOCKET-IPC-BRIDGE]     |
+|  - SoundDevice Aufnahme-Kern: WASAPI-Loopback System-Audio + Mikrofon-Mehrkanal-Erfassung        |
+|  - Live-Transkription: Lokaler Faster-Whisper Worker-Thread ohne Blockierung der Hauptschleife   |
+|  - Bidirektionale IPC-Bridge: WebSocket-Event-Dispatcher zur Status-Synchronisation mit Planer   |
+|  - HTTP Medien-API: Streaming-Bibliotheksserver mit RFC-7233 Range-Requests, CORS & HEAD-Support |
++--------------------------------------------------------------------------------------------------+
+                                                |
+                                                | Atomares Chunk-Flushing & Session-Serialisierung
+                                                v
++--------------------------------------------------------------------------------------------------+
+|             [SICHT 3: LAUFZEIT-PERSISTENZ, MEHRSPUR-WAV/MP4-KODIERUNG & ARBEITSBEREICH-SPEICHER] |
+|  - Audio-Container-Writer: 32-Bit-Float/24-Bit-PCM WAV-Schreiben mit NaN/Inf-Sanitisierung      |
+|  - FFmpeg Video-Muxer: Abgesicherte Subprozess-Pipeline für Bildschirm- & Kamera-MP4-Aufnahmen   |
+|  - Workspace-v1 Speicher: JSON-Schemas für Episoden, Cue-Punkte, Line-Items & Board-Layouts      |
+|  - Strukturierte Session-Logs: Append-only events.jsonl zur Auditierung aller Aufnahmeereignisse |
++--------------------------------------------------------------------------------------------------+
+                                                |
+                                                | Air-Gap-Schutz & Governance-Perimeter
+                                                v
++--------------------------------------------------------------------------------------------------+
+|             [SICHT 4: AIR-GAP-SICHERHEITSPERIMETER, RUNASINVOKER & ZERO-EGRESS-GOVERNANCE-GRENZE]|
+|  - 100% Local-First Isolation: Ausschließliche 127.0.0.1-Bindung; null Telemetrieabfluss (INV-01)|
+|  - Unprivilegiertes RunAsInvoker: Keine Administratorrechte oder Elevation erforderlich (INV-02)  |
+|  - Zero-Copyleft-Schutz: Dynamische PySide6 LGPL-3.0 § 4 Bindung schützt alle Urheberrechte       |
+|  - Level 1 SBOM Transparenz: Text-Begleiter THIRD_PARTY_LICENSES.txt & verbindliche 48h SLA      |
++--------------------------------------------------------------------------------------------------+
 ```
 
 ---
@@ -345,7 +387,7 @@ pytest tests/test_planer_accessibility_static.py
 # 3. Recorder Desktop- & Audio-Kern-Testsuite (440 Tests)
 pytest Recorder/tests/
 
-# 4. Gesamte Pytest-Suite (521 Tests: 521 bestanden)
+# 4. Gesamte Pytest-Suite (573 Tests: 573 bestanden)
 pytest
 
 # 5. Code-Stil- & Linter-Prüfung

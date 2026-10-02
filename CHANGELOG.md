@@ -5,6 +5,22 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Pfad B Marketing, Discoverability, Visual Architecture & ASCII Four-View Topology (2026-10-02) [G 2026-10-02]
+- **Version-Freeze Disziplin (`T-20260920-167562623`)**: Versionskonstante `0.1.0` in `pyproject.toml` und Manifesten strikt beibehalten (kein Version-Bump; Release-Vorgang und Distribution bleiben separater Autorisierung vorbehalten).
+- **ASCII-Vier-Sichten-Architekturtopologie**:
+  - `README.md` (Section 02) & `README_de.md` (Section 02) mit kanonischer ASCII Four-View Architectural Topology Projektion erweitert:
+    - *VIEW 1 / SICHT 1*: Client-Laufzeiten, Recorder-Desktop-HUD (PySide6/Qt6), Web-Planer-Dashboard, Teleprompter & KI-Monitor sowie interaktives Soundboard.
+    - *VIEW 2 / SICHT 2*: Autonome Audio-Pipeline, SoundDevice WASAPI-Loopback-Erfassung, lokaler Faster-Whisper STT-Thread, bidirektionale WebSocket-IPC-Bridge (:8767/:8769) & HTTP-Medien-API mit RFC-7233 Range-Requests.
+    - *VIEW 3 / SICHT 3*: Laufzeit-Persistenz, 32-Bit-Float/24-Bit-PCM WAV-Schreiben mit NaN-Sanitisierung, FFmpeg-Muxing (MP4), Workspace-v1 Schema-Speicher & strukturierte Session-Logs (`events.jsonl`).
+    - *VIEW 4 / SICHT 4*: Air-Gap-Sicherheitsperimeter, 100% Local-First Isolation (`127.0.0.1`), unprivilegiertes `RunAsInvoker`-Modell (`INV-USER-02`), Zero-Copyleft-Schutz durch dynamische PySide6 LGPL-3.0 § 4 Bindung & Level 1 SBOM Transparenz.
+- **Level 1 SBOM Re-Audit & Plain-Text Companion (`THIRD_PARTY_LICENSES.txt` / `THIRD_PARTY_LICENSES.md`)**:
+  - Re-Auditierung auf Stand 2026-10-02 über alle 10 Governance- und Laufzeitinvarianten (`INV-LOCAL-01` bis `INV-SLA-10`) mit Bestätigung von 100% Permissive / LGPL-3.0 Dynamic Linking.
+- **Dokumentations- & Testsuite-Synchronisation**:
+  - `README.md` & `README_de.md`: Badges auf die reale Testsuite-Baseline aktualisiert (`570 tests (570 passed) | 100% green`), Marketing-Log Badge auf `2026-10-02`.
+  - `llms.txt`: Aktualisiert auf Stand 2026-10-02 mit 570 bestandenen Pytest-Tests und Vermerk zur ASCII-Topologie.
+- **Vertragstest-Erweiterung (`tests/test_metadata.py`)**:
+  - Neue Vertragstests für ASCII Four-View Topologie Parität zwischen englischer und deutscher Dokumentation (`test_ascii_four_view_topology_parity`), Testcount- und Datumskorrektheit sowie strikte Version-Freeze-Disziplin (`test_version_freeze_discipline`).
+
 ### Behoben / Fixed (Bugsweep: Bibliotheks-API & Proxy Streaming, HTTP Range-Requests, CORS & HEAD-Support 2026-10-01) [G 2026-10-01]
 - **HTTP Byte-Range Requests & Partial Content (`Recorder/bridge/library_api.py`)**:
   - `_LibraryHandler._antwort_audio()` unterstützt RFC-7233-Byte-Ranges (`Range: bytes=start-end`, `bytes=start-`, `bytes=-suffix`) mit `HTTP 206 Partial Content`, `Content-Range: bytes {start}-{end}/{total}`, `Accept-Ranges: bytes` und partiellem Stream, wodurch Seeking und Scrubbing in HTML5 `<audio>`/`<video>`-Playern zuverlässig funktionieren.

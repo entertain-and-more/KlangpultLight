@@ -5,6 +5,21 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Security & License Audit, CVE-2025-7117 Floor, 5-Field SBOM & Contract Tests (2026-10-04) [G 2026-10-04]
+- **Dependency Floors & CVE-Schutz (CVE-2025-7117 / GHSA-6w46-j5rx-g56g)**:
+  - `pyproject.toml`: Mindestversion in `[tool.pytest.ini_options]` von `7.0` auf `9.1.1` gehärtet; `[project.optional-dependencies]` für `test` und `dev` auf `pytest>=9.1.1` und `ruff>=0.9.0` festgelegt; `build`-Toolchain-Floors für `pyinstaller>=6.10.0`, `pyinstaller-hooks-contrib>=2024.0`, `altgraph>=0.17.4`, `packaging>=24.0` und `setuptools>=61.0` etabliert.
+  - `requirements.txt`: `pytest>=8.0` auf `pytest>=9.1.1` angehoben.
+  - `requirements-dev.txt`: Neue reproduzierbare Entwicklungsspezifikation angelegt.
+  - `pyproject.toml` `[project.urls]`: Direkte private Melde-URL `"Security Advisories" = "https://github.com/entertain-and-more/KlangpultLight/security/advisories/new"` registriert.
+- **5-Felder-SBOM-Standardisierung (`THIRD_PARTY_LICENSES.txt` / `THIRD_PARTY_LICENSES.md`)**:
+  - `THIRD_PARTY_LICENSES.txt`: Vollständig auf das kanonische 5-Felder-Schema (`Package:`, `License:`, `SPDX:`, `URL:`, `Notice:`) umgestellt; alle 14 Laufzeit- und Toolchain-Komponenten inventarisiert; Floor-Härtung gegen CVE-2025-7117 dokumentiert; Re-Zertifizierung der 10 Level 1 Invarianten (`INV-LOCAL-01` bis `INV-SLA-10`) auf Stand 2026-10-04.
+  - `THIRD_PARTY_LICENSES.md`: Audit-Datum und Querverweise synchronisiert.
+- **Repository- & Gitignore-Hygiene**:
+  - `.gitignore`: Um Zertifikatsmuster (`*.crt`, `*.cer`), Token-Dateien (`token*.json`, `credentials*.json`) und Test-Log-Muster (`pytest_out.txt`, `pytest*.txt`) gehärtet.
+  - Hygiene-Scan bestätigt 0 Secrets, 0 API-Keys und 0 unberechtigte private Nutzerpfade im Quellcode.
+- **Vertragstest-Suite (`tests/test_security_license_contract.py`)**:
+  - Ausgebaut auf 10 hermetische Vertragstests inklusive 5-Felder-SBOM-Validierung, Dependency-Floors (`pytest>=9.1.1`, `minversion = "9.1.1"`), Security-Advisories-URL, Gitignore-Hardening und Local-First Invarianten (10/10 passed).
+
 ### Pfad B Marketing, Discoverability, Visual Architecture & ASCII Four-View Topology (2026-10-02) [G 2026-10-02]
 - **Version-Freeze Disziplin (`T-20260920-167562623`)**: Versionskonstante `0.1.0` in `pyproject.toml` und Manifesten strikt beibehalten (kein Version-Bump; Release-Vorgang und Distribution bleiben separater Autorisierung vorbehalten).
 - **ASCII-Vier-Sichten-Architekturtopologie**:

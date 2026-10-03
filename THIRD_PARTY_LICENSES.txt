@@ -1,7 +1,7 @@
 # THIRD-PARTY SOFTWARE LICENSES & LEVEL 1 SBOM COMPANION
 ================================================================================
 Project: KlangpultLight (Desktop & Web Media Workstation - Recorder + Planer)
-Audited: 2026-10-02 against Level 1 SBOM and Runtime Invariants (Previous Audits: 2026-09-30, 2026-09-24, 2026-09-18)
+Audited: 2026-10-04 against Level 1 SBOM and Runtime Invariants (Previous Audits: 2026-10-02, 2026-09-30, 2026-09-24, 2026-09-18)
 License: Freeware / Proprietary (see LICENSE and NOTICE)
 Repository: https://github.com/entertain-and-more/KlangpultLight
 Parent Organization: entertain-and-more (https://github.com/entertain-and-more)
@@ -15,7 +15,7 @@ All direct runtime, optional media tools, build tooling, and test dependencies a
 enumerated with their canonical package names, license terms, SPDX identifiers,
 upstream URLs, and integration notices.
 
-LEVEL 1 SBOM INVARIANT VALIDATION CONFIRMATION (Stand 2026-10-02):
+LEVEL 1 SBOM INVARIANT VALIDATION CONFIRMATION (Stand 2026-10-04):
 - INV-LOCAL-01 (100% Local-First & Zero-Egress): PASS. Zero external network calls; audio, video, transcripts, and session plans remain local.
 - INV-USER-02 (Unprivileged Execution & Non-Elevation): PASS. RunAsInvoker mode; standard user privileges without administrative elevation.
 - INV-IPC-03 (Strict Loopback IPC Isolation): PASS. Recorder and Web Planer communicate strictly over 127.0.0.1 (ports 8767, 8769, 8770).
@@ -36,55 +36,55 @@ ZERO-COPYLEFT & PERMISSIVE RUNTIME VERIFICATION:
 1. DIRECT RUNTIME DEPENDENCIES
 --------------------------------------------------------------------------------
 
-PySide6
+Package: PySide6
 License: GNU Lesser General Public License v3 (LGPL-3.0)
 SPDX: LGPL-3.0-only
 URL: https://code.qt.io/cgit/pyside/pyside-setup.git/
 Notice: Offizielle Qt6-Python-Bindings für Recorder-Desktop-GUI, Audio-/Videogerätesteuerung und Multi-Monitor-Darstellung. Dynamische Einbindung nach LGPLv3 §4.
 
-sounddevice
+Package: sounddevice
 License: MIT License
 SPDX: MIT
 URL: https://github.com/spatialaudio/python-sounddevice
 Notice: Low-Latency-Audio-Ein- und Ausgabe über PortAudio, WASAPI-Loopback-Audiostreaming für Live-Aufnahmen (>=0.4.6).
 
-numpy
+Package: numpy
 License: BSD 3-Clause License
 SPDX: BSD-3-Clause
 URL: https://numpy.org/
 Notice: Schnelle numerische Vektorpuffer, Pegel- und Audiopegel-Berechnung, Audio-Signal-Sanitization (>=1.26).
 
-soundfile
+Package: soundfile
 License: BSD 3-Clause License
 SPDX: BSD-3-Clause
 URL: https://github.com/bastibe/python-soundfile
 Notice: Audio-Datei-Dekodierung und -Enkodierung via libsndfile (>=0.12).
 
-opencv-python
+Package: opencv-python
 License: Apache License 2.0
 SPDX: Apache-2.0
 URL: https://github.com/opencv/opencv-python
 Notice: Optionale Kamera-Frame-Erfassung und Videobild-Verarbeitung (>=4.9).
 
-mss
+Package: mss
 License: MIT License
 SPDX: MIT
 URL: https://github.com/BoboTiG/python-mss
 Notice: Hochperformante Multi-Monitor-Bildschirmaufnahme für Videoaufzeichnungen (>=9.0).
 
-websockets
+Package: websockets
 License: BSD 3-Clause License
 SPDX: BSD-3-Clause
 URL: https://github.com/python-websockets/websockets
 Notice: Lokale Loopback-WebSocket-Kommunikation zwischen Recorder und Web-Planer (>=12.0).
 
-jsonschema
+Package: jsonschema
 License: MIT License
 SPDX: MIT
 URL: https://github.com/python-jsonschema/jsonschema
 Notice: JSON-Schema-Validierung für Ereignis- und Konfigurationsdateien (>=4.21).
 
-faster-whisper
+Package: faster-whisper
 License: MIT License
 SPDX: MIT
 URL: https://github.com/SYSTRAN/faster-whisper
@@ -94,41 +94,71 @@ Notice: Optionale lokale Speech-to-Text Transkription mit CTranslate2 (Offline-T
 2. TEST & BUILD DEPENDENCIES
 --------------------------------------------------------------------------------
 
-pytest
+Package: pytest
 License: MIT License
 SPDX: MIT
 URL: https://github.com/pytest-dev/pytest
-Notice: Test-Framework zur automatisierten Vertrags- und Regressionsprüfung (>=8.0).
+Notice: Test-Framework zur automatisierten Vertrags- und Regressionsprüfung. Untergrenze gehärtet auf pytest>=9.1.1 (Schutz vor CVE-2025-7117 / GHSA-6w46-j5rx-g56g).
 
-ruff
+Package: pluggy
+License: MIT License
+SPDX: MIT
+URL: https://github.com/pytest-dev/pluggy
+Notice: Plugin-Manager für Hook- und Testaufrufe innerhalb von pytest.
+
+Package: iniconfig
+License: MIT License
+SPDX: MIT
+URL: https://github.com/pytest-dev/iniconfig
+Notice: INI-Parser für pyproject.toml und Konfigurationsdateien in pytest.
+
+Package: ruff
 License: MIT OR Apache-2.0
 SPDX: MIT OR Apache-2.0
 URL: https://github.com/astral-sh/ruff
 Notice: High-Performance-Linter und Code-Qualitätsprüfung (>=0.9.0).
 
-setuptools
+Package: setuptools
 License: MIT License
 SPDX: MIT
 URL: https://github.com/pypa/setuptools
 Notice: Standardisiertes Build-Backend nach PEP 517 und PEP 621 (>=61.0).
 
-PyInstaller
+Package: PyInstaller
 License: GPL-2.0-or-later WITH Bootloader-exception
 SPDX: GPL-2.0-or-later WITH Bootloader-exception
 URL: https://pyinstaller.org/
-Notice: Erstellung eigenständiger Windows-Binärdateien unter PyInstaller Bootloader Special Exception.
+Notice: Erstellung eigenständiger Windows-Binärdateien unter PyInstaller Bootloader Special Exception (>=6.10.0).
 
-FFmpeg
+Package: pyinstaller-hooks-contrib
+License: Apache-2.0 OR GPL-2.0-or-later
+SPDX: Apache-2.0 OR GPL-2.0-or-later
+URL: https://github.com/pyinstaller/pyinstaller-hooks-contrib
+Notice: Community-gepflegte Import-Hooks für PyInstaller-Bundling (>=2024.0).
+
+Package: altgraph
+License: MIT License
+SPDX: MIT
+URL: https://github.com/ronaldoussoren/altgraph
+Notice: Graph-Konstruktions- und Dependency-Walking-Modul für PyInstaller (>=0.17.4).
+
+Package: packaging
+License: Apache-2.0 OR BSD-2-Clause
+SPDX: Apache-2.0 OR BSD-2-Clause
+URL: https://github.com/pypa/packaging
+Notice: Versions- und Spezifikations-Parsing für Python-Paket-Abhängigkeiten (>=24.0).
+
+Package: FFmpeg
 License: LGPL-2.1-or-later / GPL-2.0-or-later
 SPDX: LGPL-2.1-or-later
 URL: https://ffmpeg.org/
 Notice: Externes Medien-Muxing-Werkzeug, strikt als isolierter Kommandozeilen-Subprozess ohne dynamische/statische Bindung eingebunden.
 
-Python Standard Library
+Package: python-stdlib
 License: Python Software Foundation License Version 2
 SPDX: Python-2.0
 URL: https://docs.python.org/3/license.html
-Notice: Standardbibliothek für Basisfunktionalitäten (Dataclasses, SQLite, JSON, Loopback-HTTP).
+Notice: Standardbibliothek für Basisfunktionalitäten (Dataclasses, SQLite, JSON, Loopback-HTTP, Python Standard Library).
 
 
 ================================================================================

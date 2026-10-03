@@ -9,6 +9,6 @@ websockets>=12.0
 jsonschema>=4.21
 
 # Entwicklung & Qualitätssicherung
-pytest>=8.0
+pytest>=9.1.1
 ruff>=0.9.0
 setuptools>=61.0

@@ -30,7 +30,11 @@ env/
 *.pem
 *.pfx
 *.p12
+*.crt
+*.cer
 credentials.json
+credentials*.json
+token*.json
 secrets.*
 keyring/
 *.sqlite
@@ -99,6 +103,8 @@ uv.lock
 # Test & Coverage Caches
 .pytest_temp/
 .pytest_tmp*/
+pytest_out.txt
+pytest*.txt
 .coverage*
 coverage/
 htmlcov/

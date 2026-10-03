@@ -1,0 +1,8 @@
+# Development & Build Toolchain Specification (CVE-gehärtete Untergrenzen)
+pytest>=9.1.1
+ruff>=0.9.0
+pyinstaller>=6.10.0
+pyinstaller-hooks-contrib>=2024.0
+altgraph>=0.17.4
+packaging>=24.0
+setuptools>=61.0

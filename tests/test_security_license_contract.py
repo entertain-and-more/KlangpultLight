@@ -56,7 +56,8 @@ def test_third_party_licenses_complete_and_accurate() -> None:
         assert spdx_prefix in txt_content, f"SPDX prefix {spdx_prefix} for {pkg} missing from THIRD_PARTY_LICENSES.txt"
         assert pkg in md_content, f"Package {pkg} missing from THIRD_PARTY_LICENSES.md"
 
-    # Schema markers in text SBOM
+    # 5-field schema markers in text SBOM
+    assert "Package:" in txt_content
     assert "License:" in txt_content
     assert "URL:" in txt_content
     assert "SPDX:" in txt_content
@@ -69,7 +70,7 @@ def test_third_party_licenses_complete_and_accurate() -> None:
 
 
 def test_dependency_vulnerability_floors() -> None:
-    """Verify requirements.txt and pyproject.toml enforce patched dependency floors against CVEs."""
+    """Verify requirements.txt, requirements-dev.txt, and pyproject.toml enforce patched floors against CVEs."""
     req_file = ROOT / "requirements.txt"
     assert req_file.is_file(), "requirements.txt must exist"
     req_text = req_file.read_text(encoding="utf-8")
@@ -82,8 +83,15 @@ def test_dependency_vulnerability_floors() -> None:
     assert re.search(r"^mss\s*>=\s*9\.0", req_text, re.MULTILINE)
     assert re.search(r"^websockets\s*>=\s*12\.0", req_text, re.MULTILINE)
     assert re.search(r"^jsonschema\s*>=\s*4\.21", req_text, re.MULTILINE)
-    assert re.search(r"^pytest\s*>=\s*8\.0", req_text, re.MULTILINE)
+    assert re.search(r"^pytest\s*>=\s*9\.1\.1", req_text, re.MULTILINE)
     assert re.search(r"^ruff\s*>=\s*0\.9\.0", req_text, re.MULTILINE)
+
+    req_dev_file = ROOT / "requirements-dev.txt"
+    assert req_dev_file.is_file(), "requirements-dev.txt must exist"
+    req_dev_text = req_dev_file.read_text(encoding="utf-8")
+    assert "pytest>=9.1.1" in req_dev_text
+    assert "ruff>=0.9.0" in req_dev_text
+    assert "pyinstaller>=6.10.0" in req_dev_text
 
     pyproject_file = ROOT / "pyproject.toml"
     assert pyproject_file.is_file()
@@ -93,9 +101,12 @@ def test_dependency_vulnerability_floors() -> None:
     assert "PySide6>=6.6" in pyproject_text
     assert "numpy>=1.26" in pyproject_text
     assert "[project.optional-dependencies]" in pyproject_text
-    assert "pytest>=8.0" in pyproject_text
+    assert "pytest>=9.1.1" in pyproject_text
     assert "ruff>=0.9.0" in pyproject_text
+    assert "pyinstaller>=6.10.0" in pyproject_text
+    assert 'minversion = "9.1.1"' in pyproject_text
     assert "support@lukasgeiger.com" in pyproject_text
+    assert "advisories/new" in pyproject_text
 
 
 def test_gitignore_security_and_multi_host_hardening() -> None:
@@ -105,7 +116,7 @@ def test_gitignore_security_and_multi_host_hardening() -> None:
     content = gitignore_file.read_text(encoding="utf-8")
 
     # Secrets and certificate protection
-    for pat in [".env", "*.pfx", "*.p12", "*.pem", "*.key", "credentials.json", "secrets.*", "keyring/"]:
+    for pat in [".env", "*.pfx", "*.p12", "*.pem", "*.crt", "*.cer", "*.key", "credentials.json", "token*.json", "secrets.*", "keyring/"]:
         assert pat in content, f"Secret pattern {pat} missing in .gitignore"
 
     # Multi-host sync hardening
@@ -115,6 +126,10 @@ def test_gitignore_security_and_multi_host_hardening() -> None:
     # Multi-agent lock system fail-closed patterns
     for lock_pat in ["LOCK", "LOCK.*", "LOCK*.txt"]:
         assert lock_pat in content, f"Lock pattern {lock_pat} missing in .gitignore"
+
+    # Test log artifacts
+    for test_pat in [".pytest_temp/", "pytest_out.txt", "pytest*.txt"]:
+        assert test_pat in content, f"Test log pattern {test_pat} missing in .gitignore"
 
 
 def test_no_hardcoded_user_paths_in_python_code() -> None:
@@ -228,6 +243,15 @@ def test_security_policy_sla_and_contacts() -> None:
     assert "5" in content, "5-day triage commitment missing"
     assert "Local-First" in content or "local-first" in content
     assert "Unprivileged Execution" in content or "unprivilegierte" in content or "User Mode" in content
+
+
+def test_security_advisories_url_and_metadata_registration() -> None:
+    """Verify security advisories reporting URL is registered in pyproject.toml and SECURITY.md."""
+    expected_advisory_url = "https://github.com/entertain-and-more/KlangpultLight/security/advisories/new"
+    pyproject_file = ROOT / "pyproject.toml"
+    assert expected_advisory_url in pyproject_file.read_text(encoding="utf-8")
+    sec_file = ROOT / "SECURITY.md"
+    assert expected_advisory_url in sec_file.read_text(encoding="utf-8")
 
 
 if __name__ == "__main__":

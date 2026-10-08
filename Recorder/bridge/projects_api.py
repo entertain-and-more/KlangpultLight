@@ -926,7 +926,11 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
 
     def _handle_line_get(self, project_id: str) -> None:
         store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
-        line = store.hole_line(project_id)
+        try:
+            line = store.hole_line(project_id)
+        except ValueError as exc:
+            self._json(400, {"error": str(exc)})
+            return
         if line is None:
             self._json(404, {"error": "Projekt nicht gefunden"})
         else:
@@ -1128,7 +1132,11 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
             self._json(400, {"error": "Pflichtfeld 'line' muss eine Liste sein"})
             return
         store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
-        line = store.speichere_line(project_id, raw_line)
+        try:
+            line = store.speichere_line(project_id, raw_line)
+        except ValueError as exc:
+            self._json(400, {"error": str(exc)})
+            return
         if line is None:
             self._json(404, {"error": "Projekt nicht gefunden"})
         else:
@@ -1185,16 +1193,32 @@ class _ProjectsHandler(BaseHTTPRequestHandler):
             self._json(404, {"error": "Projekt oder Asset nicht gefunden"})
 
     def _handle_recording_assign(self, project_id: str, recording_id: str) -> None:
+        rec_id = str(recording_id).strip()
+        if not rec_id:
+            self._json(400, {"error": "Pflichtfeld 'recording_id' fehlt oder leer"})
+            return
         store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
-        projekt = store.aufnahme_zuordnen(project_id, recording_id)
+        try:
+            projekt = store.aufnahme_zuordnen(project_id, rec_id)
+        except ValueError as exc:
+            self._json(400, {"error": str(exc)})
+            return
         if projekt is None:
             self._json(404, {"error": "Projekt nicht gefunden"})
         else:
             self._json(200, projekt)
 
     def _handle_recording_unassign(self, project_id: str, recording_id: str) -> None:
+        rec_id = str(recording_id).strip()
+        if not rec_id:
+            self._json(400, {"error": "Pflichtfeld 'recording_id' fehlt oder leer"})
+            return
         store: _ProjektStore = self.server.store  # type: ignore[attr-defined]
-        projekt = store.aufnahme_entfernen(project_id, recording_id)
+        try:
+            projekt = store.aufnahme_entfernen(project_id, rec_id)
+        except ValueError as exc:
+            self._json(400, {"error": str(exc)})
+            return
         if projekt is None:
             self._json(404, {"error": "Projekt nicht gefunden"})
         else:

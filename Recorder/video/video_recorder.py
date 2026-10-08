@@ -231,19 +231,44 @@ class VideoRecorder:
                 pass  # FFmpeg hat ggf. bereits beendet
 
         # Auf FFmpeg warten und Exit-Code prüfen
-        returncode = self._prozess.wait(timeout=self._writer_join_timeout)
-        self._prozess = None
-
-        # stderr auslesen für Fehlermeldung
-        stderr_text = ""
-        if self._stderr_datei is not None:
+        returncode = -1
+        timed_out = False
+        try:
+            returncode = self._prozess.wait(timeout=self._writer_join_timeout)
+        except subprocess.TimeoutExpired:
+            timed_out = True
             try:
-                self._stderr_datei.seek(0)
-                stderr_text = self._stderr_datei.read(4096).decode("utf-8", errors="replace")
+                self._prozess.terminate()
+                returncode = self._prozess.wait(timeout=self._writer_join_timeout)
+            except subprocess.TimeoutExpired:
+                try:
+                    self._prozess.kill()
+                    returncode = self._prozess.wait(timeout=self._writer_join_timeout)
+                except Exception:
+                    pass
             except Exception:
                 pass
-            self._stderr_datei.close()
-            self._stderr_datei = None
+        finally:
+            self._prozess = None
+
+            # stderr auslesen für Fehlermeldung
+            stderr_text = ""
+            if self._stderr_datei is not None:
+                try:
+                    self._stderr_datei.seek(0)
+                    stderr_text = self._stderr_datei.read(4096).decode("utf-8", errors="replace")
+                except Exception:
+                    pass
+                try:
+                    self._stderr_datei.close()
+                except Exception:
+                    pass
+                self._stderr_datei = None
+
+        if timed_out:
+            raise RuntimeError(
+                f"FFmpeg-Prozess reagierte nicht rechtzeitig und wurde beendet. Ausgabe: {stderr_text[-2000:]!r}"
+            )
 
         if returncode != 0:
             raise RuntimeError(

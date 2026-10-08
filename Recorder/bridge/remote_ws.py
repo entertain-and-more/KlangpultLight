@@ -308,7 +308,13 @@ class RemoteWsServer:
             channels = getattr(self._engine, "_channels", [])
             for kanal in channels:
                 if kanal.source_id == source_id:
-                    kanal.mute = not kanal.mute
+                    neuer_mute = not kanal.mute
+                    if hasattr(self._engine, "set_channel_capture_enabled"):
+                        self._engine.set_channel_capture_enabled(source_id, not neuer_mute)
+                    else:
+                        kanal.mute = neuer_mute
+                        if self._state is not None and hasattr(self._engine, "active_channel_ids"):
+                            self._state.active_source_ids = self._engine.active_channel_ids()
                     _log.debug(
                         "RemoteWsServer: toggle_mute '%s' → mute=%s",
                         source_id, kanal.mute,

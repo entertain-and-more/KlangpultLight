@@ -190,77 +190,90 @@ class RecordingSession:
         if self._aktuelle_meta is None:
             raise RuntimeError("Keine Aufnahme aktiv — zuerst start() aufrufen.")
 
-        # Audio stoppen
-        if self._audio_enabled:
-            ergebnis = self._engine.stop_recording()
-            dauer = float(ergebnis.get("duration", 0.0))
-            mix_pfad = ergebnis.get("mix", "")
-        else:
-            dauer = 0.0
-            mix_pfad = ""
-
-        # Video stoppen und muxen (wenn aktiv)
-        program_mp4 = ""
-        if self._video_capture is not None or self._video_recorder is not None:
-            program_mp4 = self._stoppe_video_und_mux(mix_pfad, dauer)
-            if not self._audio_enabled:
-                dauer = self._last_video_duration
-
-        # Original-Branch mit Ergebnis aktualisieren
         meta = self._aktuelle_meta
-        for branch in meta.branches:
-            if branch.is_original:
-                branch.audio_path = mix_pfad
-                branch.duration = dauer
-                if program_mp4:
-                    branch.video_path = program_mp4
-                break
+        dauer = 0.0
+        mix_pfad = ""
+        program_mp4 = ""
 
-        meta.duration = dauer
-        self._library.update_metadata(meta)
+        try:
+            # Audio stoppen
+            if self._audio_enabled:
+                ergebnis = self._engine.stop_recording()
+                dauer = float(ergebnis.get("duration", 0.0))
+                mix_pfad = ergebnis.get("mix", "")
+            else:
+                dauer = 0.0
+                mix_pfad = ""
 
-        # Roh-Capture-Diagnose dieses Takes sichern (WASAPI/Treiber vs. App):
-        # capture_metrics.json mit Roh-Null-Anteil je Kanal (vor jeder Verarbeitung).
-        if self._audio_enabled:
-            try:
-                import json as _json
-                main_dir = os.path.join(
-                    self._library.recording_dir(meta.recording_id), "main"
+            # Video stoppen und muxen (wenn aktiv)
+            if self._video_capture is not None or self._video_recorder is not None:
+                program_mp4 = self._stoppe_video_und_mux(mix_pfad, dauer)
+                if not self._audio_enabled:
+                    dauer = self._last_video_duration
+
+            # Original-Branch mit Ergebnis aktualisieren
+            for branch in meta.branches:
+                if branch.is_original:
+                    branch.audio_path = mix_pfad
+                    branch.duration = dauer
+                    if program_mp4:
+                        branch.video_path = program_mp4
+                    break
+
+            meta.duration = dauer
+            self._library.update_metadata(meta)
+
+            # Roh-Capture-Diagnose dieses Takes sichern (WASAPI/Treiber vs. App):
+            # capture_metrics.json mit Roh-Null-Anteil je Kanal (vor jeder Verarbeitung).
+            if self._audio_enabled:
+                try:
+                    import json as _json
+                    main_dir = os.path.join(
+                        self._library.recording_dir(meta.recording_id), "main"
+                    )
+                    metrics = self._engine.capture_metrics()
+                    with open(os.path.join(main_dir, "capture_metrics.json"),
+                              "w", encoding="utf-8") as _fh:
+                        _json.dump(metrics, _fh, ensure_ascii=False, indent=2)
+                except Exception:
+                    pass
+
+            if self._event_log is not None:
+                log_kwargs = dict(
+                    recording_id=meta.recording_id,
+                    duration=dauer,
+                    mix=mix_pfad,
                 )
-                metrics = self._engine.capture_metrics()
-                with open(os.path.join(main_dir, "capture_metrics.json"),
-                          "w", encoding="utf-8") as _fh:
-                    _json.dump(metrics, _fh, ensure_ascii=False, indent=2)
+                if program_mp4:
+                    log_kwargs["video"] = program_mp4
+                self._event_log.log("stop", **log_kwargs)
+
+            return meta
+        finally:
+            # Aufnahme-Schutz aufheben (kein Dauer-CPU-Vorrang im Leerlauf).
+            try:
+                from core.process_priority import restore_priority
+                restore_priority()
             except Exception:
                 pass
 
-        # Aufnahme-Schutz aufheben (kein Dauer-CPU-Vorrang im Leerlauf).
-        try:
-            from core.process_priority import restore_priority
-            restore_priority()
-        except Exception:
-            pass
+            # AppState aktualisieren
+            if self._state is not None:
+                self._state.recording = False
 
-        # AppState aktualisieren
-        if self._state is not None:
-            self._state.recording = False
+            if self._event_log is not None:
+                try:
+                    self._event_log.close()
+                except Exception:
+                    pass
+                self._event_log = None
 
-        if self._event_log is not None:
-            log_kwargs = dict(
-                recording_id=meta.recording_id,
-                duration=dauer,
-                mix=mix_pfad,
-            )
-            if program_mp4:
-                log_kwargs["video"] = program_mp4
-            self._event_log.log("stop", **log_kwargs)
-            self._event_log.close()
-            self._event_log = None
-
-        self._aktuelle_meta = None
-        self._audio_enabled = True
-        self._last_video_duration = 0.0
-        return meta
+            self._aktuelle_meta = None
+            self._audio_enabled = True
+            self._last_video_duration = 0.0
+            self._video_pfad = None
+            self._video_capture = None
+            self._video_recorder = None
 
     # -------------------------------------------------------------------------
     # Video-Interna

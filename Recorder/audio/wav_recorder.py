@@ -81,8 +81,11 @@ class WavRecorder:
             Aufgezeichnete Dauer in Sekunden.
         """
         if self._datei is not None:
-            self._datei.flush()
-            self._datei.close()
-            self._datei = None
+            datei = self._datei
+            try:
+                datei.flush()
+                datei.close()
+            finally:
+                self._datei = None
 
-        return self._frames_geschrieben / self._samplerate
+        return self._frames_geschrieben / self._samplerate if self._samplerate > 0 else 0.0

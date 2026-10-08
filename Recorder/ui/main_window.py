@@ -1735,8 +1735,19 @@ class MainWindow(QMainWindow):
     # -------------------------------------------------------------------------
 
     def closeEvent(self, event) -> None:  # noqa: N802
-        """Räumt Engine, Video-Capture-Loops und Timer beim Schließen auf."""
+        """Räumt Engine, Video-Capture-Loops, Timer und schwebende Panels beim Schließen auf."""
         self._timer.stop()
+
+        # Schwebende abgelöste Panels schließen
+        if hasattr(self, "_float_panels") and self._float_panels:
+            for state in list(self._float_panels.values()):
+                win = state[0] if isinstance(state, (tuple, list)) and len(state) > 0 else state
+                if win is not None:
+                    try:
+                        win.close()
+                    except Exception:
+                        pass
+            self._float_panels.clear()
 
         # Vorschau-Loop stoppen
         if self._vorschau_loop is not None:
@@ -1753,7 +1764,7 @@ class MainWindow(QMainWindow):
                 pass  # Aufnahme-Stop darf das Schließen nicht blockieren
 
         # Engine nur stoppen wenn sie läuft (Guard verhindert doppelten Aufruf)
-        if self._engine.is_running():
+        if hasattr(self, "_engine") and self._engine and hasattr(self._engine, "is_running") and self._engine.is_running():
             self._engine.stop()
 
         if hasattr(self, "_translator") and self._translator:

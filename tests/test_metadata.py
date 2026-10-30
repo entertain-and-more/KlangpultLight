@@ -598,5 +598,76 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         self.assertIn("T-20260920-167562623", text)
 
 
+    def test_dependabot_actions_and_labels_guardrail(self):
+        """Verify .github/dependabot.yml configuration and github-actions label in labels.yml."""
+        dependabot_file = PROJECT_ROOT / ".github" / "dependabot.yml"
+        self.assertTrue(dependabot_file.is_file(), ".github/dependabot.yml must exist")
+        db_text = dependabot_file.read_text(encoding="utf-8")
+        self.assertIn("version: 2", db_text)
+        self.assertIn('package-ecosystem: "pip"', db_text)
+        self.assertIn('package-ecosystem: "github-actions"', db_text)
+        self.assertIn('open-pull-requests-limit: 0', db_text)
+        self.assertIn('open-pull-requests-limit: 3', db_text)
+        self.assertIn('timezone: "Europe/Berlin"', db_text)
+
+        labels_file = PROJECT_ROOT / ".github" / "labels.yml"
+        lbl_text = labels_file.read_text(encoding="utf-8")
+        self.assertIn("name: github-actions", lbl_text)
+        self.assertIn("name: dependencies", lbl_text)
+
+    def test_extended_multihost_tokens_and_thumbs_defense(self):
+        """Verify .gitignore includes extended multi-host tokens, taskplans, and thumbs.db."""
+        gi_file = PROJECT_ROOT / ".gitignore"
+        text = gi_file.read_text(encoding="utf-8")
+        for pat in ["*-ASUS-GEI.*", "*-IDEAPAD-GEI.*", "*-TASKPLAN*", "thumbs.db"]:
+            self.assertIn(pat, text, f"Pattern {pat} must be present in .gitignore")
+
+    def test_pyproject_license_files_includes_contributing(self):
+        """Verify pyproject.toml license-files includes CONTRIBUTING.md alongside standard licenses."""
+        pyproject_file = PROJECT_ROOT / "pyproject.toml"
+        text = pyproject_file.read_text(encoding="utf-8")
+        self.assertIn('"CONTRIBUTING.md"', text)
+
+        if tomllib is not None:
+            data = tomllib.loads(text)
+            lf = data.get("project", {}).get("license-files", [])
+            self.assertIn("CONTRIBUTING.md", lf)
+            self.assertIn("LICENSE", lf)
+            self.assertIn("NOTICE", lf)
+            self.assertIn("THIRD_PARTY_LICENSES.md", lf)
+            self.assertIn("THIRD_PARTY_LICENSES.txt", lf)
+
+    def test_changelog_recent_pfad_a_unreleased_entry_20261030(self):
+        """Verify CHANGELOG.md documents the 2026-10-30 Pfad A hardening under [Unreleased]."""
+        cl_file = PROJECT_ROOT / "CHANGELOG.md"
+        text = cl_file.read_text(encoding="utf-8")
+        self.assertIn("## [Unreleased]", text)
+        self.assertIn("Pfad A Repository Lifecycle Hardening & CI Matrix Expansion (2026-10-30)", text)
+        self.assertIn("T-20260920-167562623", text)
+        self.assertIn(".github/dependabot.yml", text)
+
+    def test_level1_sbom_re_audit_stand_2026_10_30(self):
+        """Verify Level 1 SBOM companion and markdown matrix reflect the 2026-10-30 re-audit."""
+        txt_file = PROJECT_ROOT / "THIRD_PARTY_LICENSES.txt"
+        self.assertTrue(txt_file.is_file(), "THIRD_PARTY_LICENSES.txt must exist")
+        txt_content = txt_file.read_text(encoding="utf-8")
+        self.assertIn("2026-10-30", txt_content)
+        self.assertIn("LEVEL 1 SBOM INVARIANT VALIDATION CONFIRMATION (Stand 2026-10-30)", txt_content)
+
+        md_file = PROJECT_ROOT / "THIRD_PARTY_LICENSES.md"
+        self.assertTrue(md_file.is_file(), "THIRD_PARTY_LICENSES.md must exist")
+        md_content = md_file.read_text(encoding="utf-8")
+        self.assertIn("2026-10-30", md_content)
+
+    def test_marketing_log_recent_pfad_a_entry_20261030(self):
+        """Verify MARKETING-LOG.txt documents the 2026-10-30 Pfad A milestone in Section 9."""
+        log_file = PROJECT_ROOT / "MARKETING-LOG.txt"
+        text = log_file.read_text(encoding="utf-8")
+        self.assertIn("PFAD_A_REPOSITORY_HYGIENE_AND_LIFECYCLE_WORKFLOWS_20261030", text)
+        self.assertIn("2026-10-30", text)
+        self.assertIn(".github/dependabot.yml", text)
+        self.assertIn("*-TASKPLAN*", text)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

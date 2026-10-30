@@ -5,6 +5,24 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Pfad A Repository Lifecycle Hardening & CI Matrix Expansion (2026-10-30) [G 2026-10-30]
+- **CI Lifecycle & Dependabot Automation**:
+  - `.github/dependabot.yml` angelegt für wöchentliche Security-only Pip-Updates (Limit: 0) und wöchentliche GitHub Actions Updates (montags 06:00 Europe/Berlin, Limit: 3).
+  - `.github/labels.yml`: Standard-Labels um `github-actions` (`color: '000000'`, `description: 'Pull requests that update GitHub Actions code'`) erweitert.
+- **Multi-Host Lock- und Cloud-Sync-Defense**:
+  - `.gitignore`: Muster um `*-ASUS-GEI.*`, `*-IDEAPAD-GEI.*`, `*-TASKPLAN*` und `thumbs.db` erweitert zur Abwehr von Cloud-Sync-Konfliktkopien und Multi-Host-Sperren.
+- **PEP 621 Metadaten-Standardisierung**:
+  - `pyproject.toml`: `license-files` Whitelist um `CONTRIBUTING.md` erweitert (`["LICENSE", "NOTICE", "THIRD_PARTY_LICENSES.md", "THIRD_PARTY_LICENSES.txt", "CONTRIBUTING.md"]`).
+  - Version-Freeze-Disziplin: Version `0.1.0` strikt unverändert gemäß `T-20260920-167562623` (kein Version-Bump im laufenden Pfad A/B Betrieb).
+- **Level 1 SBOM Re-Audit & Plain-Text Companion**:
+  - `THIRD_PARTY_LICENSES.txt` & `THIRD_PARTY_LICENSES.md`: Re-Audit Stand 2026-10-30 mit Bestätigung aller 10 Invarianten (`INV-LOCAL-01` bis `INV-SLA-10`), unprivilegierter `RunAsInvoker`-Ausführung, Zero-Copyleft & Permissive-Stack-Zertifizierung und verbindlicher 48h Security Response SLA.
+- **Dokumentation & Badges Currency**:
+  - `README.md` & `README_de.md`: Dependabot-Badge integriert, Badges und Verifikationsstempel auf Stand 2026-10-30 synchronisiert unter lückenlosem Erhalt aller 18 bilateralen Schnellnavigations-Anker (`sec-01` bis `sec-18`).
+  - `llms.txt`: Stand 2026-10-30 aktualisiert.
+  - `MARKETING-LOG.txt`: Neuer Pfad-A-Revisionsabschnitt Section 9 Stand 2026-10-30.
+- **Vertragstest-Erweiterung (`tests/test_metadata.py`)**:
+  - Neue Regressionstests für Dependabot-Konfiguration & `github-actions` Label, erweiterte Multi-Host-Gitignore-Defense, Level-1-SBOM Re-Audit Stand 2026-10-30, CHANGELOG- und MARKETING-LOG-Recency.
+
 ### Security & License Audit, CVE-2025-7117 Floor, 5-Field SBOM & Contract Tests (2026-10-04) [G 2026-10-04]
 - **Dependency Floors & CVE-Schutz (CVE-2025-7117 / GHSA-6w46-j5rx-g56g)**:
   - `pyproject.toml`: Mindestversion in `[tool.pytest.ini_options]` von `7.0` auf `9.1.1` gehärtet; `[project.optional-dependencies]` für `test` und `dev` auf `pytest>=9.1.1` und `ruff>=0.9.0` festgelegt; `build`-Toolchain-Floors für `pyinstaller>=6.10.0`, `pyinstaller-hooks-contrib>=2024.0`, `altgraph>=0.17.4`, `packaging>=24.0` und `setuptools>=61.0` etabliert.

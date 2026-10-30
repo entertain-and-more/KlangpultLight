@@ -71,8 +71,10 @@ output/playwright/
 * (Copy)*
 *-ASUS*
 *-ASUS-GEI*
+*-ASUS-GEI.*
 *-IDEAPAD*
 *-IDEAPAD-GEI*
+*-IDEAPAD-GEI.*
 *-LAPTOP*
 *-WORKSTATION*
 *-WORKSTATION-LG*
@@ -82,9 +84,11 @@ output/playwright/
 *-MacBook*
 Desktop.ini
 desktop.ini
+thumbs.db
 ehthumbs.db
 *.swo
 TASKPLAN_*.md
+*-TASKPLAN*
 
 # Multi-Agent Locks & Schutzsperren
 LOCK

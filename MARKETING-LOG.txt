@@ -192,3 +192,26 @@ Comprehensive SPDX license audit completed in `THIRD_PARTY_LICENSES.md` on 2026-
   - Configured pytest options: `addopts = "-ra -v --basetemp=.pytest_temp"` and hardened `norecursedirs` to exclude `.pytest_temp` and `.pytest_tmp*`.
 - **Quality Gates & Test Surface**:
   - 8 new contract tests added to `tests/test_metadata.py` verifying workflows, labels, contributing guidelines, SBOM companions, and multi-host defenses.
+
+---
+
+## 9. Turnusgemäße Repository-Hygiene, Dependabot-Automation & Multi-Host-Defense (Pfad A — Stand 2026-10-30)
+
+### PFAD_A_REPOSITORY_HYGIENE_AND_LIFECYCLE_WORKFLOWS_20261030
+- **Audit Date**: 2026-10-30
+- **Version Integrity**: `0.1.0` strictly frozen in compliance with `T-20260920-167562623` (no version bump in Pfad A/B runs).
+- **CI Lifecycle & Dependabot Automation**:
+  - Deployed `.github/dependabot.yml` for automated weekly security-only dependency maintenance (`pip` ecosystem with `open-pull-requests-limit: 0` and grouped security updates) and weekly GitHub Actions maintenance (`github-actions` ecosystem on Mondays 06:00 Europe/Berlin with `open-pull-requests-limit: 3`).
+  - Extended `.github/labels.yml` to include the canonical `github-actions` label (`color: '000000'`, description: 'Pull requests that update GitHub Actions code') for automated workflow synchronization via `label-sync.yml`.
+- **Multi-Host Lock- und Cloud-Sync-Defense in `.gitignore`**:
+  - Hardened `.gitignore` against additional multi-host tokens (`*-ASUS-GEI.*`, `*-IDEAPAD-GEI.*`), generic task files (`*-TASKPLAN*`), and lowercase thumbnail databases (`thumbs.db`).
+- **PEP 621 Standardisation (`pyproject.toml`)**:
+  - Broadened `license-files` whitelist to include `CONTRIBUTING.md` (`license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_LICENSES.md", "THIRD_PARTY_LICENSES.txt", "CONTRIBUTING.md"]`).
+  - Confirmed all required ecosystem, security, and attribution endpoints registered in `[project.urls]`.
+- **Level 1 SBOM Re-Audit & Plain-Text Companion**:
+  - Formally re-audited `THIRD_PARTY_LICENSES.txt` and `THIRD_PARTY_LICENSES.md` to Stand 2026-10-30, certifying full compliance across all 10 runtime invariants (`INV-LOCAL-01` through `INV-SLA-10`), unprivileged `RunAsInvoker` mode, Zero-Copyleft dynamic PySide6 linking, and binding 48h Security Response SLA.
+- **Documentation & Badges Currency**:
+  - Synchronized `README.md` and `README_de.md` with Dependabot badge (`Dependabot: Active` / `Aktiv`) and updated verification timestamps to `2026-10-30` under full preservation of all 18 bilateral quick navigation anchors (`sec-01` to `sec-18`).
+  - Synchronized `llms.txt` RAG context index to Stand 2026-10-30.
+- **Automated Contract Test Expansion**:
+  - Extended `tests/test_metadata.py` with 6 new regression contract tests verifying Dependabot workflow configuration, labels parity, extended multi-host gitignore defense, PEP 621 license-files, SBOM re-audit, and recency of documentation.

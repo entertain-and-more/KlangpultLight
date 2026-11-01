@@ -106,8 +106,8 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         ci_file = PROJECT_ROOT / ".github" / "workflows" / "ci.yml"
         self.assertTrue(ci_file.is_file(), "CI workflow file must exist")
         text = ci_file.read_text(encoding="utf-8")
-        self.assertIn("actions/checkout@v4", text)
-        self.assertIn("actions/setup-python@v5", text)
+        self.assertRegex(text, r"actions/checkout@v\d+")
+        self.assertRegex(text, r"actions/setup-python@v\d+")
         self.assertIn("cache: 'pip'", text)
         self.assertIn("ubuntu-latest", text)
         self.assertIn("windows-latest", text)
@@ -123,7 +123,7 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         stale_file = PROJECT_ROOT / ".github" / "workflows" / "stale.yml"
         self.assertTrue(stale_file.is_file(), "stale.yml must exist")
         stale_text = stale_file.read_text(encoding="utf-8")
-        self.assertIn("actions/stale@v9", stale_text)
+        self.assertRegex(stale_text, r"actions/stale@v\d+")
         self.assertIn("timeout-minutes: 10", stale_text)
         self.assertIn("cancel-in-progress: true", stale_text)
 

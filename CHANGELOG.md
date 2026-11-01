@@ -5,6 +5,22 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Bugsweep Resilienz, Planer Proxy-Härtung, Schema-Drift & Windows-I/O-Absicherung (2026-11-01) [G 2026-11-01]
+- **Planer Proxy-Resilienz & Socket-Leak-Schutz (`planer/server/planer_server.py`)**:
+  - `_proxy`: Malformed oder nicht-numerische `Content-Length` Header werden defensiv via `max(0, int(...))` und `(ValueError, TypeError)`-Guards abgefangen (verhindert unhandled `ValueError`).
+  - `_proxy`: `http.client.HTTPException` (z. B. `RemoteDisconnected`, `BadStatusLine`) im Proxy-Handler abgefangen und als sauberes HTTP 502 Bad Gateway mit strukturierter Fehlermeldung beantwortet statt als unbehandelte Ausnahme abzustürzen.
+  - `_proxy`: Schließen der Backend-Verbindung (`conn.close()`) in einen `finally:`-Block überführt; verhindert File-Descriptor- und Socket-Leaks bei Übertragungsabbrüchen oder Stream-Ausnahmen (`BrokenPipeError`).
+  - `_probe_health`: Um `http.client.HTTPException` im Exception-Handling ergänzt; liefert `False` statt bei vorzeitigen Verbindungsabbrüchen unhandled abzustürzen.
+- **AppConfig Schema-Drift & Windows-I/O Härtung (`Recorder/core/config.py`)**:
+  - `load_config`: `not os.path.isfile(path)`- und `isinstance(daten, dict)`-Validierungen implementiert; schützt vor `AttributeError` bei Non-Dict JSON (z. B. leere Listen `[]`, Zahlen) und vor `PermissionError` / `IsADirectoryError` bei Verzeichnispfaden unter Windows.
+  - `save_config`: Expliziter Verzeichnisschutz (`IsADirectoryError` bei `os.path.isdir(path)` vor Temp-Dateierzeugung); PID-isolierte temporäre Dateien (`f"{path}.tmp.{os.getpid()}"`) und Ausnahme-Bereinigung; temporäre Schreibschutzaufhebung (`stat.S_IWRITE`) vor `os.replace` schützt unter Windows vor `PermissionError: [WinError 5] Zugriff verweigert`.
+- **EventLog Resilienz & Serialization (`Recorder/core/event_log.py`)**:
+  - `EventLog.log`: `default=str` in `json.dumps()` ergänzt; verhindert `TypeError` bei der Protokollierung nicht-JSON-serialisierbarer Objekte (`Path`, `set`, Exceptions, Custom Objects).
+  - `EventLog`: Context-Manager-Protokoll (`__enter__`, `__exit__`) und idempotente `close()`-Methode implementiert.
+- **Vertragstests & Regressionstest-Suite (`Recorder/tests/test_bugsweep_planer_proxy_and_core_resilience_20261101.py`)**:
+  - 11 neue hermetische Regressionstests für alle 6 Bug-Facetten implementiert (11/11 passed in 2.31s).
+
+
 ### Pfad A Repository Lifecycle Hardening & CI Matrix Expansion (2026-10-30) [G 2026-10-30]
 - **CI Lifecycle & Dependabot Automation**:
   - `.github/dependabot.yml` angelegt für wöchentliche Security-only Pip-Updates (Limit: 0) und wöchentliche GitHub Actions Updates (montags 06:00 Europe/Berlin, Limit: 3).
@@ -226,8 +242,6 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 - **Linter- & Code-Hygiene**: Unbenutzten Import `patch` in `Recorder/tests/test_stt_e2e_degradation_contract.py` bereinigt; `ruff check .` meldet 0 Fehler / 100% sauber.
 - **Automatisierte Vertragstestsuite (`tests/test_metadata.py`)**: Assertions für CI-Concurrency, macOS-Runner, PEP-621-Ecosystem-URLs, bilinguale SECURITY.md-Tabellen und aktuelle Synchronisationsstempel gehärtet (8 Tests, 100% grün).
 - **Dokumentations- & Badge-Parität**: Pytest-Testabdeckung in `README.md`, `README_de.md` und `llms.txt` auf 450 Tests (449 passed, 1 skipped) und Stempel 2026-09-08 aktualisiert.
-
-## [Unreleased]
 
 ### Hinzugefügt / Added (SOFTWARE ENTWICKLUNG 2026-08-24)
 - Live-STT End-to-End-Pfad & Degradationsgrenzen (`TW-KLANGPULTLIGHT-04`): Vollständige Verifikation und Härtung des Live-Transkriptions-Subsystems.

@@ -183,11 +183,14 @@ class PlanerHandler(BaseHTTPRequestHandler):
             response = conn.getresponse()
             body = json.loads(response.read().decode("utf-8"))
             return response.status == 200 and body == {"status": "ok"}
-        except (OSError, ValueError, json.JSONDecodeError):
+        except (OSError, ValueError, json.JSONDecodeError, http.client.HTTPException):
             return False
         finally:
             if conn is not None:
-                conn.close()
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
     def _proxy(self, backend_port: int, is_head: bool = False) -> None:
         """Leitet die Anfrage an den Backend-Dienst weiter.
@@ -197,9 +200,13 @@ class PlanerHandler(BaseHTTPRequestHandler):
         durchgereicht, damit Query-Parameter nicht verloren gehen.
         """
         method = self.command
-        content_length = int(self.headers.get("Content-Length", 0))
+        try:
+            content_length = max(0, int(self.headers.get("Content-Length", 0)))
+        except (ValueError, TypeError):
+            content_length = 0
         body = self.rfile.read(content_length) if content_length > 0 and not is_head else b""
 
+        conn: http.client.HTTPConnection | None = None
         try:
             conn = http.client.HTTPConnection("127.0.0.1", backend_port, timeout=10)
             headers = {"Content-Type": self.headers.get("Content-Type", "application/json")}
@@ -225,8 +232,7 @@ class PlanerHandler(BaseHTTPRequestHandler):
                     if not chunk:
                         break
                     self.wfile.write(chunk)
-            conn.close()
-        except OSError as exc:
+        except (OSError, http.client.HTTPException) as exc:
             _log.warning("Proxy-Fehler zu Port %d: %s", backend_port, exc)
             self._fehler(
                 502,
@@ -234,6 +240,12 @@ class PlanerHandler(BaseHTTPRequestHandler):
                 "Bitte Klangpult light – Recorder starten.",
                 is_head=is_head,
             )
+        finally:
+            if conn is not None:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
 
     def _serve_translations(self, is_head: bool = False) -> None:
         """Liefert das Wörterbuch translations.json für den Planer-Web-Companion."""

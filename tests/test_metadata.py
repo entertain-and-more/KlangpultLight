@@ -160,8 +160,8 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         self.assertIn("entertain-and-more/KlangpultLight", text)
         self.assertIn("entertain-and-more", text)
         self.assertIn("open-bricks", text)
-        self.assertTrue("2026-10-02" in text or "2026-09-30" in text or "2026-09-24" in text or "2026-09-18" in text or "2026-09-14" in text or "2026-09-09" in text)
-        self.assertTrue("573" in text or "570" in text or "563" in text or "555" in text or "521" in text or "516" in text or "502" in text or "483" in text or "449" in text)
+        self.assertTrue("2026-11-05" in text or "2026-10-02" in text or "2026-09-30" in text or "2026-09-24" in text or "2026-09-18" in text or "2026-09-14" in text or "2026-09-09" in text)
+        self.assertTrue("597" in text or "573" in text or "570" in text or "563" in text or "555" in text or "521" in text or "516" in text or "502" in text or "483" in text or "449" in text)
         self.assertIn("NOTICE", text)
         self.assertIn("MARKETING-LOG.txt", text)
         self.assertIn("THIRD_PARTY_LICENSES.md", text)
@@ -182,7 +182,7 @@ class TestKlangpultLightMetadata(unittest.TestCase):
             self.assertIn("MARKETING-LOG.txt", text, f"{name} must reference MARKETING-LOG.txt")
             self.assertIn("THIRD_PARTY_LICENSES.md", text, f"{name} must reference THIRD_PARTY_LICENSES.md")
             self.assertIn("actions/workflows/ci.yml", text, f"{name} must have CI badge")
-            self.assertTrue("573%20" in text or "570%20" in text or "563%20" in text or "555%20" in text or "521%20" in text or "516%20" in text or "503%20" in text or "484%20" in text or "450%20" in text, f"{name} must have tests badge")
+            self.assertTrue("597%20" in text or "573%20" in text or "570%20" in text or "563%20" in text or "555%20" in text or "521%20" in text or "516%20" in text or "503%20" in text or "484%20" in text or "450%20" in text, f"{name} must have tests badge")
             self.assertIn("RunAsInvoker", text, f"{name} must have security badge")
             self.assertTrue("5d%20triage" in text or "5d%20Triage" in text, f"{name} must have 5d triage badge")
             self.assertIn("graph TD", text, f"{name} must have architecture graph")
@@ -667,6 +667,22 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         self.assertIn("2026-10-30", text)
         self.assertIn(".github/dependabot.yml", text)
         self.assertIn("*-TASKPLAN*", text)
+
+
+    def test_changelog_recent_pfad_b_unreleased_entry_20261105(self):
+        """Verify CHANGELOG.md documents the 2026-11-05 Pfad B visual architecture and sequence under [Unreleased]."""
+        cl_file = PROJECT_ROOT / "CHANGELOG.md"
+        text = cl_file.read_text(encoding="utf-8")
+        self.assertIn("## [Unreleased]", text)
+        self.assertIn("Pfad B Marketing, Visual Architecture, Soundboard/Ducking Sequence & Test Parity (2026-11-05)", text)
+        self.assertIn("T-20260920-167562623", text)
+
+    def test_marketing_log_recent_pfad_b_entry_20261105(self):
+        """Verify MARKETING-LOG.txt documents the 2026-11-05 Pfad B milestone in Section 10."""
+        log_file = PROJECT_ROOT / "MARKETING-LOG.txt"
+        text = log_file.read_text(encoding="utf-8")
+        self.assertIn("PFAD_B_VISUAL_ARCHITECTURE_SOUNDBOARD_DUCKING_AND_TEST_CURRENCY_20261105", text)
+        self.assertIn("2026-11-05", text)
 
 
 if __name__ == "__main__":

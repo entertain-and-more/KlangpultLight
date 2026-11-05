@@ -5,6 +5,22 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Pfad B Marketing, Visual Architecture, Soundboard/Ducking Sequence & Test Parity (2026-11-05) [G 2026-11-05]
+- **Version-Freeze Disziplin (`T-20260920-167562623`)**:
+  - Version `0.1.0` in `pyproject.toml` und Manifesten strikt unverändert beibehalten (kein Version-Bump; Release-Vorgang und Distribution bleiben separater Autorisierung vorbehalten).
+- **Visuelle Architektur & Sequenzdiagramme (Section 3)**:
+  - Ergänzung der zweisprachigen/dreisprachigen READMEs (`README.md`, `README_de.md`, `README.es.md`) um ein dediziertes Mermaid-Sequenzdiagramm zur Soundboard- & Ducking-Audio-Pipeline mit additiver Summierung, sanftem Gain-Ramp-Down/Up und WebSocket-IPC-Zustandssynchronisation (:8769 -> :8770).
+  - Alle Diagramme vollständig syntax-validiert ohne Semikolons und mit gequoteten Labeln (0 Fehler via `lint_mermaid.py`).
+- **Badges & Verifikationsstempel**:
+  - Pytest-Badge in allen drei READMEs (`README.md`, `README_de.md`, `README.es.md`) auf den real gemessenen Stand von 597 bestandenen Tests aktualisiert (100% grün).
+  - Dependabot-Badge in `README.es.md` nachgezogen (`Dependabot: Activo`).
+  - Marketing-Log-Badge und Verifikationsstempel auf Stand `2026-11-05` synchronisiert.
+- **LLM-Kontext-Indexierung (`llms.txt`)**:
+  - Stand `2026-11-05` und Teststand 597 aktualisiert.
+- **Vertragstests (`tests/test_metadata.py`)**:
+  - Testsuite um neue Regressionstests `test_marketing_log_recent_pfad_b_entry_20261105` und `test_changelog_recent_pfad_b_unreleased_entry_20261105` erweitert.
+  - Paritätsgrenzen in `test_bilingual_readme_parity_and_diagrams` und `test_llms_txt_integrity` um `597` und `2026-11-05` erweitert.
+
 ### Bugsweep Resilienz, Planer Proxy-Härtung, Schema-Drift & Windows-I/O-Absicherung (2026-11-01) [G 2026-11-01]
 - **Planer Proxy-Resilienz & Socket-Leak-Schutz (`planer/server/planer_server.py`)**:
   - `_proxy`: Malformed oder nicht-numerische `Content-Length` Header werden defensiv via `max(0, int(...))` und `(ValueError, TypeError)`-Guards abgefangen (verhindert unhandled `ValueError`).

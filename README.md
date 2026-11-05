@@ -7,7 +7,7 @@
 [![Status](https://img.shields.io/badge/Status-Alpha-orange.svg)](#)
 [![Version](https://img.shields.io/badge/Version-v0.1.7-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-[![Pytest](https://img.shields.io/badge/Pytest-573%20tests%20(573%20passed)-success.svg)](https://docs.pytest.org/)
+[![Pytest](https://img.shields.io/badge/Pytest-597%20tests%20(597%20passed)-success.svg)](https://docs.pytest.org/)
 [![CI](https://img.shields.io/badge/CI-Multi--OS%20Matrix-blue.svg)](https://github.com/entertain-and-more/KlangpultLight/actions/workflows/ci.yml)
 [![Dependabot](https://img.shields.io/badge/Dependabot-Active-brightgreen.svg)](.github/dependabot.yml)
 [![Platforms](https://img.shields.io/badge/Platforms-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](#)
@@ -17,7 +17,7 @@
 [![Security](https://img.shields.io/badge/Security-Unprivileged%20(RunAsInvoker)-green.svg)](./SECURITY.md)
 [![Security SLA](https://img.shields.io/badge/Security%20SLA-48h%20response%20%7C%205d%20triage-blue.svg)](./SECURITY.md)
 [![Third-Party Audited](https://img.shields.io/badge/Third--Party%20Licenses-Audited%20(100%25%20Permissive%20%2F%20LGPL)--Dynamic-green.svg)](./THIRD_PARTY_LICENSES.md)
-[![Marketing Log](https://img.shields.io/badge/Marketing%20Log-Active%20(2026--10--30)-blue.svg)](./MARKETING-LOG.txt)
+[![Marketing Log](https://img.shields.io/badge/Marketing%20Log-Active%20(2026--11--05)-blue.svg)](./MARKETING-LOG.txt)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Ecosystem](https://img.shields.io/badge/Ecosystem-entertain--and--more-blueviolet.svg)](https://github.com/entertain-and-more)
 [![Umbrella](https://img.shields.io/badge/Umbrella-open--bricks-blue.svg)](https://github.com/open-bricks/open-bricks)
@@ -30,7 +30,7 @@
 > License: Freeware / Proprietary, Closed-Source.
 
 > [!NOTE]
-> For AI agents and automated tools: See [llms.txt](./llms.txt) (Last checked: 2026-10-30) for machine-readable repository overview and test contracts. Formal provenance and contributor recognition are declared in [NOTICE](./NOTICE). Detailed third-party license audits and Level 1 SBOM are documented in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md), and marketing, SEO, and visual asset telemetry is tracked in [MARKETING-LOG.txt](./MARKETING-LOG.txt).
+> For AI agents and automated tools: See [llms.txt](./llms.txt) (Last checked: 2026-11-05) for machine-readable repository overview and test contracts. Formal provenance and contributor recognition are declared in [NOTICE](./NOTICE). Detailed third-party license audits and Level 1 SBOM are documented in [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md), and marketing, SEO, and visual asset telemetry is tracked in [MARKETING-LOG.txt](./MARKETING-LOG.txt).
 
 ---
 
@@ -157,6 +157,33 @@ sequenceDiagram
     Creator->>Recorder: Stop Recording & Remux
     Recorder->>Disk: Finalize Session Metadata & Events (events.jsonl)
     Recorder-->>Creator: Ready for Playback & Planning
+`
+
+### Soundboard & Real-Time Ducking Pipeline Sequence
+
+`mermaid
+sequenceDiagram
+    autonumber
+    actor User as Host / Producer
+    participant GUI as Recorder UI / Soundboard Pad
+    participant BP as BoardPlayer Core
+    participant Engine as Mixing Engine & WASAPI Loopback
+    participant WS as WebSocket Bridge (:8769)
+    participant Planer as Planer Web Dashboard (:8770)
+
+    User->>GUI: Click Soundboard Pad / Hotkey Trigger
+    GUI->>BP: trigger(pad_id)
+    BP->>Engine: register_board_feeder(feeder_id, audio_buffer)
+    BP->>Engine: set_ducking(active=true, factor=0.4)
+    Engine->>Engine: Ramp down microphone gain (smooth fade)
+    Engine->>Engine: Additive mix (Mic * Duck + System Loopback + Board Audio)
+    BP->>WS: broadcast(pad_triggered, pad_id)
+    WS-->>Planer: Highlight Active Pad & Sync Teleprompter Cue
+    Note over Engine: Audio stream written atomically to session WAV container
+    BP->>Engine: End of audio buffer - ramp up microphone gain
+    BP->>Engine: unregister_board_feeder(feeder_id)
+    BP->>WS: broadcast(pad_stopped, pad_id)
+    WS-->>Planer: Reset Pad State & Resume Teleprompter Speed
 ```
 
 ---
@@ -388,7 +415,7 @@ pytest tests/test_planer_accessibility_static.py
 # 3. Core Engine and Desktop Recorder Test Suite (440 tests)
 pytest Recorder/tests/
 
-# 4. Full Pytest Suite (573 tests: 573 passed)
+# 4. Full Pytest Suite (597 tests: 597 passed)
 pytest
 
 # 5. Code Style and Linter Check

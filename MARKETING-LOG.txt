@@ -7,7 +7,7 @@
 - **Current Version**: `0.1.0` (App Core) / `0.1.1` (Alpha Display)
 - **License**: Freeware / Proprietary Closed-Source
 - **Architecture**: 100% Local-First PySide6 Desktop Application + Web Planer with zero cloud egress, loopback IPC, and optional local STT
-- **Last Updated**: 2026-09-24 (Pfad B — Discoverability, Level 1 SBOM, NOTICE Attribution, 18-Point Bilateral Navigation Parity & Statutory Disclaimer)
+- **Last Updated**: 2026-11-05 (Pfad B — Visual Architecture, Soundboard/Ducking Sequence Diagram, Test Count Currency & Bilateral Parity)
 
 ---
 
@@ -215,3 +215,23 @@ Comprehensive SPDX license audit completed in `THIRD_PARTY_LICENSES.md` on 2026-
   - Synchronized `llms.txt` RAG context index to Stand 2026-10-30.
 - **Automated Contract Test Expansion**:
   - Extended `tests/test_metadata.py` with 6 new regression contract tests verifying Dependabot workflow configuration, labels parity, extended multi-host gitignore defense, PEP 621 license-files, SBOM re-audit, and recency of documentation.
+
+---
+
+## 10. Visual Architecture, Soundboard & Ducking Sequence Diagram & Test Currency (Pfad B — Stand 2026-11-05)
+
+### PFAD_B_VISUAL_ARCHITECTURE_SOUNDBOARD_DUCKING_AND_TEST_CURRENCY_20261105
+- **Audit Date**: 2026-11-05
+- **Version Integrity**: `0.1.0` strictly frozen in compliance with `T-20260920-167562623` (no version bump in Pfad A/B runs).
+- **Visual Architecture & Dual Sequence Diagrams**:
+  - Expanded Section 3 ("Media & Recording Lifecycle Sequence") across `README.md`, `README_de.md`, and `README.es.md` with a comprehensive second sequence diagram: `Soundboard & Real-Time Ducking Pipeline Sequence`.
+  - Details the precise interprocess interaction between Host UI, `BoardPlayer Core`, `Mixing Engine & WASAPI Loopback`, `WebSocket Bridge (:8769)`, and `Planer Web Dashboard (:8770)` during pad triggering, additive audio mixing, smooth gain ramp-down/ducking (40% attenuation factor), broadcast state synchronization, atomic WAV streaming, and release ramp recovery.
+  - Zero Mermaid syntax errors verified via `lint_mermaid.py` across all documentation files (no unquoted special characters, no message semicolons, strict `autonumber` parity).
+- **Test Badge & Verification Currency**:
+  - Full project test suite re-verified: 597 tests collected, 597 passed (100% green across unit, integration, a11y, and metadata contract tests).
+  - Shields.io test count badge updated from `573 tests` to `597 tests` in `README.md` and `README_de.md`.
+  - Spanish `README.es.md` test count badge synchronized from `563 pruebas` to `597 pruebas`.
+  - Added missing `Dependabot: Activo` badge to `README.es.md`.
+  - Synchronized `llms.txt` RAG context index to Stand `2026-11-05` and `597 tests`.
+- **Ecosystem & Sibling Parity**:
+  - Retained all 18 bilateral quick navigation anchors (`sec-01` to `sec-18`) and verified 10 Governance Invariants (`INV-LOCAL-01` to `INV-SLA-10`) along with statutory liability disclaimer (§ 521 BGB Gefälligkeitsrecht) and 48h Security Response SLA.

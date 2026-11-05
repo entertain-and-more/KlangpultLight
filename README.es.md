@@ -7,8 +7,9 @@
 [![Estado](https://img.shields.io/badge/Estado-Alfa-orange.svg)](#)
 [![Versión](https://img.shields.io/badge/Versi%C3%B3n-v0.1.7-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-[![Pytest](https://img.shields.io/badge/Pytest-563%20pruebas%20(563%20aprobadas)-success.svg)](https://docs.pytest.org/)
+[![Pytest](https://img.shields.io/badge/Pytest-597%20pruebas%20(597%20aprobadas)-success.svg)](https://docs.pytest.org/)
 [![CI](https://img.shields.io/badge/CI-Matriz%20Multi--SO-blue.svg)](https://github.com/entertain-and-more/KlangpultLight/actions/workflows/ci.yml)
+[![Dependabot](https://img.shields.io/badge/Dependabot-Activo-brightgreen.svg)](.github/dependabot.yml)
 [![Plataformas](https://img.shields.io/badge/Plataformas-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](#)
 [![Licencia](https://img.shields.io/badge/Licencia-Freeware-informational.svg)](./LICENSE)
 [![Notice](https://img.shields.io/badge/Atribuci%C3%B3n-NOTICE-blue.svg)](./NOTICE)
@@ -29,7 +30,7 @@
 > Licencia: Freeware / Propietaria, código cerrado.
 
 > [!NOTE]
-> Para agentes de IA y herramientas automatizadas: consulte [llms.txt](./llms.txt) (Última comprobación: 2026-09-30) para obtener un resumen del repositorio legible por máquinas y contratos de pruebas. La atribución formal y el reconocimiento de contribuyentes se declaran en [NOTICE](./NOTICE). Las auditorías detalladas de licencias de terceros y SBOM de Nivel 1 están documentadas en [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md), y la telemetría de marketing, SEO y recursos visuales se registra en [MARKETING-LOG.txt](./MARKETING-LOG.txt).
+> Para agentes de IA y herramientas automatizadas: consulte [llms.txt](./llms.txt) (Última comprobación: 2026-11-05) para obtener un resumen del repositorio legible por máquinas y contratos de pruebas. La atribución formal y el reconocimiento de contribuyentes se declaran en [NOTICE](./NOTICE). Las auditorías detalladas de licencias de terceros y SBOM de Nivel 1 están documentadas en [THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md), y la telemetría de marketing, SEO y recursos visuales se registra en [MARKETING-LOG.txt](./MARKETING-LOG.txt).
 
 ---
 
@@ -115,6 +116,33 @@ sequenceDiagram
     Creator->>Recorder: Detener Grabación y Remuxing
     Recorder->>Disk: Finalizar Metadatos de Sesión y Eventos (events.jsonl)
     Recorder-->>Creator: Listo para Reproducción y Planificación
+`
+
+### Secuencia de la Línea de Reproducción y Atenuación (Ducking) de Pads
+
+`mermaid
+sequenceDiagram
+    autonumber
+    actor User as Presentador / Productor
+    participant GUI as UI de Grabador / Pad de Sonido
+    participant BP as Núcleo BoardPlayer
+    participant Engine as Motor de Mezcla y Loopback WASAPI
+    participant WS as Puente WebSocket (:8769)
+    participant Planer as Panel Web del Planificador (:8770)
+
+    User->>GUI: Clic en Pad de Sonido / Atajo de Teclado
+    GUI->>BP: trigger(pad_id)
+    BP->>Engine: register_board_feeder(feeder_id, audio_buffer)
+    BP->>Engine: set_ducking(active=true, factor=0.4)
+    Engine->>Engine: Atenuar ganancia de micrófono suavemente (Ducking)
+    Engine->>Engine: Mezcla aditiva (Micrófono * Duck + Loopback de Sistema + Audio de Pad)
+    BP->>WS: broadcast(pad_triggered, pad_id)
+    WS-->>Planer: Resaltar Pad Activo y Sincronizar Señal de Teleprónter
+    Note over Engine: Flujo de audio escrito atómicamente en el contenedor WAV de sesión
+    BP->>Engine: Fin del búfer de audio - restaurar ganancia de micrófono
+    BP->>Engine: unregister_board_feeder(feeder_id)
+    BP->>WS: broadcast(pad_stopped, pad_id)
+    WS-->>Planer: Restablecer estado de Pad y reanudar velocidad de Teleprónter
 ```
 
 ---
@@ -352,7 +380,7 @@ pytest tests/test_planer_i18n.py
 # 4. Suite de Pruebas del Motor Principal y Recorder de Escritorio
 pytest Recorder/tests/
 
-# 5. Suite Pytest Completa (516 pruebas aprobadas)
+# 5. Suite Pytest Completa (597 pruebas: 597 aprobadas)
 pytest
 
 # 6. Comprobación de Estilo de Código y Linter

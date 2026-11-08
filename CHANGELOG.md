@@ -5,6 +5,24 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
 ## [Unreleased]
 
+### Windows Store Packaging, Tier-2 6-Sprachen-Harmonisierung (Policy P-006) & Staging (2026-11-08) [G 2026-11-08]
+- **Windows Store Packaging & Metadaten (`store_package.json`, `releases/windowsstore/store_settings.json`)**:
+  - Konfiguration aller Pflichtmetadaten für Microsoft Partner Center (`Geiger.KlangpultLight`, Publisher `CN=52596601-BAB4-4F3F-B182-E8F3F273B202`, Version `0.1.0.0`, Category `Music`).
+  - Kurzbeschreibungen (strikt ≤ 100 Zeichen) für alle 6 Tier-2 Sprachen (Deutsch, English, Español, 简体中文, 日本語, Русский).
+  - Je genau 7 markenrechtsfreie Suchbegriffe (≤ 30 Zeichen je Begriff) nach Microsoft Partner Center Richtlinie 10.1.3 ohne geschützte Drittmarken.
+- **Windows Desktop AppxManifest (`store_package/KlangpultLight/AppxManifest.xml`)**:
+  - Desktop-Bridge Manifest mit `TargetDeviceFamily Windows.Desktop` (10.0.17763.0 .. 10.0.26100.0), `runFullTrust`, `internetClient` und `microphone`.
+  - Deklaration aller 6 Ressourcensprachen (`de-de`, `en-us`, `es-es`, `zh-cn`, `ja-jp`, `ru-ru`).
+  - Einbindung vollständiger Kachel- und Logo-Ressourcen (`icons\*.png`) und `StoreLogo.png` (50×50).
+- **Store Listings & Dokumentation (`STORE_LISTING.md`, `WINDOWS_STORE_PREP.md`, `PRIVACY_POLICY.md`)**:
+  - Vollständiges `STORE_LISTING.md` mit Abschnitten für alle 6 Sprachen inkl. Feature-Bullets und Copyright.
+  - Staging-Verzeichnis `releases/windowsstore/` mit `BUILD.md`, `WACK_PROTOCOL.md`, `StoreLogo.png` und 6 Staging-Dateien (`store_listing_<lang>.md`).
+  - `.gitignore` Whitelist für `releases/windowsstore/*.md`, `*.json`, `*.png`.
+  - Datenschutzerklärung (`PRIVACY_POLICY.md`) mit expliziter 100% Local-First / Zero-Egress Garantie.
+- **Automatisierter Preflight-Linter & Vertragstests (`scripts/check_store_readiness.py`, `tests/test_store_materials.py`)**:
+  - Neuer Preflight-Linter mit >50 Validierungsprüfungen (0 Findings, 100% PASS).
+  - Neue Pytest-Vertragstestsuite mit 12 hermetischen Tests für Metadaten, XML-Manifest, Keywords, Listings und Linter.
+
 ### Bugsweep Resilienz, Planer Proxy-Härtung, Schema-Drift & Windows-I/O-Absicherung (2026-11-01) [G 2026-11-01]
 - **Planer Proxy-Resilienz & Socket-Leak-Schutz (`planer/server/planer_server.py`)**:
   - `_proxy`: Malformed oder nicht-numerische `Content-Length` Header werden defensiv via `max(0, int(...))` und `(ValueError, TypeError)`-Guards abgefangen (verhindert unhandled `ValueError`).

@@ -43,7 +43,16 @@ keyring/
 # Build
 build/
 dist/
-releases/
+releases/*
+!releases/windowsstore/
+!releases/windowsstore/**
+!releases/windowsstore/*.md
+!releases/windowsstore/*.json
+!releases/windowsstore/*.png
+releases/**/*.exe
+releases/**/*.msi
+releases/**/*.msix
+releases/**/*.appx
 *.exe
 *.msi
 *.msix

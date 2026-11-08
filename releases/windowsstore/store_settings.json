@@ -1,0 +1,148 @@
+{
+  "app_name": "KlangpultLight",
+  "publisher": "CN=52596601-BAB4-4F3F-B182-E8F3F273B202",
+  "publisher_display": "Geiger",
+  "identity_name": "Geiger.KlangpultLight",
+  "version": "0.1.0.0",
+  "description": "Schlanke lokale Podcast- und Audio-Workstation mit Multi-Spur-Recorder, Soundboard und Web-Planer.",
+  "executable": "KlangpultLightRecorder.exe",
+  "execution_alias": "klangpultlight.exe",
+  "capabilities": "runFullTrust,microphone,internetClient",
+  "category": "Music",
+  "age_rating": "3+",
+  "license": "Freeware / Proprietary",
+  "languages": [
+    "de-DE",
+    "en-US",
+    "es-ES",
+    "zh-CN",
+    "ja-JP",
+    "ru-RU"
+  ],
+  "privacy_url": "https://github.com/entertain-and-more/KlangpultLight/blob/main/PRIVACY_POLICY.md",
+  "support_url": "https://github.com/entertain-and-more/KlangpultLight/issues",
+  "description_de": "Schlanke lokale Podcast- und Audio-Workstation mit Multi-Spur-Recorder, Soundboard und Web-Planer.",
+  "description_en": "Lightweight local podcast workstation with multitrack recorder, soundboard, and web planner.",
+  "description_es": "Estación de podcast ligera y local con grabador multipista, soundboard y planificador web.",
+  "description_zh": "轻量级本地播客与音频工作站，集成多轨录音机、音效板与网页规划器。",
+  "description_ja": "マルチトラック録音、サウンドボード、Webプランナーを備えた軽量ローカルポッドキャストワークステーション。",
+  "description_ru": "Легкая локальная станция для подкастов с многодорожечной записью, саундбордом и веб-планером.",
+  "keywords_de": [
+    "podcast recorder",
+    "audio aufnahme",
+    "soundboard",
+    "mikrofon mixer",
+    "lokaler planer",
+    "multitrack audio",
+    "streaming pult"
+  ],
+  "keywords_en": [
+    "podcast recorder",
+    "audio recording",
+    "soundboard",
+    "microphone mixer",
+    "local planner",
+    "multitrack audio",
+    "streaming workstation"
+  ],
+  "keywords_es": [
+    "grabador podcast",
+    "grabacion audio",
+    "soundboard",
+    "mezclador microfono",
+    "planificador local",
+    "audio multipista",
+    "estacion streaming"
+  ],
+  "keywords_zh": [
+    "播客录音",
+    "音频录制",
+    "音效板",
+    "麦克风混音",
+    "本地规划器",
+    "多轨音频",
+    "流媒体工作站"
+  ],
+  "keywords_ja": [
+    "ポッドキャスト録音",
+    "音声録音",
+    "サウンドボード",
+    "マイクミキサー",
+    "ローカルプランナー",
+    "マルチトラック",
+    "配信ワークステーション"
+  ],
+  "keywords_ru": [
+    "запись подкастов",
+    "аудиозапись",
+    "саундборд",
+    "микшер микрофона",
+    "локальный планер",
+    "многодорожечный звук",
+    "стриминг станция"
+  ],
+  "descriptions": {
+    "de-DE": "Schlanke lokale Podcast- und Audio-Workstation mit Multi-Spur-Recorder, Soundboard und Web-Planer.",
+    "en-US": "Lightweight local podcast workstation with multitrack recorder, soundboard, and web planner.",
+    "es-ES": "Estación de podcast ligera y local con grabador multipista, soundboard y planificador web.",
+    "zh-CN": "轻量级本地播客与音频工作站，集成多轨录音机、音效板与网页规划器。",
+    "ja-JP": "マルチトラック録音、サウンドボード、Webプランナーを備えた軽量ローカルポッドキャストワークステーション。",
+    "ru-RU": "Легкая локальная станция для подкастов с многодорожечной записью, саундбордом и веб-планером."
+  },
+  "keywords": {
+    "de-DE": [
+      "podcast recorder",
+      "audio aufnahme",
+      "soundboard",
+      "mikrofon mixer",
+      "lokaler planer",
+      "multitrack audio",
+      "streaming pult"
+    ],
+    "en-US": [
+      "podcast recorder",
+      "audio recording",
+      "soundboard",
+      "microphone mixer",
+      "local planner",
+      "multitrack audio",
+      "streaming workstation"
+    ],
+    "es-ES": [
+      "grabador podcast",
+      "grabacion audio",
+      "soundboard",
+      "mezclador microfono",
+      "planificador local",
+      "audio multipista",
+      "estacion streaming"
+    ],
+    "zh-CN": [
+      "播客录音",
+      "音频录制",
+      "音效板",
+      "麦克风混音",
+      "本地规划器",
+      "多轨音频",
+      "流媒体工作站"
+    ],
+    "ja-JP": [
+      "ポッドキャスト録音",
+      "音声録音",
+      "サウンドボード",
+      "マイクミキサー",
+      "ローカルプランナー",
+      "マルチトラック",
+      "配信ワークステーション"
+    ],
+    "ru-RU": [
+      "запись подкастов",
+      "аудиозапись",
+      "саундборд",
+      "микшер микрофона",
+      "локальный планер",
+      "многодорожечный звук",
+      "стриминг станция"
+    ]
+  }
+}

@@ -1,7 +1,7 @@
 /**
  * remote.js — WebSocket-Client für die Live-Kopplung an den Klangpult light – Recorder.
  *
- * Verbindet sich nach remote_protocol_v1 mit dem Recorder (Port 8768) und verteilt:
+ * Verbindet sich nach remote_protocol_v1 mit dem Recorder (Standard-Port 8768) und verteilt:
  *   - state_update (Peaks, Recording-Status, Active Pads, Prompter-Line)
  *   - transcript_chunk (Live-STT Chunks von Whisper / STT)
  *
@@ -12,10 +12,61 @@
  *   - toggle_mute (source_id)
  */
 
-class RemoteConnection {
-  constructor() {
+const DEFAULT_WS_PORT = 8768;
+
+/**
+ * Ermittelt die Standard-WebSocket-URL passend zur aktuellen Browser-Origin.
+ *
+ * - Auf dem lokalen Desktop (`http://127.0.0.1:8770` oder Node/Headless ohne `window`)
+ *   ergibt sich unverändert `ws://127.0.0.1:8768`.
+ * - Im lokalen Studio-LAN (z. B. Tablet-Teleprompter auf `http://192.168.178.25:8770`)
+ *   löst der Helper automatisch auf `ws://192.168.178.25:8768` (bzw. `?ws_port=...`) auf.
+ *
+ * @param {Location|object|null} [loc]
+ * @param {number} [defaultPort=8768]
+ * @returns {string}
+ */
+export function resolveDefaultWsUrl(
+  loc = typeof window !== "undefined" ? window.location : null,
+  defaultPort = DEFAULT_WS_PORT
+) {
+  let port = Number(defaultPort) || DEFAULT_WS_PORT;
+  if (!loc || typeof loc !== "object") {
+    return `ws://127.0.0.1:${port}`;
+  }
+
+  const protocol = String(loc.protocol || "").toLowerCase();
+  if (protocol !== "http:" && protocol !== "https:") {
+    return `ws://127.0.0.1:${port}`;
+  }
+
+  if (typeof loc.search === "string" && loc.search.length > 1) {
+    try {
+      const params = new URLSearchParams(loc.search);
+      const customPort = Number(params.get("ws_port"));
+      if (Number.isInteger(customPort) && customPort >= 1 && customPort <= 65535) {
+        port = customPort;
+      }
+    } catch {
+      // Ungültigen Query-String ignorieren
+    }
+  }
+
+  const rawHost = String(loc.hostname || "").trim();
+  if (!rawHost) {
+    return `ws://127.0.0.1:${port}`;
+  }
+  const formattedHost = rawHost.includes(":") && !rawHost.startsWith("[")
+    ? `[${rawHost}]`
+    : rawHost;
+  const wsScheme = protocol === "https:" ? "wss" : "ws";
+  return `${wsScheme}://${formattedHost}:${port}`;
+}
+
+export class RemoteConnection {
+  constructor(initialLocation = typeof window !== "undefined" ? window.location : null) {
     this.ws = null;
-    this.url = "ws://127.0.0.1:8768";
+    this.url = resolveDefaultWsUrl(initialLocation, DEFAULT_WS_PORT);
     this.listeners = new Map();
     this.reconnectTimer = null;
     this.isConnected = false;

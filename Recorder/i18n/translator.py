@@ -65,22 +65,27 @@ def resolve_translations_file(custom_path: Optional[Path] = None) -> Path:
         if (p / "translations.json").is_file():
             return p / "translations.json"
 
-    # PyInstaller _MEIPASS
+    # PyInstaller _MEIPASS (onefile & neuere onedir-_internal-Umgebungen)
     meipass = getattr(sys, "_MEIPASS", None)
     if meipass:
-        p = Path(meipass) / "locales" / "translations.json"
-        if p.is_file():
-            return p
-        p_shared = Path(meipass) / "shared" / "locales" / "translations.json"
-        if p_shared.is_file():
-            return p_shared
+        meipass_root = Path(meipass)
+        for cand in [
+            meipass_root / "locales" / "translations.json",
+            meipass_root / "planer" / "locales" / "translations.json",
+            meipass_root / "Recorder" / "locales" / "translations.json",
+            meipass_root / "shared" / "locales" / "translations.json",
+        ]:
+            if cand.is_file():
+                return cand
 
-    # PyInstaller onedir (neben exe)
+    # PyInstaller onedir (neben exe bzw. _internal)
     if getattr(sys, "frozen", False):
         exe_dir = Path(sys.executable).resolve().parent
         for cand in [
             exe_dir / "locales" / "translations.json",
             exe_dir / "_internal" / "locales" / "translations.json",
+            exe_dir / "_internal" / "planer" / "locales" / "translations.json",
+            exe_dir / "planer" / "locales" / "translations.json",
             exe_dir / "Recorder" / "locales" / "translations.json",
         ]:
             if cand.is_file():
@@ -89,9 +94,10 @@ def resolve_translations_file(custom_path: Optional[Path] = None) -> Path:
     # Quellumgebung: relative Pfade ausgehend von dieser Datei
     here = Path(__file__).resolve().parent  # Recorder/i18n
     candidates = [
-        here.parent / "locales" / "translations.json",        # Recorder/locales/
-        here.parent.parent / "locales" / "translations.json", # Repo-Root/locales/
-        here.parent.parent / "shared" / "translations.json",  # shared/
+        here.parent / "locales" / "translations.json",               # Recorder/locales/
+        here.parent.parent / "locales" / "translations.json",        # Repo-Root/locales/
+        here.parent.parent / "planer" / "locales" / "translations.json",  # planer/locales/
+        here.parent.parent / "shared" / "translations.json",         # shared/
     ]
     for cand in candidates:
         if cand.is_file():

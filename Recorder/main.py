@@ -261,6 +261,8 @@ def main() -> int:
             engine=engine,
             state=state,
             board_player=board_player,
+            host="127.0.0.1",
+            companion_host=BridgeService.resolve_companion_host(),
             planer_port=planer_port,
         )
         bridge.start()

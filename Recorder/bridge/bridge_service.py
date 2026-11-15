@@ -72,8 +72,10 @@ class BridgeService:
         ws_port:       WebSocket-Port (Standard: 8768; 0 = OS wählt).
         projects_port: HTTP-Port für Projektplanung-API (Standard: 8769; 0 = OS wählt).
         projects_data_dir: Verzeichnis für Projektdaten (Standard: workspace/projects).
-        host:          Bind-Adresse (Standard: 127.0.0.1).
+        host:          Bind-Adresse für interne REST-APIs 8767/8769 (Standard: 127.0.0.1).
         planer_port:   HTTP-Port für den Planer-Webserver (Optional; None = nicht starten, 8770 / 0).
+        companion_host: Optionale Bind-Adresse für PlanerServer (8770) & RemoteWsServer (8768)
+                        im lokalen Studio-LAN (Standard: identisch zu host = 127.0.0.1).
     """
 
     def __init__(
@@ -88,6 +90,7 @@ class BridgeService:
         projects_data_dir: str = "./workspace/projects",
         host: str = "127.0.0.1",
         planer_port: Optional[int] = None,
+        companion_host: Optional[str] = None,
     ) -> None:
         self._library = library
         self._engine = engine
@@ -98,6 +101,7 @@ class BridgeService:
         self._projects_port = projects_port
         self._projects_data_dir = projects_data_dir
         self._host = host
+        self._companion_host = (companion_host or "").strip() or host
         self._planer_port = planer_port
 
         self._api: Optional[LibraryApiServer] = None
@@ -130,7 +134,7 @@ class BridgeService:
                 board_player=self._board_player,
                 library=self._library,
             )
-            self._ws.start(host=self._host, port=self._ws_port)
+            self._ws.start(host=self._companion_host, port=self._ws_port)
 
             self._projects = ProjectsApiServer(data_dir=self._projects_data_dir)
             self._projects.start(host=self._host, port=self._projects_port)
@@ -143,7 +147,7 @@ class BridgeService:
                             library_port=self._api.port,
                             projects_port=self._projects.port,
                         )
-                        srv.start(host=self._host, port=self._planer_port)
+                        srv.start(host=self._companion_host, port=self._planer_port)
                         self._planer = srv
                     except OSError as err:
                         _log.warning(
@@ -233,9 +237,24 @@ class BridgeService:
             return self._planer.port
         return None
 
+    @property
+    def companion_host(self) -> str:
+        """Gebundene Host-Adresse für PlanerServer (8770) und RemoteWsServer (8768)."""
+        return self._companion_host
+
     # -------------------------------------------------------------------------
     # Klassenmethoden: aus Env-Variable starten
     # -------------------------------------------------------------------------
+
+    @classmethod
+    def resolve_companion_host(cls) -> str:
+        """Ermittelt die Bind-Adresse für PlanerServer & RemoteWsServer (INV-LOCAL-01: Default 127.0.0.1)."""
+        raw = (
+            os.environ.get("PODCAST_RECORDER_COMPANION_HOST")
+            or os.environ.get("PLANER_HOST")
+            or "127.0.0.1"
+        )
+        return raw.strip() or "127.0.0.1"
 
     @classmethod
     def soll_starten(cls) -> bool:

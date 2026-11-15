@@ -1,7 +1,8 @@
 """planer.server.planer_server — Statischer Dateiserver mit API-Proxy.
 
 Dient zwei Zwecken:
-1. Statische Dateien aus ``planer/`` ausliefern (index.html, app/*.js, styles/*.css).
+1. Statische Dateien aus ``planer/`` ausliefern (index.html, sw.js, manifest.json, app/*.js, styles/*.css)
+   sowie allowlist-geschützte PWA-Icons aus ``mobile_icons/`` ohne Datei-Duplikate.
 2. API-Anfragen transparent an die laufenden Recorder-Dienste weiterleiten:
    - /api/library/* → LibraryApiServer  (Standard-Port 8767)
    - /api/projects/* → ProjectsApiServer (Standard-Port 8769)
@@ -57,15 +58,49 @@ def _resolve_static_root() -> Path:
     return default_root
 
 
+def _resolve_mobile_icons_root() -> Optional[Path]:
+    """Ermittelt das Read-Only-Verzeichnis ``mobile_icons/`` für PWA-Icons (Quell- & Frozen-Modus)."""
+    static_root = _resolve_static_root()
+    candidates: list[Path] = [
+        static_root.parent / "mobile_icons",
+        Path(__file__).resolve().parent.parent.parent / "mobile_icons",
+    ]
+
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        candidates.insert(0, Path(meipass) / "mobile_icons")
+
+    exe_dir = Path(sys.executable).parent
+    candidates.extend([
+        exe_dir / "mobile_icons",
+        exe_dir / "_internal" / "mobile_icons",
+    ])
+
+    for cand in candidates:
+        if (cand / "icon-192.png").is_file():
+            return cand
+    return None
+
+
 # Statischer Root: planer/
 _STATIC_ROOT = _resolve_static_root()
 
-# Erweiterungen, die NIEMALS ausgeliefert werden dürfen (Python-Quellcode / Bytecode)
-_BLOCKED_SUFFIXES = {".py", ".pyc", ".pyo", ".pyd"}
+# Strikte Allowlist für PWA-Manifest-Icons aus mobile_icons/ (kein Verzeichnis-Scan, kein Path-Traversal)
+_PWA_ICON_ALLOWLIST = frozenset({
+    "icon-192.png",
+    "icon-512.png",
+    "icon-maskable-192.png",
+    "icon-maskable-512.png",
+    "apple-touch-icon-180.png",
+})
+
+# Erweiterungen, die NIEMALS ausgeliefert werden dürfen (Python-Quellcode / Bytecode / Testskripte)
+_BLOCKED_SUFFIXES = {".py", ".pyc", ".pyo", ".pyd", ".mjs"}
 
 # MIME-Typen sicherstellen
 mimetypes.add_type("application/javascript", ".js")
 mimetypes.add_type("text/css", ".css")
+mimetypes.add_type("application/manifest+json", ".webmanifest")
 
 
 class PlanerHandler(BaseHTTPRequestHandler):
@@ -73,7 +108,7 @@ class PlanerHandler(BaseHTTPRequestHandler):
 
     Proxy-Logik: /api/library* → library_port, /api/projects* → projects_port.
     ``/api/status`` prüft beide Recorder-Dienste ohne Nutzdaten abzurufen.
-    Alles andere: statische Dateien aus _STATIC_ROOT.
+    Alles andere: statische Dateien aus _STATIC_ROOT (plus allowlist-geschützte PWA-Icons).
     """
 
     def _set_cors_headers(self) -> None:
@@ -274,8 +309,23 @@ class PlanerHandler(BaseHTTPRequestHandler):
     # Statische Dateien
     # -------------------------------------------------------------------------
 
+    @staticmethod
+    def _resolve_allowlisted_pwa_icon(clean_name: str) -> Optional[Path]:
+        """Löst ein allowlist-freigegebenes PWA-Icon aus ``mobile_icons/`` auf."""
+        if clean_name not in _PWA_ICON_ALLOWLIST:
+            return None
+        icons_root = _resolve_mobile_icons_root()
+        if icons_root is None:
+            return None
+        try:
+            cand = (icons_root / clean_name).resolve()
+            cand.relative_to(icons_root.resolve())
+        except ValueError:
+            return None
+        return cand if cand.is_file() else None
+
     def _serve_static(self, path: str, is_head: bool = False) -> None:
-        """Liefert statische Dateien aus dem Planer-Verzeichnis."""
+        """Liefert statische Dateien aus dem Planer-Verzeichnis (inkl. allowlist-PWA-Icons)."""
         # Index-Datei-Fallback
         if path == "/" or path == "":
             path = "/index.html"
@@ -288,14 +338,24 @@ class PlanerHandler(BaseHTTPRequestHandler):
             self._fehler(403, "Zugriff verweigert", is_head=is_head)
             return
 
-        # Sicherheitscheck: keine Python-Quelldateien oder -Bytecode ausliefern
+        # Sicherheitscheck: keine Python-Quelldateien, Bytecode oder Testskripte ausliefern
         if abs_path.suffix.lower() in _BLOCKED_SUFFIXES:
             self._fehler(404, f"Datei nicht gefunden: {path}", is_head=is_head)
             return
 
         if not abs_path.exists():
-            self._fehler(404, f"Datei nicht gefunden: {path}", is_head=is_head)
-            return
+            # Allowlist-Fallback für in planer/manifest.json referenzierte PWA-Icons
+            rel_clean = path.lstrip("/")
+            if "/" not in rel_clean and "\\" not in rel_clean:
+                pwa_icon = self._resolve_allowlisted_pwa_icon(rel_clean)
+                if pwa_icon is not None:
+                    abs_path = pwa_icon
+                else:
+                    self._fehler(404, f"Datei nicht gefunden: {path}", is_head=is_head)
+                    return
+            else:
+                self._fehler(404, f"Datei nicht gefunden: {path}", is_head=is_head)
+                return
 
         if abs_path.is_dir():
             # Verzeichnis: index.html versuchen
@@ -306,13 +366,20 @@ class PlanerHandler(BaseHTTPRequestHandler):
                 self._fehler(403, "Verzeichnis-Listing nicht erlaubt", is_head=is_head)
                 return
 
-        mime = mimetypes.guess_type(str(abs_path))[0] or "application/octet-stream"
+        if abs_path.name == "manifest.json":
+            mime = "application/manifest+json; charset=utf-8"
+        else:
+            mime = mimetypes.guess_type(str(abs_path))[0] or "application/octet-stream"
+
         try:
             size = os.path.getsize(abs_path)
             self.send_response(200)
             self.send_header("Content-Type", mime)
             self.send_header("Content-Length", str(size))
             self.send_header("Accept-Ranges", "bytes")
+            if abs_path.name == "sw.js":
+                self.send_header("Cache-Control", "no-cache")
+                self.send_header("Service-Worker-Allowed", "/")
             self._set_cors_headers()
             self.end_headers()
             if not is_head:
@@ -437,18 +504,17 @@ class PlanerServer:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    import sys
-
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
+    host = os.environ.get("PLANER_HOST", "127.0.0.1").strip() or "127.0.0.1"
     port = int(os.environ.get("PLANER_PORT", "8770"))
     library_port = int(os.environ.get("LIBRARY_PORT", str(_LIBRARY_PORT_DEFAULT)))
     projects_port = int(os.environ.get("PROJECTS_PORT", str(_PROJECTS_PORT_DEFAULT)))
 
     srv = PlanerServer(library_port=library_port, projects_port=projects_port)
-    srv.start(host="127.0.0.1", port=port)
+    srv.start(host=host, port=port)
 
-    print(f"Klangpult light – Planer läuft auf http://127.0.0.1:{srv.port}")
+    print(f"Klangpult light – Planer läuft auf http://{host}:{srv.port}")
     print("Stoppen mit Ctrl+C")
     try:
         threading.Event().wait()

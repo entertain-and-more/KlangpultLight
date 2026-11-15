@@ -4,8 +4,9 @@
 Store Readiness Preflight Check for Klangpult light.
 
 Validates that all necessary metadata, documentation files, licenses,
-icon assets, AppxManifest, and staged 6-language Store listings required for Windows Store
-release are present, valid, and policy-compliant (Policy P-006 / Tier-2 / Microsoft Partner Center Policy 10.1.3).
+icon assets, AppxManifest, staged 6-language Store listings, WACK preflight scripts,
+and multi-target porting contracts required for Windows Store & companion web release
+are present, valid, and policy-compliant (Policy P-006 / Tier-2 / Microsoft Partner Center Policy 10.1.3).
 """
 
 from __future__ import annotations
@@ -97,7 +98,6 @@ def check_store_package_json(project_root: Path) -> List[str]:
         desc_key = f"description_{lang_code}"
         desc_val = data.get(desc_key) or descriptions_map.get(lang_code)
         if not desc_val:
-            # check full tag e.g. de-DE
             full_tag = next((lang_tag for lang_tag in TIER2_LANGUAGES if lang_tag.lower().startswith(lang_code)), None)
             if full_tag:
                 desc_val = descriptions_map.get(full_tag)
@@ -273,7 +273,7 @@ def check_store_listings(project_root: Path) -> List[str]:
 
 def check_documentation_and_privacy(project_root: Path) -> List[str]:
     errors = []
-    for doc in ["PRIVACY_POLICY.md", "WINDOWS_STORE_PREP.md", "LICENSE"]:
+    for doc in ["PRIVACY_POLICY.md", "WINDOWS_STORE_PREP.md", "PORTIERUNGSPLAN.md", "LICENSE"]:
         p = project_root / doc
         if not p.exists():
             errors.append(f"Required document '{doc}' is missing in project root.")
@@ -289,6 +289,35 @@ def check_documentation_and_privacy(project_root: Path) -> List[str]:
     return errors
 
 
+def check_multitarget_and_wack_gates(project_root: Path) -> List[str]:
+    """Verifies WACK preflight runner, cross-platform smoke runner, and PWA companion artifacts."""
+    errors = []
+    required_artifacts = [
+        Path("scripts") / "run_windows_wack.py",
+        Path("tests") / "source_platform_smoke.py",
+        Path("planer") / "manifest.json",
+        Path("planer") / "sw.js",
+        Path("planer") / "app" / "pwa.js",
+        Path("planer") / "README.md",
+        Path("planer") / "README_de.md",
+    ]
+    for rel in required_artifacts:
+        full = project_root / rel
+        if not full.is_file():
+            errors.append(f"Missing multi-target/WACK artifact: {rel.as_posix()}")
+        elif full.stat().st_size == 0:
+            errors.append(f"Multi-target/WACK artifact is empty: {rel.as_posix()}")
+
+    for spec_name in ("KlangpultLightRecorder.spec", "KlangpultLightRecorderOnedir.spec"):
+        spec_path = project_root / spec_name
+        if spec_path.is_file():
+            spec_text = spec_path.read_text(encoding="utf-8")
+            if '("locales", "locales")' not in spec_text:
+                errors.append(f"{spec_name} missing ('locales', 'locales') bundle entry for frozen 6-language UI.")
+
+    return errors
+
+
 def run_all_checks(project_root: Path = PROJECT_ROOT) -> int:
     print(f"Running Store Readiness Preflight Checks for Klangpult light in: {project_root}")
     all_errors: List[str] = []
@@ -298,13 +327,12 @@ def run_all_checks(project_root: Path = PROJECT_ROOT) -> int:
         ("Windows Desktop AppxManifest", check_appx_manifest),
         ("Icon & Tile Assets (50x50, 44x44, 150x150, 310x150, 310x310)", check_icon_assets),
         ("Store Listings & Staging (6 Tier-2 Languages)", check_store_listings),
-        ("Documentation & Privacy Policy", check_documentation_and_privacy),
+        ("Documentation, Porting Plan & Privacy Policy", check_documentation_and_privacy),
+        ("WACK Preflight, Frozen Locales & PWA Multi-Target Gates", check_multitarget_and_wack_gates),
     ]
 
-    total_checks = 0
     for section_name, check_fn in sections:
         errs = check_fn(project_root)
-        total_checks += 1
         if errs:
             print(f"  [FAIL] {section_name}")
             for err in errs:

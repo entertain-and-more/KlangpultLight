@@ -161,9 +161,20 @@
 - [x] **Zentrales Wörterbuch (`locales/translations.json`):** 44 Kernschlüssel mit 100% Parität über alle 6 Sprachen und echten deutschen Umlauten (ä, ö, ü, Ä, Ö, Ü, ß) ✔ (2026-09-12)
 - [x] **Audit-Werkzeug (`manage_translations.py`):** CLI zur statischen Validierung und Abdeckungsprüfung (`--check`) ✔ (2026-09-12)
 - [x] **Automatisierte Testabdeckung (`tests/test_i18n.py` & `Recorder/tests/test_i18n.py`):** 10 Vertragstests (Sprachwechsel, 4-stufige Fallback-Kette, Umlaut-Konformität, Parität, Listener, Resilienz) ✔ (2026-09-12, 10/10 bestanden)
-- [ ] UI-Integration: Dynamischer Sprachumschalter in `MainWindow` mit `retranslate_ui()` und `QSettings`-Persistenz
-- [ ] Web-Planer: Client-Adapter `planer/app/i18n.js` mit Umschaltung und `lang`-Attribut-Aktualisierung
-- [ ] Dokumentation: Spanische Fassung `README.es.md`
+- [x] UI-Integration: Dynamischer Sprachumschalter in `MainWindow` mit `retranslate_ui()` und `QSettings`-Persistenz ✔ (2026-09-16, TW-KLANGPULTLIGHT-13)
+- [x] Web-Planer: Client-Adapter `planer/app/i18n.js` mit Umschaltung und `lang`-Attribut-Aktualisierung ✔ (2026-09-16, TW-KLANGPULTLIGHT-13)
+- [x] Dokumentation: Spanische Fassung `README.es.md` ✔ (2026-09-16, TW-KLANGPULTLIGHT-13)
+
+---
+
+## Phase 11 — Multi-Target-Architektur, Windows Store WACK & Installierbare Planer-PWA (TW-KLANGPULTLIGHT-15)
+
+> Ziel: Ehrliche Plattform-Transfer-Matrix nach `PUBLICATION-POLICY.md` §2, lückenlose Windows-Store-Zertifizierungsreife (`0.1.0.0`), installierbare Offline-App-Shell-PWA für Desktop & Tablet/Mobile-Companion sowie plattformspezifische Desktop-Loopback-Führung für Windows, macOS und Linux.
+
+- [x] **Kanonischer Portierungsplan (`PORTIERUNGSPLAN.md`):** Feature-Usecase-Plattform-Matrix (Windows Store, Web-PWA, Android/iOS Companion, macOS, Linux) + Nicht-Ziele ✔ (2026-11-15)
+- [x] **Windows Store Frozen-I18N & WACK-Runner:** `("locales", "locales")` in Onefile-/Onedir-Specs, `_MEIPASS`-Auflösung in `translator.py`, `scripts/run_windows_wack.py` & erweiterter `scripts/check_store_readiness.py` ✔ (2026-11-15)
+- [x] **Installierbare Local-First Planer-PWA (`planer/`):** Allowlist-Icon-Routing aus `mobile_icons/` (0 Datei-Duplikate), Zero-Egress Service Worker `planer/sw.js`, `planer/app/pwa.js`, synchrone `PLANER_HOST`-Companion-Bindung (`8770` + `8768`, interne REST-APIs `8767`/`8769` auf `127.0.0.1`) in `BridgeService` & `planer/app/remote.js`, `planer/README.md` & `planer/README_de.md`, Node-ESM-Tests `planer/tests/pwa.test.mjs` ✔ (2026-11-15)
+- [x] **macOS & Linux Desktop-Source-Mode:** `get_platform_loopback_hint()` (WASAPI / BlackHole / PipeWire-Monitor) + zustandsisolierter 7-Gate-Smoke-Runner `tests/source_platform_smoke.py` ✔ (2026-11-15)
 
 ---
 

@@ -6,6 +6,7 @@ Verwendung:
     python planer/start.py
 
 Umgebungsvariablen:
+    PLANER_HOST       Bind-Adresse (Standard: 127.0.0.1; Opt-in z. B. 192.168.x.x für Tablet-Companion)
     PLANER_PORT       Port für den Planer-Server (Standard: 8770)
     LIBRARY_PORT      Port des LibraryApiServers  (Standard: 8767)
     PROJECTS_PORT     Port des ProjectsApiServers (Standard: 8769)
@@ -34,15 +35,17 @@ def main() -> None:
         datefmt="%H:%M:%S",
     )
 
+    host = os.environ.get("PLANER_HOST", "127.0.0.1").strip() or "127.0.0.1"
     port = int(os.environ.get("PLANER_PORT", "8770"))
     library_port = int(os.environ.get("LIBRARY_PORT", "8767"))
     projects_port = int(os.environ.get("PROJECTS_PORT", "8769"))
 
     srv = PlanerServer(library_port=library_port, projects_port=projects_port)
-    srv.start(host="127.0.0.1", port=port)
+    srv.start(host=host, port=port)
 
-    url = f"http://127.0.0.1:{srv.port}"
-    print(f"\nKlangpult light – Planer läuft auf {url}")
+    browser_host = "127.0.0.1" if host in ("0.0.0.0", "::") else host
+    url = f"http://{browser_host}:{srv.port}"
+    print(f"\nKlangpult light – Planer läuft auf {url} (gebunden an {host}:{srv.port})")
     print("Stoppen mit Ctrl+C\n")
 
     if not os.environ.get("PLANER_NO_BROWSER"):

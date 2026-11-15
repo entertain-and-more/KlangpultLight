@@ -14,6 +14,7 @@ a = Analysis(
         ("planer", "planer"),
         ("assets", "assets"),
         ("mobile_icons", "mobile_icons"),
+        ("locales", "locales"),
     ],
     hiddenimports=[
         "sounddevice",

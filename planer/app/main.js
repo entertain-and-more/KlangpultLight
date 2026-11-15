@@ -1,8 +1,8 @@
 /**
  * main.js — Einstiegspunkt des Klangpult light – Planers.
  *
- * Verwaltet Tab-Navigation, Recorder-Verbindungsstatus und Tier-2
- * Internationalisierung (Policy P-006: DE, EN, ES, ZH, JA, RU).
+ * Verwaltet Tab-Navigation, Recorder-Verbindungsstatus, PWA-App-Shell-Registrierung
+ * und Tier-2 Internationalisierung (Policy P-006: DE, EN, ES, ZH, JA, RU).
  * Mounted die einzelnen Views (Bibliothek, Projekte) on demand.
  */
 
@@ -13,6 +13,7 @@ import { mount as mountAssets, unmount as unmountAssets, reload as reloadAssets 
 import { mount as mountTeleprompter, unmount as unmountTeleprompter, reload as reloadTeleprompter } from "./teleprompter.js";
 import { mount as mountMonitor, unmount as unmountMonitor, reload as reloadMonitor } from "./monitor.js";
 import { remote } from "./remote.js";
+import { registerPlanerServiceWorker } from "./pwa.js";
 import {
   initI18n,
   t,
@@ -244,7 +245,7 @@ if (reloadBtn) {
 }
 
 // ---------------------------------------------------------------------------
-// Start
+// Start & lokale PWA-App-Shell-Registrierung
 // ---------------------------------------------------------------------------
 
 initI18n().then(() => {
@@ -252,5 +253,6 @@ initI18n().then(() => {
   updateLocalizedTexts();
 });
 
+registerPlanerServiceWorker();
 remote.connect();
 switchTab("bibliothek");

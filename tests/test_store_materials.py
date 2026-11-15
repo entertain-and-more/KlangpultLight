@@ -2,7 +2,8 @@
 Vertragstests für Tier-2 Windows Store Packaging & 6-Sprachen-Materialien (Policy P-006).
 
 Sichert die Einhaltung der Windows Store Richtlinie 10.1.3, der Sprachabdeckung
-(DE, EN, ES, ZH, JA, RU), der AppxManifest-Konformität und des Staging-Verzeichnisses ab.
+(DE, EN, ES, ZH, JA, RU), der AppxManifest-Konformität, des WACK-Preflights
+und des Staging-Verzeichnisses ab.
 """
 
 from __future__ import annotations
@@ -90,11 +91,13 @@ class TestStoreMaterials(unittest.TestCase):
         self.assertTrue(build_md.is_file(), "releases/windowsstore/BUILD.md fehlt")
         self.assertTrue(wack_md.is_file(), "releases/windowsstore/WACK_PROTOCOL.md fehlt")
 
-    def test_privacy_policy_and_windows_store_prep_exist(self):
+    def test_privacy_policy_windows_store_prep_and_porting_plan_exist(self):
         pp = PROJECT_ROOT / "PRIVACY_POLICY.md"
         prep = PROJECT_ROOT / "WINDOWS_STORE_PREP.md"
+        porting = PROJECT_ROOT / "PORTIERUNGSPLAN.md"
         self.assertTrue(pp.is_file(), "PRIVACY_POLICY.md fehlt")
         self.assertTrue(prep.is_file(), "WINDOWS_STORE_PREP.md fehlt")
+        self.assertTrue(porting.is_file(), "PORTIERUNGSPLAN.md fehlt")
         pp_text = pp.read_text(encoding="utf-8")
         self.assertIn("Zero-Egress", pp_text)
         self.assertIn("Local-First", pp_text)
@@ -132,11 +135,18 @@ class TestStoreMaterials(unittest.TestCase):
             self.assertTrue(icon_file.is_file(), f"Icon {icon_name} fehlt in store_assets")
             self.assertGreater(icon_file.stat().st_size, 100)
 
-    def test_check_store_readiness_script_passes(self):
-        sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+    def test_check_store_readiness_and_wack_preflight_pass(self):
+        scripts_dir = str(PROJECT_ROOT / "scripts")
+        if scripts_dir not in sys.path:
+            sys.path.insert(0, scripts_dir)
         import check_store_readiness
+        import run_windows_wack
+
         exit_code = check_store_readiness.run_all_checks(PROJECT_ROOT)
         self.assertEqual(exit_code, 0, "check_store_readiness.run_all_checks() muss 0 zurückgeben")
+
+        wack = run_windows_wack.run_wack_preflight(PROJECT_ROOT)
+        self.assertTrue(wack["passed"], f"run_windows_wack.run_wack_preflight() schlug fehl: {wack['errors']}")
 
 
 if __name__ == "__main__":

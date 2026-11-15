@@ -44,7 +44,11 @@ from recordings.library import RecordingLibrary
 from recordings.recording_session import RecordingSession
 from sources.source_config import SourcesConfig, save_sources_config
 from i18n.translator import get_translator, t
-from sources.loopback_detector import LoopbackRoute, LOOPBACK_HINT
+from sources.loopback_detector import (
+    LOOPBACK_HINT as LOOPBACK_HINT,
+    LoopbackRoute,
+    get_platform_loopback_hint,
+)
 from ui.level_meter import LevelMeter
 from ui.styles import APP_QSS
 from video.video_manager import VideoManager
@@ -738,9 +742,9 @@ class MainWindow(QMainWindow):
                 zeile.addStretch()
                 outer_layout.addLayout(zeile)
 
-            # LOOPBACK_HINT — sichtbar wenn kein Loopback vorhanden
+            # LOOPBACK_HINT — sichtbar wenn kein Loopback vorhanden (plattformgenau)
             if self._loopback_route is None:
-                hint_lbl = QLabel(LOOPBACK_HINT)
+                hint_lbl = QLabel(get_platform_loopback_hint())
                 hint_lbl.setWordWrap(True)
                 hint_lbl.setProperty("role", "sekundär")
                 hint_lbl.setObjectName("loopback_hint")
@@ -1188,14 +1192,24 @@ class MainWindow(QMainWindow):
         """Öffnet die Planer-Web-App im Standard-Browser und gibt die URL zurück."""
         import webbrowser
         port = 8770
+        url_host = "127.0.0.1"
         if self._bridge is not None and getattr(self._bridge, "planer_port", None) is not None:
             port = self._bridge.planer_port
+            comp_host = str(getattr(self._bridge, "companion_host", "127.0.0.1") or "").strip()
+            if comp_host in ("::", "::1"):
+                url_host = "[::1]"
+            elif comp_host not in ("", "0.0.0.0", "127.0.0.1", "localhost"):
+                url_host = (
+                    f"[{comp_host}]"
+                    if (":" in comp_host and not comp_host.startswith("["))
+                    else comp_host
+                )
         else:
             try:
                 port = int(os.environ.get("PLANER_PORT", "8770"))
             except ValueError:
                 port = 8770
-        url = f"http://127.0.0.1:{port}/"
+        url = f"http://{url_host}:{port}/"
         try:
             webbrowser.open(url)
         except Exception:

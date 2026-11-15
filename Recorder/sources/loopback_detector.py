@@ -3,23 +3,26 @@
 Keine GUI-Imports. Kernlogik (detect_from) ist rein funktional und
 hardware-frei testbar per Dependency-Injection.
 
-Zwei reale Aufnahmewege auf Windows:
-  1. WASAPI-Loopback: Ausgabegerät mit sounddevice im Loopback-Modus öffnen.
-  2. Virtuelles/Monitor-Eingabegerät: Input-Gerät, dessen Name auf
-     einen Loopback- oder Virtual-Cable-Treiber hinweist.
+Plattformübergreifende Aufnahmewege (Windows, macOS, Linux):
+  1. WASAPI-Loopback (Windows): Ausgabegerät mit sounddevice im Loopback-Modus öffnen.
+  2. Virtuelles/Monitor-Eingabegerät (alle Desktop-OS):
+     - Windows: VB-CABLE ('CABLE Output'), VoiceMeeter, Stereo Mix
+     - macOS:   BlackHole ('BlackHole 2ch' / 'BlackHole 16ch'), Soundflower, Loopback Audio
+     - Linux:   PipeWire / PulseAudio ('Monitor of …', 'pipewire')
 
 Score-Tiers (absteigend):
-  100  wasapi_loopback      — direktes WASAPI-Ausgabegerät (zuverlässigste Methode)
-   50  input_device (Cable) — virtuelles Kabel (VB-CABLE, VoiceMeeter, BlackHole …)
-   30  input_device (Mix)   — Stereo Mix / What U Hear / Monitor (Treiber-abhängig)
+  100  wasapi_loopback      — direktes WASAPI-Ausgabegerät (zuverlässigste Methode unter Windows)
+   50  input_device (Cable) — virtuelles Kabel (VB-CABLE, VoiceMeeter, BlackHole, Soundflower …)
+   30  input_device (Mix)   — Stereo Mix / What U Hear / PipeWire- oder PulseAudio-Monitor
 """
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 from typing import Optional
 
 # ---------------------------------------------------------------------------
-# Öffentliche Hinweis-Botschaft (ehrlich, wenn kein Loopback-Weg gefunden)
+# Öffentliche Hinweis-Botschaften (ehrlich, wenn kein Loopback-Weg gefunden)
 # ---------------------------------------------------------------------------
 
 LOOPBACK_HINT: str = (
@@ -29,6 +32,36 @@ LOOPBACK_HINT: str = (
     "2. VB-CABLE installieren: https://vb-audio.com/Cable/ (kostenlos). "
     "Nach Installation erscheint 'CABLE Output' als Aufnahmegerät."
 )
+
+LOOPBACK_HINT_MACOS: str = (
+    "Kein Loopback-Weg unter macOS gefunden. Um Systemton aufzunehmen:\n"
+    "1. BlackHole (2ch) installieren (z. B. via Homebrew: 'brew install blackhole-2ch').\n"
+    "2. Im 'Audio-MIDI-Setup' ein Gerät mit mehreren Ausgängen (Lautsprecher + BlackHole 2ch) "
+    "anlegen, damit 'BlackHole 2ch' als verifizierter Eingang im Recorder erscheint."
+)
+
+LOOPBACK_HINT_LINUX: str = (
+    "Kein Loopback-Weg unter Linux gefunden. Um Systemton aufzunehmen:\n"
+    "1. PipeWire / PulseAudio prüfen: Normalerweise steht 'Monitor of …' automatisch bereit.\n"
+    "2. Falls ausgeblendet, in 'pavucontrol' (Reiter Eingabegeräte → Alle Eingabegeräte anzeigen) "
+    "oder via 'pw-loopback' eine Monitor-Quelle aktivieren."
+)
+
+
+def get_platform_loopback_hint(platform: Optional[str] = None) -> str:
+    """Liefert den plattformspezifischen Einrichtungshinweis für Systemton-Loopback.
+
+    Args:
+        platform: Optionaler ``sys.platform``-String (z. B. ``"win32"``, ``"darwin"``, ``"linux"``).
+                  Standard: ``sys.platform``.
+    """
+    plat = (platform if platform is not None else sys.platform).lower()
+    if plat.startswith("darwin") or plat == "macos":
+        return LOOPBACK_HINT_MACOS
+    if plat.startswith("linux"):
+        return LOOPBACK_HINT_LINUX
+    return LOOPBACK_HINT
+
 
 # ---------------------------------------------------------------------------
 # Name-Heuristik für virtuelle Loopback-Eingabegeräte
@@ -41,6 +74,7 @@ _CABLE_KEYWORDS: tuple[str, ...] = (
     "vb audio",
     "voicemeeter",
     "blackhole",
+    "soundflower",
 )
 
 # Niedrigerer Score: Stereo Mix / What U Hear / Monitor (treiber-/hardware-abhängig)
@@ -50,6 +84,7 @@ _MIX_KEYWORDS: tuple[str, ...] = (
     "what u hear",
     "loopback",
     "monitor of",
+    "pipewire",
     "monitor",
 )
 
@@ -70,7 +105,7 @@ class LoopbackRoute:
         name:         Gerätename (wie von sounddevice gemeldet).
         method:       Aufnahmeverfahren: "wasapi_loopback" | "input_device".
         device_index: sounddevice-Geräte-Index.
-        hostapi:      Name der Host-API (z. B. "Windows WASAPI").
+        hostapi:      Name der Host-API (z. B. "Windows WASAPI", "Core Audio", "ALSA").
         score:        Priorität (höher = bevorzugter Weg).
     """
     name: str
@@ -109,9 +144,7 @@ class LoopbackDetector:
 
         Der Schlüssel "index" wird direkt übernommen — er entspricht der
         Position in der vollständigen sd.query_devices()-Liste und ist
-        der richtige Index zum Öffnen eines Geräts. Fehlt "index" in einem
-        Dict (z. B. in Unit-Tests die ihn nicht setzen), wird als Fallback
-        None verwendet; Task 3b muss das dann behandeln.
+        der richtige Index zum Öffnen eines Geräts.
 
         HostAPI-Dicts: {"name": str}.
 
@@ -127,7 +160,6 @@ class LoopbackDetector:
                 routen.append(LoopbackRoute(
                     name=gerät["name"],
                     method="wasapi_loopback",
-                    # Echten sounddevice-Index aus dem Dict übernehmen
                     device_index=gerät.get("index", -1),
                     hostapi=api_name,
                     score=_SCORE_WASAPI,
@@ -142,7 +174,6 @@ class LoopbackDetector:
                 routen.append(LoopbackRoute(
                     name=gerät["name"],
                     method="input_device",
-                    # Echten sounddevice-Index aus dem Dict übernehmen
                     device_index=gerät.get("index", -1),
                     hostapi=api_name,
                     score=score,

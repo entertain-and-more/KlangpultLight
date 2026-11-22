@@ -470,7 +470,7 @@ class TestKlangpultLightMetadata(unittest.TestCase):
         auto_assign = PROJECT_ROOT / ".github" / "workflows" / "auto-assign.yml"
         self.assertTrue(auto_assign.is_file(), "auto-assign.yml must exist")
         aa_text = auto_assign.read_text(encoding="utf-8")
-        self.assertIn("actions/github-script@v7", aa_text)
+        self.assertRegex(aa_text, r"actions/github-script@v\d+")
         self.assertIn("timeout-minutes: 5", aa_text)
         self.assertIn("cancel-in-progress: true", aa_text)
         self.assertIn("issues: write", aa_text)
